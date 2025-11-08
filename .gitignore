@@ -17,3 +17,40 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# ############# #
+#  CocoaPods    #
+# ############# #
+iosApp/Pods/
+iosApp/*.xcworkspace
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# ############# #
+#  Xcode        #
+# ############# #
+## Build generated
+build/
+DerivedData/
+# ############# #
+# Generated Podspecs
+# ############# #
+*.podspec
+
+## Other
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-to-trash
+*.gcno
+*.xctestrun
+*.gcda
+profile.raw
