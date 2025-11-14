@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "458786278659",
+    "project_id": "luklan-dev",
+    "storage_bucket": "luklan-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458786278659:android:56b0fcef6a43c0a21ead36",
+        "android_client_info": {
+          "package_name": "com.commu.luklan.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhx2YkQdSLdMkbswDYUgApP71Y4PeQ9k0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -101,12 +101,12 @@
 			buildConfigurationList = 27C7C1BCBD93F6AF971DF94C /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
 				75995EF2D16AE3E94B9AA27C /* [CP] Check Pods Manifest.lock */,
-				F2B3FCF78038C78BFD69E464 /* Compile Kotlin Framework */,
 				48DC124D6AD2282290ADDAF1 /* Sources */,
 				57C321B4A6B44CB7B6B1850F /* Frameworks */,
 				19D374D418F44EFD356C8399 /* Resources */,
 				F96B1AFB3DB77D98DCDEA835 /* [CP] Embed Pods Frameworks */,
 				19D1D027564D4C8836FBFE6E /* [CP] Copy Pods Resources */,
+				E1D9B3B62EC427320019A471 /* Copy GoogleService Plist */,
 			);
 			buildRules = (
 			);
@@ -204,9 +204,8 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		F2B3FCF78038C78BFD69E464 /* Compile Kotlin Framework */ = {
+		E1D9B3B62EC427320019A471 /* Copy GoogleService Plist */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -214,14 +213,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Compile Kotlin Framework";
+			name = "Copy GoogleService Plist";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "echo \"Copying GoogleService located at ${GOOGLE_SERVICE}\"\n\nif [ -z \"${GOOGLE_SERVICE}\" ]; then\n    echo \"GOOGLE_SERVICE is unset or set to the empty string\"\n    exit 1\nfi\n\nif [ ! -f \"${GOOGLE_SERVICE}\" ]; then\n    echo \"GOOGLE_SERVICE does not exist\"\n    exit 1\nfi\n\nPLIST_DESTINATION=${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist\ncp \"${GOOGLE_SERVICE}\" \"${PLIST_DESTINATION}\"\n\necho \"Copied ${GOOGLE_SERVICE} to ${PLIST_DESTINATION}\"\n";
 		};
 		F96B1AFB3DB77D98DCDEA835 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -256,7 +255,7 @@
 		44F6E20CBB43290A161A9864 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = C14097E6D51AA0625053271D /* Configuration */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Release.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -314,7 +313,7 @@
 		9062D698C1406FABE3897C2F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = C14097E6D51AA0625053271D /* Configuration */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Debug.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

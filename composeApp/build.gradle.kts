@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinCocoapods)
+    alias(libs.plugins.googleServices)
 //    id("dev.icerock.mobile.multiplatform-resources") version "0.25.1"
 }
 
@@ -48,6 +49,8 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(project.dependencies.platform(libs.android.firebase.bom))
+            implementation(libs.android.firebase.auth)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -58,6 +61,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -66,6 +70,7 @@ kotlin {
 
     cocoapods {
         version = "1.0"
+        ios.deploymentTarget = "16.0"
         summary = "Some description for a Kotlin/Native module"
         homepage = "Link to a Kotlin/Native module homepage"
         podfile = project.file("../iosApp/Podfile")
@@ -75,11 +80,11 @@ kotlin {
             baseName = "composeApp"
             // Optional properties
             // Specify the framework linking type. It's dynamic by default.
-            isStatic = false
-            // Dependency export
-            // Uncomment and specify another project module if you have one:
-            // export(project(":<your other KMP module>"))
-            transitiveExport = false // This is default.
+            isStatic = true
+        }
+        pod("FirebaseCore") {
+            version = "~> 11.13"
+            extraOpts += listOf("-compiler-option", "-fmodules")
         }
 
         // Maps custom Xcode configuration to NativeBuildType
@@ -114,8 +119,13 @@ android {
         }
     }
     buildTypes {
-        getByName("release") {
+        getByName("debug") {
             isMinifyEnabled = false
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-DEBUG"
+        }
+        getByName("release") {
+            isMinifyEnabled = true
         }
     }
     compileOptions {

@@ -1,16 +1,40 @@
 PODS:
-  - composeApp (1.0)
+  - composeApp (1.0):
+    - FirebaseCore (~> 11.13)
+  - FirebaseCore (11.15.0):
+    - FirebaseCoreInternal (~> 11.15.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreInternal (11.15.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - GoogleUtilities/Environment (8.1.0):
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Logger (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Privacy (8.1.0)
 
 DEPENDENCIES:
   - composeApp (from `../composeApp`)
+
+SPEC REPOS:
+  trunk:
+    - FirebaseCore
+    - FirebaseCoreInternal
+    - GoogleUtilities
 
 EXTERNAL SOURCES:
   composeApp:
     :path: "../composeApp"
 
 SPEC CHECKSUMS:
-  composeApp: cbdf8838f508cdac525e278fc9c502ef4903f59c
+  composeApp: 042f3c21e98cb7556c88c5f7d0fced79df1f5190
+  FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
+  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
 
-PODFILE CHECKSUM: 810b79501d4d9a50d319c32cd2fc5b11b2b763ff
+PODFILE CHECKSUM: 3524ad1eb6b949c003df992754f2e191687b8f27
 
 COCOAPODS: 1.16.2
