@@ -1,7 +1,6 @@
-//import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
-//import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,40 +9,30 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.googleServices)
-//    id("dev.icerock.mobile.multiplatform-resources") version "0.25.1"
 }
 
 kotlin {
     tasks.register("testClasses")
     applyDefaultHierarchyTemplate()
-//    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.compilations.getByName("main") {
+            val FirestoreBridge by cinterops.creating {
+                defFile(project.file("src/nativeInterop/cinterop/FirestoreBridge.def"))
+                packageName("platform.FirestoreBridge")
+                includeDirs(project.file("../iosApp/iosApp"))
+            }
+        }
+    }
 
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
-//    listOf(
-//        iosArm64(),
-//        iosSimulatorArm64()
-//    ).forEach { iosTarget ->
-//        iosTarget.binaries.framework {
-//            baseName = "ComposeApp"
-//            isStatic = true
-//        }
-//    }
-
-//    val xcf = XCFramework()
-//    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
-//        binaries.framework {
-//            baseName = "composeApp"
-//            export("dev.icerock.moke:resources:0.23.0")
-//            xcf.add(this)
-//        }
-//    }
 
     sourceSets {
         androidMain.dependencies {
@@ -51,17 +40,22 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(project.dependencies.platform(libs.android.firebase.bom))
             implementation(libs.android.firebase.auth)
+            implementation(libs.android.firebase.firestore)
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.material)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -75,27 +69,30 @@ kotlin {
         homepage = "Link to a Kotlin/Native module homepage"
         podfile = project.file("../iosApp/Podfile")
         framework {
-            // Required properties
-            // Framework name configuration. Use this property instead of deprecated 'frameworkName'
             baseName = "composeApp"
-            // Optional properties
-            // Specify the framework linking type. It's dynamic by default.
             isStatic = true
         }
+
         pod("FirebaseCore") {
-            version = "~> 11.13"
+            version = "~> 11.0"
+            extraOpts += listOf("-compiler-option", "-fmodules")
+        }
+        pod("FirebaseAuth") {
+            version = "~> 11.0"
             extraOpts += listOf("-compiler-option", "-fmodules")
         }
 
-        // Maps custom Xcode configuration to NativeBuildType
+        pod("FirebaseFirestore") {
+            version = "~> 11.0"
+            extraOpts += listOf("-compiler-option", "-fmodules")
+        }
+
         xcodeConfigurationToNativeBuildType["CUSTOM_DEBUG"] = NativeBuildType.DEBUG
         xcodeConfigurationToNativeBuildType["CUSTOM_RELEASE"] = NativeBuildType.RELEASE
     }
 }
 
 compose {
-    // This block tells the JetBrains Compose plugin where to find your resources
-    // and what package to generate the 'Res' class in.
     resources {
         publicResClass = true
         packageOfResClass = "luklan.composeapp.generated.resources"
@@ -132,9 +129,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    lint {
+        disable += "InvalidFragmentVersionForActivityResult"
+    }
 }
 
 dependencies {
     debugImplementation(compose.uiTooling)
 }
-

@@ -1,3 +1,5 @@
+package com.commu.luklan
+
 import cocoapods.FirebaseCore.FIRApp
 import kotlinx.cinterop.ExperimentalForeignApi
 

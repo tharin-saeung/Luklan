@@ -54,3 +54,4 @@ xcuserdata/
 *.xctestrun
 *.gcda
 profile.raw
+pod_wrapper.sh

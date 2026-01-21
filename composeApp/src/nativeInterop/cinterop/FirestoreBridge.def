@@ -1,0 +1,4 @@
+language = Objective-C
+headers = FirestoreBridge.h
+headerFilter = FirestoreBridge.h
+package = platform.FirestoreBridge
