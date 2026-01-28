@@ -68,6 +68,6 @@ class IosNotificationScheduler : NotificationScheduler {
     override fun cancel(medicine: Medicine) {
         val center = UNUserNotificationCenter.currentNotificationCenter()
         center.removePendingNotificationRequestsWithIdentifiers(listOf(medicine.id))
-        println("🗑️ Cancelled notification for ${medicine.name}")
+        println("✅ Cancelled notification for ${medicine.name} (ID: ${medicine.id})")
     }
 }
