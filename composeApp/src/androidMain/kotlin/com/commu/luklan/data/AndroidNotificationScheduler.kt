@@ -11,9 +11,21 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     override fun schedule(medicine: Medicine) {
+        // Build notification message with dosage and unit
+        val message = buildString {
+            append("ได้เวลากินยา ${medicine.name}")
+            if (medicine.dosage.isNotEmpty()) {
+                append(" ${medicine.dosage}")
+                if (medicine.unit.isNotEmpty()) {
+                    append(" ${medicine.unit}")
+                }
+            }
+            append("แล้วนะครับ")
+        }
+        
         val intent =
                 Intent(context, NotificationReceiver::class.java).apply {
-                    putExtra("EXTRA_MESSAGE", "ได้เวลากินยา ${medicine.name} แล้วนะครับ")
+                    putExtra("EXTRA_MESSAGE", message)
                 }
 
         // Use medicine.id.hashCode() as a unique request code

@@ -14,9 +14,18 @@
 + (void)addMedicineWithId:(NSString *)medicineId
                      name:(NSString *)name
               description:(NSString *)description
+                   dosage:(NSString *)dosage
                      time:(NSString *)time
+                frequency:(NSString *)frequency
+                 quantity:(NSInteger)quantity
+                     unit:(NSString *)unit
+               expiryDate:(NSString *)expiryDate
+                 category:(NSString *)category
+     storageInstructions:(NSString *)storageInstructions
+                    notes:(NSString *)notes
                    userId:(NSString *)userId
                     taken:(BOOL)taken
+                createdAt:(long long)createdAt
                completion:(void (^)(NSString * _Nullable))completion {
     
     FIRFirestore *db = [FIRFirestore firestore];
@@ -24,9 +33,18 @@
         @"id": medicineId,
         @"name": name,
         @"description": description,
+        @"dosage": dosage,
         @"time": time,
+        @"frequency": frequency,
+        @"quantity": @(quantity),
+        @"unit": unit,
+        @"expiryDate": expiryDate,
+        @"category": category,
+        @"storageInstructions": storageInstructions,
+        @"notes": notes,
         @"userId": userId,
-        @"taken": @(taken)
+        @"taken": @(taken),
+        @"createdAt": @(createdAt)
     };
     
     [[[db collectionWithPath:@"medicines"] documentWithPath:medicineId] setData:data completion:^(NSError * _Nullable error) {
@@ -57,16 +75,34 @@
 + (void)updateMedicineWithId:(NSString *)medicineId
                         name:(NSString *)name
                  description:(NSString *)description
+                      dosage:(NSString *)dosage
                         time:(NSString *)time
+                   frequency:(NSString *)frequency
+                    quantity:(NSInteger)quantity
+                        unit:(NSString *)unit
+                  expiryDate:(NSString *)expiryDate
+                    category:(NSString *)category
+        storageInstructions:(NSString *)storageInstructions
+                       notes:(NSString *)notes
                        taken:(BOOL)taken
+                   createdAt:(long long)createdAt
                   completion:(void (^)(NSString * _Nullable))completion {
     
     FIRFirestore *db = [FIRFirestore firestore];
     NSDictionary *data = @{
         @"name": name,
         @"description": description,
+        @"dosage": dosage,
         @"time": time,
-        @"taken": @(taken)
+        @"frequency": frequency,
+        @"quantity": @(quantity),
+        @"unit": unit,
+        @"expiryDate": expiryDate,
+        @"category": category,
+        @"storageInstructions": storageInstructions,
+        @"notes": notes,
+        @"taken": @(taken),
+        @"createdAt": @(createdAt)
     };
     
     [[[db collectionWithPath:@"medicines"] documentWithPath:medicineId] updateData:data completion:^(NSError * _Nullable error) {

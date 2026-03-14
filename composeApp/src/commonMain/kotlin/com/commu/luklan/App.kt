@@ -7,7 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.navigation.Screen
-import com.commu.luklan.ui.home.HomeScreen
+import com.commu.luklan.ui.main.MainScreen
 import com.commu.luklan.ui.login.LoginScreen
 import com.commu.luklan.ui.medicine.AddMedicineScreen
 import com.commu.luklan.ui.medicine.EditMedicineScreen
@@ -81,20 +81,37 @@ fun App() {
             }
 
             composable(Screen.Home.route) {
-                HomeScreen(
+                MainScreen(
                     onNavigateToAddMedicine = {
                         navController.navigate(Screen.AddMedicine.route)
                     },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                    onNavigateToEditMedicine = { medicine ->
+                    onNavigateToMedicineDetail = { medicine ->
                         medicineToEdit = medicine
-                        navController.navigate(Screen.EditMedicine.route)
-                    }
+                        navController.navigate(Screen.MedicineDetail.route)
+                    },
+                    onNavigateToHistory = { navController.navigate(Screen.History.route) },
+                    onNavigateToMedicineGroups = { navController.navigate(Screen.MedicineGroups.route) }
                 )
             }
 
             composable(Screen.AddMedicine.route) {
                 AddMedicineScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.MedicineDetail.route) {
+                medicineToEdit?.let { medicine ->
+                    com.commu.luklan.ui.medicine.MedicineDetailScreen(
+                        medicine = medicine,
+                        onBack = { navController.popBackStack() },
+                        onEdit = {
+                            navController.navigate(Screen.EditMedicine.route)
+                        },
+                        onMedicineTaken = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
 
             composable(Screen.EditMedicine.route) {
@@ -104,6 +121,22 @@ fun App() {
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
+            }
+
+            composable(Screen.History.route) {
+                com.commu.luklan.ui.history.HistoryScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.MedicineGroups.route) {
+                com.commu.luklan.ui.groups.MedicineGroupsScreen(
+                    onBack = { navController.popBackStack() },
+                    onMedicineClick = { medicine ->
+                        medicineToEdit = medicine
+                        navController.navigate(Screen.MedicineDetail.route)
+                    }
+                )
             }
 
             composable(Screen.Profile.route) {

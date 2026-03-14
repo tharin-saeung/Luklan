@@ -15,9 +15,18 @@ class MedicineRepositoryIos : MedicineRepository {
                 id = medicine.id,
                 name = medicine.name,
                 description = medicine.description,
+                dosage = medicine.dosage,
                 time = medicine.time,
+                frequency = medicine.frequency,
+                quantity = medicine.quantity,
+                unit = medicine.unit,
+                expiryDate = medicine.expiryDate,
+                category = medicine.category,
+                storageInstructions = medicine.storageInstructions,
+                notes = medicine.notes,
                 userId = medicine.userId,
-                taken = medicine.taken
+                taken = medicine.taken,
+                createdAt = medicine.createdAt
             ) { error: String? ->
                 if (error != null) {
                     continuation.resume(Result.failure(Exception(error)))
@@ -43,9 +52,18 @@ class MedicineRepositoryIos : MedicineRepository {
                             id = (dict.objectForKey("id") as? String) ?: "",
                             name = (dict.objectForKey("name") as? String) ?: "",
                             description = (dict.objectForKey("description") as? String) ?: "",
+                            dosage = (dict.objectForKey("dosage") as? String) ?: "",
                             time = (dict.objectForKey("time") as? String) ?: "",
+                            frequency = (dict.objectForKey("frequency") as? String) ?: "",
+                            quantity = (dict.objectForKey("quantity") as? Number)?.toInt() ?: 0,
+                            unit = (dict.objectForKey("unit") as? String) ?: "เม็ด",
+                            expiryDate = (dict.objectForKey("expiryDate") as? String) ?: "",
+                            category = (dict.objectForKey("category") as? String) ?: "",
+                            storageInstructions = (dict.objectForKey("storageInstructions") as? String) ?: "",
+                            notes = (dict.objectForKey("notes") as? String) ?: "",
                             userId = (dict.objectForKey("userId") as? String) ?: "",
-                            taken = (dict.objectForKey("taken") as? Boolean) ?: false
+                            taken = (dict.objectForKey("taken") as? Boolean) ?: false,
+                            createdAt = (dict.objectForKey("createdAt") as? Number)?.toLong() ?: 0L
                         )
                         medicineList.add(medicine)
                     }
@@ -63,8 +81,17 @@ class MedicineRepositoryIos : MedicineRepository {
                 id = medicine.id,
                 name = medicine.name,
                 description = medicine.description,
+                dosage = medicine.dosage,
                 time = medicine.time,
-                taken = medicine.taken
+                frequency = medicine.frequency,
+                quantity = medicine.quantity,
+                unit = medicine.unit,
+                expiryDate = medicine.expiryDate,
+                category = medicine.category,
+                storageInstructions = medicine.storageInstructions,
+                notes = medicine.notes,
+                taken = medicine.taken,
+                createdAt = medicine.createdAt
             ) { error: String? ->
                 if (error != null) {
                     continuation.resume(Result.failure(Exception(error)))

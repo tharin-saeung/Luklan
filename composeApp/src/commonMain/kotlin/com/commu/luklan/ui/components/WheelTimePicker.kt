@@ -29,7 +29,7 @@ fun WheelTimePicker(startTime: String = "08:00", onTimeSelected: (String) -> Uni
     val hours = (0..23).toList()
     val minutes = (0..59).toList()
 
-    val itemHeight = 40.dp
+    val itemHeight = 60.dp
     val visibleItemsCount = 3
     val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 

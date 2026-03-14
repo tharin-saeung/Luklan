@@ -9,18 +9,36 @@ internal fun addMedicineNative(
     id: String,
     name: String,
     description: String,
+    dosage: String,
     time: String,
+    frequency: String,
+    quantity: Int,
+    unit: String,
+    expiryDate: String,
+    category: String,
+    storageInstructions: String,
+    notes: String,
     userId: String,
     taken: Boolean,
+    createdAt: Long,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.addMedicineWithId(
         medicineId = id,
         name = name,
         description = description,
+        dosage = dosage,
         time = time,
+        frequency = frequency,
+        quantity = quantity.toLong(),
+        unit = unit,
+        expiryDate = expiryDate,
+        category = category,
+        storageInstructions = storageInstructions,
+        notes = notes,
         userId = userId,
         taken = taken,
+        createdAt = createdAt,
         completion = { error -> completion(error) }
     )
 }
@@ -43,16 +61,34 @@ internal fun updateMedicineNative(
     id: String,
     name: String,
     description: String,
+    dosage: String,
     time: String,
+    frequency: String,
+    quantity: Int,
+    unit: String,
+    expiryDate: String,
+    category: String,
+    storageInstructions: String,
+    notes: String,
     taken: Boolean,
+    createdAt: Long,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.updateMedicineWithId(
         medicineId = id,
         name = name,
         description = description,
+        dosage = dosage,
         time = time,
+        frequency = frequency,
+        quantity = quantity.toLong(),
+        unit = unit,
+        expiryDate = expiryDate,
+        category = category,
+        storageInstructions = storageInstructions,
+        notes = notes,
         taken = taken,
+        createdAt = createdAt,
         completion = { error -> completion(error) }
     )
 }

@@ -24,9 +24,21 @@ class IosNotificationScheduler : NotificationScheduler {
     }
 
     private fun scheduleLocalNotification(medicine: Medicine) {
+        // Build notification message with dosage and unit
+        val message = buildString {
+            append("ได้เวลากินยา ${medicine.name}")
+            if (medicine.dosage.isNotEmpty()) {
+                append(" ${medicine.dosage}")
+                if (medicine.unit.isNotEmpty()) {
+                    append(" ${medicine.unit}")
+                }
+            }
+            append("แล้วนะครับ")
+        }
+        
         val content = UNMutableNotificationContent().apply {
             setTitle("⏰ เตือนกินยา")
-            setBody("ได้เวลากินยา ${medicine.name} ${medicine.description} แล้วนะครับ")
+            setBody(message)
             setSound(UNNotificationSound.defaultSound())
             setBadge(NSNumber(1))
         }
