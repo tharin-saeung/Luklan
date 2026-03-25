@@ -48,7 +48,7 @@ fun HomeScreen(
                 medicineRepository
                     .getMedicines(userId)
                     .onSuccess {
-                        medicines = it.filter { !it.taken }.sortedBy { m -> m.time }
+                        medicines = it.filter { !it.taken }.sortedBy { m -> (m.times.firstOrNull() ?: m.time) }
                         isLoading = false
                     }
                     .onFailure { isLoading = false }
@@ -277,6 +277,7 @@ fun MedicineCardRounded(
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    val displayTimes = if (medicine.times.isNotEmpty()) medicine.times.joinToString(", ") else medicine.time
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.AccessTime,
@@ -286,7 +287,7 @@ fun MedicineCardRounded(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = medicine.time,
+                            text = displayTimes,
                             fontSize = 16.sp,
                             color = Color.White,
                             fontWeight = FontWeight.Medium

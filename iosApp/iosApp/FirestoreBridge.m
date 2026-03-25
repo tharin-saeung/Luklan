@@ -12,21 +12,22 @@
 @implementation FirestoreBridge
 
 + (void)addMedicineWithId:(NSString *)medicineId
-                     name:(NSString *)name
-              description:(NSString *)description
-                   dosage:(NSString *)dosage
-                     time:(NSString *)time
-                frequency:(NSString *)frequency
-                 quantity:(NSInteger)quantity
-                     unit:(NSString *)unit
-               expiryDate:(NSString *)expiryDate
-                 category:(NSString *)category
-     storageInstructions:(NSString *)storageInstructions
-                    notes:(NSString *)notes
-                   userId:(NSString *)userId
-                    taken:(BOOL)taken
-                createdAt:(long long)createdAt
-               completion:(void (^)(NSString * _Nullable))completion {
+                                         name:(NSString *)name
+                            description:(NSString *)description
+                                     dosage:(NSString *)dosage
+                                         time:(NSString *)time
+                                frequency:(NSString *)frequency
+                                 quantity:(NSInteger)quantity
+                                         unit:(NSString *)unit
+                             expiryDate:(NSString *)expiryDate
+                                 category:(NSString *)category
+         storageInstructions:(NSString *)storageInstructions
+                                        notes:(NSString *)notes
+                                        times:(NSArray * _Nullable)times
+                                     userId:(NSString *)userId
+                                        taken:(BOOL)taken
+                                createdAt:(long long)createdAt
+                             completion:(void (^)(NSString * _Nullable))completion {
     
     FIRFirestore *db = [FIRFirestore firestore];
     NSDictionary *data = @{
@@ -42,6 +43,7 @@
         @"category": category,
         @"storageInstructions": storageInstructions,
         @"notes": notes,
+        @"times": times ?: @[],
         @"userId": userId,
         @"taken": @(taken),
         @"createdAt": @(createdAt)
@@ -73,20 +75,21 @@
 }
 
 + (void)updateMedicineWithId:(NSString *)medicineId
-                        name:(NSString *)name
-                 description:(NSString *)description
-                      dosage:(NSString *)dosage
-                        time:(NSString *)time
-                   frequency:(NSString *)frequency
-                    quantity:(NSInteger)quantity
-                        unit:(NSString *)unit
-                  expiryDate:(NSString *)expiryDate
-                    category:(NSString *)category
-        storageInstructions:(NSString *)storageInstructions
-                       notes:(NSString *)notes
-                       taken:(BOOL)taken
-                   createdAt:(long long)createdAt
-                  completion:(void (^)(NSString * _Nullable))completion {
+                                                name:(NSString *)name
+                                 description:(NSString *)description
+                                            dosage:(NSString *)dosage
+                                                time:(NSString *)time
+                                     frequency:(NSString *)frequency
+                                        quantity:(NSInteger)quantity
+                                                unit:(NSString *)unit
+                                    expiryDate:(NSString *)expiryDate
+                                        category:(NSString *)category
+                storageInstructions:(NSString *)storageInstructions
+                                             notes:(NSString *)notes
+                                             times:(NSArray * _Nullable)times
+                                             taken:(BOOL)taken
+                                     createdAt:(long long)createdAt
+                                    completion:(void (^)(NSString * _Nullable))completion {
     
     FIRFirestore *db = [FIRFirestore firestore];
     NSDictionary *data = @{
@@ -94,6 +97,7 @@
         @"description": description,
         @"dosage": dosage,
         @"time": time,
+        @"times": times ?: @[],
         @"frequency": frequency,
         @"quantity": @(quantity),
         @"unit": unit,

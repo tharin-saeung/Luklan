@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import com.commu.luklan.LuklanApplication
 import java.util.Calendar
 
 class AndroidNotificationScheduler(private val context: Context) : NotificationScheduler {
@@ -84,3 +85,5 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         alarmManager.cancel(pendingIntent)
     }
 }
+
+actual fun getNotificationScheduler(): NotificationScheduler = AndroidNotificationScheduler(LuklanApplication.getAppContext())

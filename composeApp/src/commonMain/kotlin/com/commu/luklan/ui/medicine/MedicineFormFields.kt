@@ -1,6 +1,7 @@
 package com.commu.luklan.ui.medicine
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,13 +33,17 @@ data class MedicineFormState(
     val dosage: String = "",
     val description: String = "",
     val frequency: String = "ทุกวัน",
+    val timeUnit: String = "วัน",
+    val frequencyCount: Int = 1,
+    val amountPerDose: String = "",
     val quantity: String = "",
     val unit: String = "เม็ด",
     val category: String = "",
     val expiryDate: String = "",
     val storageInstructions: String = "",
     val notes: String = "",
-    val time: String = ""
+    val time: String = "",
+    val times: List<String> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
@@ -78,10 +84,13 @@ fun MedicineFormFields(
                     onTimeSelected = { selectedTime -> tempTime = selectedTime }
                 )
             },
-            confirmButton = {
+                confirmButton = {
                 TextButton(
                     onClick = {
-                        onStateChange(state.copy(time = tempTime))
+                        // Append selected time (avoid duplicates) and ensure primary time set
+                        val newList = (state.times + tempTime).distinct()
+                        val primary = newList.firstOrNull() ?: tempTime
+                        onStateChange(state.copy(time = primary, times = newList))
                         showTimePicker = false
                     }
                 ) { Text("ตกลง") }
@@ -150,11 +159,11 @@ fun MedicineFormFields(
 
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
-        // Dosage
+        // Single dose field: keep `amountPerDose` as canonical and keep `dosage` in sync
         OutlinedTextField(
-            value = state.dosage,
-            onValueChange = { onStateChange(state.copy(dosage = it)) },
-            label = { Text("ปริมาณต่อครั้ง (เช่น 1, 2, 1/2)") },
+            value = state.amountPerDose,
+            onValueChange = { v -> onStateChange(state.copy(amountPerDose = v, dosage = v)) },
+            label = { Text("ครั้งละ (เช่น 1 เม็ด)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
@@ -166,6 +175,7 @@ fun MedicineFormFields(
             )
         )
 
+        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
         // Unit Dropdown
@@ -213,47 +223,294 @@ fun MedicineFormFields(
 
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
-        // Time Picker
-        Box(modifier = Modifier.fillMaxWidth()) {
+        // Frequency controls (move above times) - linked to times behavior
+        // When user changes frequencyCount or timeUnit we adjust `times` entries accordingly
+        fun adjustTimesForFrequency(fCount: Int, tUnit: String, currentTimes: List<String>): List<String> {
+            val result = currentTimes.toMutableList()
+            if (tUnit == "วัน") {
+                // keep only times (HH:MM). ensure size == fCount
+                while (result.size < fCount) result.add("")
+                while (result.size > fCount) result.removeAt(result.lastIndex)
+            } else if (tUnit == "สัปดาห์") {
+                // store entries as DAY@HH:MM, default day = จันทร์
+                while (result.size < fCount) result.add("จันทร์@")
+                while (result.size > fCount) result.removeAt(result.lastIndex)
+            } else if (tUnit == "เดือน") {
+                // store entries as DATE@HH:MM (date number)
+                while (result.size < fCount) result.add("1@")
+                while (result.size > fCount) result.removeAt(result.lastIndex)
+            }
+            return result
+        }
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
-                value = state.time,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("เวลาที่ต้องกิน *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
-                trailingIcon = {
-                    Icon(
-                        Icons.Default.AccessTime,
-                        contentDescription = "Select Time"
-                    )
+                value = state.frequencyCount.toString(),
+                onValueChange = { v ->
+                    if (v.all { it.isDigit() } && v.length <= 3) {
+                        val newCount = v.toIntOrNull() ?: 0
+                        val newTimes = adjustTimesForFrequency(newCount, state.timeUnit, state.times)
+                        onStateChange(state.copy(frequencyCount = newCount, times = newTimes))
+                    }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = LuklanTheme.colors.Surface,
-                    unfocusedContainerColor = LuklanTheme.colors.Surface,
-                    focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                    unfocusedBorderColor = LuklanTheme.colors.Indicator
-                )
+                label = { Text("จำนวน") },
+                modifier = Modifier.width(96.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            Box(
-                modifier = Modifier.matchParentSize().clickable {
-                    focusManager.clearFocus()
-                    showTimePicker = true
-                }
+
+            Text(text = "ครั้งต่อ", modifier = Modifier.padding(start = 4.dp, end = 4.dp))
+
+            DropdownSelector(
+                label = "",
+                selectedValue = state.timeUnit,
+                options = listOf("วัน", "สัปดาห์", "เดือน"),
+                onValueChange = { newUnit ->
+                    val newTimes = adjustTimesForFrequency(state.frequencyCount, newUnit, state.times)
+                    onStateChange(state.copy(timeUnit = newUnit, times = newTimes))
+                },
+                modifier = Modifier.weight(1f)
             )
         }
 
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
-        // Frequency Dropdown
-        DropdownSelector(
-            label = "ความถี่ในการกิน",
-            selectedValue = state.frequency,
-            options = frequencyOptions,
-            onValueChange = { onStateChange(state.copy(frequency = it)) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Time Picker + multiple times display
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Manage editing index/time for the picker
+            var editingIndex by remember { mutableStateOf(-1) }
+            var editingTempTime by remember { mutableStateOf("") }
+
+            val daysOfWeek = listOf("จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์")
+
+            if (state.timeUnit == "วัน") {
+                // Daily: show times as chips in order; user edits each time
+                if (state.times.isNotEmpty()) {
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for ((index, t) in state.times.withIndex()) {
+                            OutlinedButton(onClick = {
+                                // edit this time
+                                editingIndex = index
+                                editingTempTime = if (t.isNotBlank()) t else "08:00"
+                                showTimePicker = true
+                            }) {
+                                Text(if (t.isNotBlank()) t else "(ตั้งเวลา)")
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(LuklanTheme.spacing.sm))
+                }
+
+                // Read-only display of times joined
+                OutlinedTextField(
+                    value = if (state.times.isNotEmpty()) state.times.joinToString(", ") else "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("เวลาที่ต้องกิน") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.AccessTime,
+                            contentDescription = "Select Time"
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = LuklanTheme.colors.Surface,
+                        unfocusedContainerColor = LuklanTheme.colors.Surface,
+                        focusedBorderColor = LuklanTheme.colors.TextSecondary,
+                        unfocusedBorderColor = LuklanTheme.colors.Indicator
+                    )
+                )
+
+                // When picker confirms, update the specific index (if editing) or append
+                if (showTimePicker) {
+                    // reuse existing dialog code: show wheel and update
+                    // We'll present a temporary inline picker via AlertDialog
+                    var tempTime by remember { mutableStateOf(if (editingTempTime.isNotBlank()) editingTempTime else "08:00") }
+                    AlertDialog(
+                        onDismissRequest = { showTimePicker = false; editingIndex = -1 },
+                        title = { Text("เลือกเวลา", style = LuklanTypography.h3) },
+                        text = { com.commu.luklan.ui.components.WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val newList = state.times.toMutableList()
+                                if (editingIndex >= 0 && editingIndex < newList.size) {
+                                    newList[editingIndex] = tempTime
+                                } else {
+                                    newList.add(tempTime)
+                                }
+                                val primary = newList.firstOrNull() ?: tempTime
+                                onStateChange(state.copy(times = newList, time = primary))
+                                showTimePicker = false
+                                editingIndex = -1
+                            }) { Text("ตกลง") }
+                        },
+                        dismissButton = { TextButton(onClick = { showTimePicker = false; editingIndex = -1 }) { Text("ยกเลิก") } },
+                        containerColor = LuklanTheme.colors.Surface,
+                        titleContentColor = LuklanTheme.colors.TextPrimary,
+                        textContentColor = LuklanTheme.colors.TextPrimary
+                    )
+                }
+
+            } else if (state.timeUnit == "สัปดาห์") {
+                // Weekly: show N rows of (day dropdown + time)
+                for (i in 0 until state.frequencyCount.coerceAtLeast(1)) {
+                    val entry = state.times.getOrNull(i) ?: "จันทร์@"
+                    val parts = entry.split('@')
+                    val day = parts.getOrNull(0)?.ifEmpty { "จันทร์" } ?: "จันทร์"
+                    val time = parts.getOrNull(1) ?: ""
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        DropdownSelector(
+                            label = "วัน",
+                            selectedValue = day,
+                            options = daysOfWeek,
+                            onValueChange = { newDay ->
+                                val newTimes = state.times.toMutableList()
+                                val t = newTimes.getOrNull(i) ?: ""
+                                val tm = t.split('@').getOrNull(1) ?: ""
+                                val composed = "${newDay}@${tm}"
+                                if (i < newTimes.size) newTimes[i] = composed else newTimes.add(composed)
+                                onStateChange(state.copy(times = newTimes))
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = if (time.isNotBlank()) time else "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("เวลา") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+                        )
+                        Box(modifier = Modifier.size(40.dp).clickable {
+                            // edit this time
+                            val tmp = if (time.isNotBlank()) time else "08:00"
+                            editingTempTime = tmp
+                            editingIndex = i
+                            showTimePicker = true
+                        }) { }
+                    }
+                    Spacer(modifier = Modifier.height(LuklanTheme.spacing.sm))
+                }
+
+                if (showTimePicker) {
+                    var tempTime by remember { mutableStateOf(if (editingTempTime.isNotBlank()) editingTempTime else "08:00") }
+                    AlertDialog(
+                        onDismissRequest = { showTimePicker = false; editingIndex = -1 },
+                        title = { Text("เลือกเวลา", style = LuklanTypography.h3) },
+                        text = { com.commu.luklan.ui.components.WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val newTimes = state.times.toMutableList()
+                                val existingDay = newTimes.getOrNull(editingIndex)?.split('@')?.getOrNull(0) ?: "จันทร์"
+                                val composed = "${existingDay}@${tempTime}"
+                                if (editingIndex >= 0 && editingIndex < newTimes.size) newTimes[editingIndex] = composed else newTimes.add(composed)
+                                onStateChange(state.copy(times = newTimes))
+                                showTimePicker = false
+                                editingIndex = -1
+                            }) { Text("ตกลง") }
+                        },
+                        dismissButton = { TextButton(onClick = { showTimePicker = false; editingIndex = -1 }) { Text("ยกเลิก") } },
+                        containerColor = LuklanTheme.colors.Surface,
+                        titleContentColor = LuklanTheme.colors.TextPrimary,
+                        textContentColor = LuklanTheme.colors.TextPrimary
+                    )
+                }
+
+            } else if (state.timeUnit == "เดือน") {
+                // Monthly: each entry is DATE@HH:MM
+                for (i in 0 until state.frequencyCount.coerceAtLeast(1)) {
+                    val entry = state.times.getOrNull(i) ?: "1@"
+                    val parts = entry.split('@')
+                    val dateStr = parts.getOrNull(0) ?: "1"
+                    val time = parts.getOrNull(1) ?: ""
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // date selector (1..31)
+                        val dateOptions = (1..31).map { it.toString() }
+                        DropdownSelector(
+                            label = "วันที่",
+                            selectedValue = dateStr,
+                            options = dateOptions,
+                            onValueChange = { newDate ->
+                                val newTimes = state.times.toMutableList()
+                                val tm = newTimes.getOrNull(i)?.split('@')?.getOrNull(1) ?: ""
+                                val composed = "${newDate}@${tm}"
+                                if (i < newTimes.size) newTimes[i] = composed else newTimes.add(composed)
+                                onStateChange(state.copy(times = newTimes))
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = if (time.isNotBlank()) time else "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("เวลา") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+                        )
+                        Box(modifier = Modifier.size(40.dp).clickable {
+                            val tmp = if (time.isNotBlank()) time else "08:00"
+                            editingTempTime = tmp
+                            editingIndex = i
+                            showTimePicker = true
+                        }) { }
+                    }
+                    Spacer(modifier = Modifier.height(LuklanTheme.spacing.sm))
+                }
+
+                if (showTimePicker) {
+                    var tempTime by remember { mutableStateOf(if (editingTempTime.isNotBlank()) editingTempTime else "08:00") }
+                    AlertDialog(
+                        onDismissRequest = { showTimePicker = false; editingIndex = -1 },
+                        title = { Text("เลือกเวลา", style = LuklanTypography.h3) },
+                        text = { com.commu.luklan.ui.components.WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val newTimes = state.times.toMutableList()
+                                val existingDate = newTimes.getOrNull(editingIndex)?.split('@')?.getOrNull(0) ?: "1"
+                                val composed = "${existingDate}@${tempTime}"
+                                if (editingIndex >= 0 && editingIndex < newTimes.size) newTimes[editingIndex] = composed else newTimes.add(composed)
+                                onStateChange(state.copy(times = newTimes))
+                                showTimePicker = false
+                                editingIndex = -1
+                            }) { Text("ตกลง") }
+                        },
+                        dismissButton = { TextButton(onClick = { showTimePicker = false; editingIndex = -1 }) { Text("ยกเลิก") } },
+                        containerColor = LuklanTheme.colors.Surface,
+                        titleContentColor = LuklanTheme.colors.TextPrimary,
+                        textContentColor = LuklanTheme.colors.TextPrimary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
+
+        // Frequency: split into count + unit for flexible rules
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = state.frequencyCount.toString(),
+                onValueChange = { v -> if (v.all { it.isDigit() } && v.length <= 3) onStateChange(state.copy(frequencyCount = v.toIntOrNull() ?: 0)) },
+                label = { Text("จำนวนครั้ง") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+
+            DropdownSelector(
+                label = "หน่วยเวลา",
+                selectedValue = state.timeUnit,
+                options = listOf("วัน", "สัปดาห์", "เดือน"),
+                onValueChange = { onStateChange(state.copy(timeUnit = it)) },
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 

@@ -15,6 +15,7 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "description" to medicine.description,
                 "dosage" to medicine.dosage,
                 "time" to medicine.time,
+                "times" to medicine.times,
                 "frequency" to medicine.frequency,
                 "quantity" to medicine.quantity,
                 "unit" to medicine.unit,
@@ -43,6 +44,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
                     description = doc.getString("description") ?: "",
                     dosage = doc.getString("dosage") ?: "",
                     time = doc.getString("time") ?: "",
+                    times = (doc.get("times") as? List<*>)?.filterIsInstance<String>()
+                        ?: listOfNotNull(doc.getString("time")),
                     frequency = doc.getString("frequency") ?: "",
                     quantity = (doc.getLong("quantity") ?: 0).toInt(),
                     unit = doc.getString("unit") ?: "เม็ด",
@@ -69,6 +72,7 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "description" to medicine.description,
                 "dosage" to medicine.dosage,
                 "time" to medicine.time,
+                "times" to medicine.times,
                 "frequency" to medicine.frequency,
                 "quantity" to medicine.quantity,
                 "unit" to medicine.unit,
@@ -96,3 +100,5 @@ class MedicineRepositoryAndroid : MedicineRepository {
         }
     }
 }
+
+actual fun getMedicineRepository(): MedicineRepository = MedicineRepositoryAndroid()

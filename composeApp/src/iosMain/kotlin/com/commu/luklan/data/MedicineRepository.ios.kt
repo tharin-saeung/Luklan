@@ -17,6 +17,7 @@ class MedicineRepositoryIos : MedicineRepository {
                 description = medicine.description,
                 dosage = medicine.dosage,
                 time = medicine.time,
+                times = medicine.times,
                 frequency = medicine.frequency,
                 quantity = medicine.quantity,
                 unit = medicine.unit,
@@ -48,12 +49,25 @@ class MedicineRepositoryIos : MedicineRepository {
 
                     for (i in 0 until array.count.toInt()) {
                         val dict = array.objectAtIndex(i.toULong()) as NSDictionary
+                        val timesListForMedicine = run {
+                            val arr = (dict.objectForKey("times") as? NSArray)
+                            val list = mutableListOf<String>()
+                            if (arr != null) {
+                                for (j in 0 until arr.count.toInt()) {
+                                    val v = arr.objectAtIndex(j.toULong()) as? String
+                                    if (v != null) list.add(v)
+                                }
+                            }
+                            list
+                        }
+
                         val medicine = Medicine(
                             id = (dict.objectForKey("id") as? String) ?: "",
                             name = (dict.objectForKey("name") as? String) ?: "",
                             description = (dict.objectForKey("description") as? String) ?: "",
                             dosage = (dict.objectForKey("dosage") as? String) ?: "",
-                            time = (dict.objectForKey("time") as? String) ?: "",
+                            time = timesListForMedicine.firstOrNull() ?: (dict.objectForKey("time") as? String) ?: "",
+                            times = timesListForMedicine,
                             frequency = (dict.objectForKey("frequency") as? String) ?: "",
                             quantity = (dict.objectForKey("quantity") as? Number)?.toInt() ?: 0,
                             unit = (dict.objectForKey("unit") as? String) ?: "เม็ด",
@@ -83,6 +97,7 @@ class MedicineRepositoryIos : MedicineRepository {
                 description = medicine.description,
                 dosage = medicine.dosage,
                 time = medicine.time,
+                times = medicine.times,
                 frequency = medicine.frequency,
                 quantity = medicine.quantity,
                 unit = medicine.unit,
@@ -114,3 +129,5 @@ class MedicineRepositoryIos : MedicineRepository {
         }
     }
 }
+
+actual fun getMedicineRepository(): MedicineRepository = MedicineRepositoryIos()

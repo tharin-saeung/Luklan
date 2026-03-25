@@ -83,3 +83,5 @@ class IosNotificationScheduler : NotificationScheduler {
         println("✅ Cancelled notification for ${medicine.name} (ID: ${medicine.id})")
     }
 }
+
+actual fun getNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()

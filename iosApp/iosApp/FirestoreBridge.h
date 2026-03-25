@@ -24,10 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
                  category:(NSString *)category
      storageInstructions:(NSString *)storageInstructions
                     notes:(NSString *)notes
+                   times:(NSArray * _Nullable)times
                    userId:(NSString *)userId
                     taken:(BOOL)taken
                 createdAt:(long long)createdAt
                completion:(void (^)(NSString * _Nullable error))completion;
+// Note: times is an optional NSArray of NSString timestamps (e.g., @[@"08:00", @"20:00"])
 
 + (void)getMedicinesWithUserId:(NSString *)userId
                     completion:(void (^)(NSArray * _Nullable medicines, NSString * _Nullable error))completion;
@@ -44,6 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
                     category:(NSString *)category
         storageInstructions:(NSString *)storageInstructions
                        notes:(NSString *)notes
+                       times:(NSArray * _Nullable)times
                        taken:(BOOL)taken
                    createdAt:(long long)createdAt
                   completion:(void (^)(NSString * _Nullable error))completion;

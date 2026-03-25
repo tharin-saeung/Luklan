@@ -132,7 +132,8 @@ fun MedicineDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Time Display
+                    // Time Display (support multiple times)
+                    val displayTimes = if (medicine.times.isNotEmpty()) medicine.times.joinToString(", ") else medicine.time
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -144,7 +145,7 @@ fun MedicineDetailScreen(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = medicine.time,
+                            text = displayTimes,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
                             color = LuklanColors.TextPrimary
@@ -155,6 +156,14 @@ fun MedicineDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = medicine.frequency,
+                            fontSize = 14.sp,
+                            color = LuklanColors.TextSecondary
+                        )
+                    }
+                    if (medicine.amountPerDose.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "ขนาดที่รับประทานต่อครั้ง: ${medicine.amountPerDose}",
                             fontSize = 14.sp,
                             color = LuklanColors.TextSecondary
                         )

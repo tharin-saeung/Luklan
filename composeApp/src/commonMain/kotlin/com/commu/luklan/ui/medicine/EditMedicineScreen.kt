@@ -29,13 +29,17 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                 dosage = medicine.dosage,
                 description = medicine.description,
                 frequency = medicine.frequency,
+                timeUnit = medicine.timeUnit,
+                frequencyCount = medicine.frequencyCount,
+                amountPerDose = medicine.amountPerDose,
                 quantity = medicine.quantity.toString(),
                 unit = medicine.unit,
                 category = medicine.category,
                 expiryDate = medicine.expiryDate,
                 storageInstructions = medicine.storageInstructions,
                 notes = medicine.notes,
-                time = medicine.time
+                time = medicine.time,
+                times = medicine.times
             )
         )
     }
@@ -89,15 +93,21 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
 
             Button(
                 onClick = {
-                    if (formState.name.isNotBlank() && formState.time.isNotBlank()) {
+                    if (formState.name.isNotBlank() && (formState.times.isNotEmpty() || formState.time.isNotBlank())) {
                         isLoading = true
                         scope.launch {
                             val updatedMedicine = medicine.copy(
                                 name = formState.name,
                                 description = formState.description,
-                                dosage = formState.dosage,
-                                time = formState.time,
-                                frequency = formState.frequency,
+                                dosage = if (formState.amountPerDose.isNotBlank()) formState.amountPerDose else formState.dosage,
+                                time = (if (formState.times.isNotEmpty()) formState.times.first() else formState.time),
+                                times = if (formState.times.isNotEmpty()) formState.times else listOf(formState.time).filter { it.isNotBlank() },
+                                frequency = if (formState.frequency.isNotBlank()) formState.frequency else if (formState.frequencyCount > 0) {
+                                    if (formState.timeUnit == "วัน") "วันละ ${formState.frequencyCount} ครั้ง" else "${formState.timeUnit}ละ ${formState.frequencyCount} ครั้ง"
+                                } else formState.frequency,
+                                timeUnit = formState.timeUnit,
+                                frequencyCount = formState.frequencyCount,
+                                amountPerDose = formState.amountPerDose,
                                 quantity = formState.quantity.toIntOrNull() ?: 0,
                                 unit = formState.unit,
                                 expiryDate = formState.expiryDate,

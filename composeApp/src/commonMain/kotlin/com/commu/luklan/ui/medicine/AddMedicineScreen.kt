@@ -19,6 +19,7 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import com.commu.luklan.ui.ocr.OcrResultStore
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalTime::class)
 @Composable
@@ -28,7 +29,14 @@ fun AddMedicineScreen(onNavigateBack: () -> Unit) {
         val notificationScheduler = remember { getNotificationScheduler() }
         val scope = rememberCoroutineScope()
 
-        var formState by remember { mutableStateOf(MedicineFormState()) }
+                var formState by remember { mutableStateOf(MedicineFormState()) }
+                // If OCR produced a form, load it and clear the store
+                LaunchedEffect(Unit) {
+                        OcrResultStore.lastForm?.let {
+                                formState = it
+                                OcrResultStore.lastForm = null
+                        }
+                }
         var isLoading by remember { mutableStateOf(false) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -81,19 +89,28 @@ fun AddMedicineScreen(onNavigateBack: () -> Unit) {
                         Button(
                                 onClick = {
                                         val userId = authRepository.getCurrentUserId()
-                                        if (userId != null &&
-                                                        formState.name.isNotBlank() &&
-                                                        formState.time.isNotBlank()
-                                        ) {
+                                                                                if (userId != null &&
+                                                                                                                formState.name.isNotBlank() &&
+                                                                                                                (formState.times.isNotEmpty() || formState.time.isNotBlank())
+                                                                                ) {
                                                 isLoading = true
                                                 scope.launch {
-                                                    val medicine = Medicine(
+                                                                                                        val times = if (formState.times.isNotEmpty()) formState.times else listOf(formState.time).filter { it.isNotBlank() }
+                                                                                                        val frequencyStr = if (formState.frequency.isNotBlank()) formState.frequency else if (formState.frequencyCount > 0) {
+                                                                                                                if (formState.timeUnit == "วัน") "วันละ ${formState.frequencyCount} ครั้ง" else "${formState.timeUnit}ละ ${formState.frequencyCount} ครั้ง"
+                                                                                                        } else formState.frequency
+
+                                                                                                        val medicine = Medicine(
                                                         id = Uuid.random().toString(),
                                                         name = formState.name,
                                                         description = formState.description,
-                                                        dosage = formState.dosage,
-                                                        time = formState.time,
-                                                        frequency = formState.frequency,
+                                                                                                                dosage = if (formState.amountPerDose.isNotBlank()) formState.amountPerDose else formState.dosage,
+                                                                                                                time = times.firstOrNull() ?: formState.time,
+                                                                                                                times = times,
+                                                                                                                frequency = frequencyStr,
+                                                                                                                timeUnit = formState.timeUnit,
+                                                                                                                frequencyCount = formState.frequencyCount,
+                                                                                                                amountPerDose = formState.amountPerDose,
                                                         quantity = formState.quantity.toIntOrNull() ?: 0,
                                                         unit = formState.unit,
                                                         expiryDate = formState.expiryDate,

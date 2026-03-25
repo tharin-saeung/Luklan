@@ -18,6 +18,7 @@ internal fun addMedicineNative(
     category: String,
     storageInstructions: String,
     notes: String,
+    times: List<String>,
     userId: String,
     taken: Boolean,
     createdAt: Long,
@@ -35,7 +36,8 @@ internal fun addMedicineNative(
         expiryDate = expiryDate,
         category = category,
         storageInstructions = storageInstructions,
-        notes = notes,
+    notes = notes,
+    times = times,
         userId = userId,
         taken = taken,
         createdAt = createdAt,
@@ -70,6 +72,7 @@ internal fun updateMedicineNative(
     category: String,
     storageInstructions: String,
     notes: String,
+    times: List<String>,
     taken: Boolean,
     createdAt: Long,
     completion: (String?) -> Unit
@@ -87,11 +90,15 @@ internal fun updateMedicineNative(
         category = category,
         storageInstructions = storageInstructions,
         notes = notes,
+        times = times,
         taken = taken,
         createdAt = createdAt,
         completion = { error -> completion(error) }
     )
 }
+
+// Note: the cinterop-generated Kotlin declarations expect Kotlin collections (List) for NSArray parameters,
+// so we pass `List<String>` directly. If a conversion to NSMutableArray is ever required, implement it here.
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun deleteMedicineNative(

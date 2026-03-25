@@ -83,7 +83,7 @@ fun App() {
             composable(Screen.Home.route) {
                 MainScreen(
                     onNavigateToAddMedicine = {
-                        navController.navigate(Screen.AddMedicine.route)
+                        navController.navigate(Screen.AddMethod.route)
                     },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                     onNavigateToMedicineDetail = { medicine ->
@@ -97,6 +97,24 @@ fun App() {
 
             composable(Screen.AddMedicine.route) {
                 AddMedicineScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.AddMethod.route) {
+                com.commu.luklan.ui.ocr.AddMethodScreen(
+                    onManual = { navController.navigate(Screen.AddMedicine.route) },
+                    onOcr = { navController.navigate(Screen.OcrScan.route) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.OcrScan.route) {
+                com.commu.luklan.ui.ocr.OcrScanScreen(
+                    onBack = { navController.popBackStack() },
+                    onProceedToAdd = {
+                        // push to add screen with prefilled form from OCR store
+                        navController.navigate(Screen.AddMedicine.route)
+                    }
+                )
             }
 
             composable(Screen.MedicineDetail.route) {

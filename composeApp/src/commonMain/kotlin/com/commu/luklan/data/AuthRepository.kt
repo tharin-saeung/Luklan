@@ -7,3 +7,5 @@ expect class AuthRepository() {
     fun getCurrentUserId(): String?
     fun signOut()
 }
+
+expect fun getAuthRepository(): AuthRepository

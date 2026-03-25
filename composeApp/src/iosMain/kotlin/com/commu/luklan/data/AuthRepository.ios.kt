@@ -59,3 +59,5 @@ actual class AuthRepository {
         }
     }
 }
+
+actual fun getAuthRepository(): AuthRepository = AuthRepository()

@@ -4,7 +4,9 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-    <key>NSUserNotificationsUsageDescription</key>
-    <string>ให้เราส่งการแจ้งเตือนเพื่อเตือนให้คุณกินยาตามเวลาที่กำหนด</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>แอปต้องการส่งการแจ้งเตือนเพื่อเตือนให้คุณกินยาตามเวลาที่กำหนด</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>แอปต้องการเข้าถึงรูปภาพเพื่อใช้สแกนฉลากยา</string>
 </dict>
 </plist>

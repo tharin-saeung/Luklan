@@ -6,7 +6,11 @@ data class Medicine(
     val description: String = "",
     val dosage: String = "", // เช่น "1 เม็ด", "2 ช้อนชา"
     val time: String = "",
+    val times: List<String> = emptyList(), // รองรับหลายเวลาต่อวัน (เช่น ["08:00","20:00"]) - backward compatible
     val frequency: String = "", // เช่น "ทุกวัน", "สัปดาห์ละ 3 ครั้ง"
+    val timeUnit: String = "วัน", // หน่วยเวลา: วัน, สัปดาห์, เดือน
+    val frequencyCount: Int = 1, // จำนวนครั้งต่อหน่วยเวลา (เช่น 2 ครั้งต่อสัปดาห์)
+    val amountPerDose: String = "", // จำนวนที่กินต่อครั้ง (เช่น "1 เม็ด")
     val quantity: Int = 0, // จำนวนยาที่มี
     val unit: String = "เม็ด", // หน่วย: เม็ด, ขวด, กล่อง
     val expiryDate: String = "", // วันหมดอายุ

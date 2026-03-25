@@ -87,6 +87,11 @@ kotlin {
             version = "~> 11.0"
             extraOpts += listOf("-compiler-option", "-fmodules")
         }
+        
+        pod("FirebaseFunctions") {
+            version = "~> 11.0"
+            extraOpts += listOf("-compiler-option", "-fmodules")
+        }
 
         xcodeConfigurationToNativeBuildType["CUSTOM_DEBUG"] = NativeBuildType.DEBUG
         xcodeConfigurationToNativeBuildType["CUSTOM_RELEASE"] = NativeBuildType.RELEASE
