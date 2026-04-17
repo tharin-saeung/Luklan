@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,9 @@ data class MedicineFormState(
     val storageInstructions: String = "",
     val notes: String = "",
     val time: String = "",
-    val times: List<String> = emptyList()
+    val times: List<String> = emptyList(),
+    val selectedWeekDays: List<Int> = emptyList(),
+    val selectedMonthDays: List<Int> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
@@ -53,6 +56,10 @@ fun MedicineFormFields(
     onStateChange: (MedicineFormState) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    @Composable
+    fun FieldLabel(text: String) {
+        Text(text = text, color = LuklanTheme.colors.Secondary, style = LuklanTypography.bodyMedium, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+    }
     val focusManager = LocalFocusManager.current
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -123,10 +130,12 @@ fun MedicineFormFields(
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
         // Medicine Name
+        FieldLabel("ชื่อยา *")
         OutlinedTextField(
             value = state.name,
             onValueChange = { onStateChange(state.copy(name = it)) },
-            label = { Text("ชื่อยา *") },
+            placeholder = { Text("กรอกชื่อยา", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
@@ -134,17 +143,20 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 
         Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
 
         // Description
+        FieldLabel("รายละเอียด")
         OutlinedTextField(
             value = state.description,
             onValueChange = { onStateChange(state.copy(description = it)) },
-            label = { Text("รายละเอียด") },
+            placeholder = { Text("รายละเอียด", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
             maxLines = 3,
@@ -153,7 +165,8 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 
@@ -163,7 +176,9 @@ fun MedicineFormFields(
         OutlinedTextField(
             value = state.amountPerDose,
             onValueChange = { v -> onStateChange(state.copy(amountPerDose = v, dosage = v)) },
-            label = { Text("ครั้งละ (เช่น 1 เม็ด)") },
+            label = { Text("ครั้งละ (เช่น 1 เม็ด)", color = LuklanTheme.colors.Secondary) },
+            placeholder = { Text("กรอกปริมาณต่อครั้ง", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
@@ -171,7 +186,10 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                focusedLabelColor = LuklanTheme.colors.Secondary,
+                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 
@@ -197,7 +215,9 @@ fun MedicineFormFields(
                     onStateChange(state.copy(quantity = it))
                 }
             },
-            label = { Text("จำนวนที่มี (ทั้งหมด)") },
+            label = { Text("จำนวนที่มี (ทั้งหมด)", color = LuklanTheme.colors.Secondary) },
+            placeholder = { Text("กรอกจำนวนที่มี", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -206,7 +226,10 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                focusedLabelColor = LuklanTheme.colors.Secondary,
+                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 
@@ -242,7 +265,7 @@ fun MedicineFormFields(
             }
             return result
         }
-
+    
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = state.frequencyCount.toString(),
@@ -253,7 +276,7 @@ fun MedicineFormFields(
                         onStateChange(state.copy(frequencyCount = newCount, times = newTimes))
                     }
                 },
-                label = { Text("จำนวน") },
+                label = { Text("จำนวน", color = LuklanTheme.colors.Secondary) },
                 modifier = Modifier.width(96.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -306,7 +329,9 @@ fun MedicineFormFields(
                     value = if (state.times.isNotEmpty()) state.times.joinToString(", ") else "",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("เวลาที่ต้องกิน") },
+                    label = { Text("เวลาที่ต้องกิน", color = LuklanTheme.colors.Secondary) },
+                    placeholder = { Text("--:--", color = LuklanTheme.colors.TextSecondary) },
+                    textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
@@ -320,7 +345,10 @@ fun MedicineFormFields(
                         focusedContainerColor = LuklanTheme.colors.Surface,
                         unfocusedContainerColor = LuklanTheme.colors.Surface,
                         focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                        unfocusedBorderColor = LuklanTheme.colors.Indicator
+                        unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                        focusedLabelColor = LuklanTheme.colors.Secondary,
+                        unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                        cursorColor = LuklanTheme.colors.TextPrimary
                     )
                 )
 
@@ -381,10 +409,21 @@ fun MedicineFormFields(
                             value = if (time.isNotBlank()) time else "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("เวลา") },
+                            label = { Text("เวลา", color = LuklanTheme.colors.Secondary) },
+                            placeholder = { Text("--:--", color = LuklanTheme.colors.TextSecondary) },
+                            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = LuklanTheme.colors.Surface,
+                                unfocusedContainerColor = LuklanTheme.colors.Surface,
+                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
+                                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                                focusedLabelColor = LuklanTheme.colors.Secondary,
+                                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                                cursorColor = LuklanTheme.colors.TextPrimary
+                            )
                         )
                         Box(modifier = Modifier.size(40.dp).clickable {
                             // edit this time
@@ -449,10 +488,21 @@ fun MedicineFormFields(
                             value = if (time.isNotBlank()) time else "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("เวลา") },
+                            label = { Text("เวลา", color = LuklanTheme.colors.Secondary) },
+                            placeholder = { Text("--:--", color = LuklanTheme.colors.TextSecondary) },
+                            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+                            trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = LuklanTheme.colors.Surface,
+                                unfocusedContainerColor = LuklanTheme.colors.Surface,
+                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
+                                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                                focusedLabelColor = LuklanTheme.colors.Secondary,
+                                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                                cursorColor = LuklanTheme.colors.TextPrimary
+                            )
                         )
                         Box(modifier = Modifier.size(40.dp).clickable {
                             val tmp = if (time.isNotBlank()) time else "08:00"
@@ -497,10 +547,19 @@ fun MedicineFormFields(
             OutlinedTextField(
                 value = state.frequencyCount.toString(),
                 onValueChange = { v -> if (v.all { it.isDigit() } && v.length <= 3) onStateChange(state.copy(frequencyCount = v.toIntOrNull() ?: 0)) },
-                label = { Text("จำนวนครั้ง") },
+                label = { Text("จำนวนครั้ง", color = LuklanTheme.colors.Secondary) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = LuklanTheme.colors.Surface,
+                    unfocusedContainerColor = LuklanTheme.colors.Surface,
+                    focusedBorderColor = LuklanTheme.colors.TextSecondary,
+                    unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                    focusedLabelColor = LuklanTheme.colors.Secondary,
+                    unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                    cursorColor = LuklanTheme.colors.TextPrimary
+                )
             )
 
             DropdownSelector(
@@ -520,7 +579,9 @@ fun MedicineFormFields(
                 value = state.expiryDate,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("วันหมดอายุ") },
+                label = { Text("วันหมดอายุ", color = LuklanTheme.colors.Secondary) },
+                placeholder = { Text("เลือกวันหมดอายุ", color = LuklanTheme.colors.TextSecondary) },
+                textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
@@ -534,7 +595,10 @@ fun MedicineFormFields(
                     focusedContainerColor = LuklanTheme.colors.Surface,
                     unfocusedContainerColor = LuklanTheme.colors.Surface,
                     focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                    unfocusedBorderColor = LuklanTheme.colors.Indicator
+                    unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                    focusedLabelColor = LuklanTheme.colors.Secondary,
+                    unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                    cursorColor = LuklanTheme.colors.TextPrimary
                 )
             )
             Box(
@@ -551,8 +615,9 @@ fun MedicineFormFields(
         OutlinedTextField(
             value = state.storageInstructions,
             onValueChange = { onStateChange(state.copy(storageInstructions = it)) },
-            label = { Text("วิธีเก็บรักษา") },
-            placeholder = { Text("เช่น เก็บในที่เย็น, เก็บในตู้เย็น") },
+            label = { Text("วิธีเก็บรักษา", color = LuklanTheme.colors.Secondary) },
+            placeholder = { Text("เช่น เก็บในที่เย็น, เก็บในตู้เย็น", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
             maxLines = 2,
@@ -561,7 +626,10 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                focusedLabelColor = LuklanTheme.colors.Secondary,
+                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 
@@ -571,8 +639,9 @@ fun MedicineFormFields(
         OutlinedTextField(
             value = state.notes,
             onValueChange = { onStateChange(state.copy(notes = it)) },
-            label = { Text("หมายเหตุ") },
-            placeholder = { Text("บันทึกเพิ่มเติม...") },
+            label = { Text("หมายเหตุ", color = LuklanTheme.colors.Secondary) },
+            placeholder = { Text("บันทึกเพิ่มเติม...", color = LuklanTheme.colors.TextSecondary) },
+            textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             singleLine = false,
             maxLines = 3,
@@ -581,7 +650,10 @@ fun MedicineFormFields(
                 focusedContainerColor = LuklanTheme.colors.Surface,
                 unfocusedContainerColor = LuklanTheme.colors.Surface,
                 focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                unfocusedBorderColor = LuklanTheme.colors.Indicator,
+                focusedLabelColor = LuklanTheme.colors.Secondary,
+                unfocusedLabelColor = LuklanTheme.colors.Secondary,
+                cursorColor = LuklanTheme.colors.TextPrimary
             )
         )
 

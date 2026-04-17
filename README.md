@@ -33,3 +33,15 @@ in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and r
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+
+## Temporary change: OCR flow disabled
+
+- OCR parsing has been found unstable and this project temporarily disables the OCR flow in the app navigation.
+- The Home screen Add button now navigates directly to the manual `AddMedicine` screen.
+- OCR source files were kept in repo for future re-enablement:
+  - `composeApp/src/commonMain/kotlin/com/commu/luklan/ui/ocr/OcrParser.kt`
+  - `composeApp/src/commonMain/kotlin/com/commu/luklan/ui/ocr/OcrScanScreen.kt`
+  - `composeApp/src/commonMain/kotlin/com/commu/luklan/ui/ocr/AddMethodScreen.kt`
+  - `composeApp/src/commonMain/kotlin/com/commu/luklan/ui/ocr/OcrResultStore.kt`
+
+To re-enable OCR navigation later, restore the removed `composable` blocks in `App.kt` for `AddMethod` and `OcrScan` and change the Home add navigation back to `Screen.AddMethod`.

@@ -168,6 +168,30 @@ fun MedicineDetailScreen(
                             color = LuklanColors.TextSecondary
                         )
                     }
+                    if (medicine.category.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "ประเภท: ${medicine.category}",
+                            fontSize = 14.sp,
+                            color = LuklanColors.TextSecondary
+                        )
+                    }
+                    if (medicine.quantity > 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "จำนวน: ${medicine.quantity} ${medicine.unit}",
+                            fontSize = 14.sp,
+                            color = LuklanColors.TextSecondary
+                        )
+                    }
+                    if (medicine.expiryDate.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "วันหมดอายุ: ${medicine.expiryDate}",
+                            fontSize = 14.sp,
+                            color = LuklanColors.TextSecondary
+                        )
+                    }
                 }
             }
 

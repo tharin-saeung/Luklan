@@ -1,6 +1,8 @@
 package com.commu.luklan
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
+import com.commu.luklan.ui.theme.LuklanTheme
 import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,7 +21,20 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = lightColorScheme(
+            primary = LuklanTheme.colors.Primary,
+            onPrimary = LuklanTheme.colors.OnPrimary,
+            secondary = LuklanTheme.colors.Secondary,
+            onSecondary = LuklanTheme.colors.OnSecondary,
+                background = LuklanTheme.colors.Background,
+            surface = LuklanTheme.colors.Surface,
+                surfaceVariant = LuklanTheme.colors.SurfaceVariant,
+            error = LuklanTheme.colors.Error,
+            onBackground = LuklanTheme.colors.TextPrimary,
+            onSurface = LuklanTheme.colors.TextPrimary
+        )
+    ) {
         val navController = rememberNavController()
             var medicineToEdit by remember { mutableStateOf<Medicine?>(null) }
 
@@ -83,7 +98,8 @@ fun App() {
             composable(Screen.Home.route) {
                 MainScreen(
                     onNavigateToAddMedicine = {
-                        navController.navigate(Screen.AddMethod.route)
+                        // Skip AddMethod/OCR flow and go straight to manual AddMedicine
+                        navController.navigate(Screen.AddMedicine.route)
                     },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                     onNavigateToMedicineDetail = { medicine ->
@@ -99,23 +115,8 @@ fun App() {
                 AddMedicineScreen(onNavigateBack = { navController.popBackStack() })
             }
 
-            composable(Screen.AddMethod.route) {
-                com.commu.luklan.ui.ocr.AddMethodScreen(
-                    onManual = { navController.navigate(Screen.AddMedicine.route) },
-                    onOcr = { navController.navigate(Screen.OcrScan.route) },
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Screen.OcrScan.route) {
-                com.commu.luklan.ui.ocr.OcrScanScreen(
-                    onBack = { navController.popBackStack() },
-                    onProceedToAdd = {
-                        // push to add screen with prefilled form from OCR store
-                        navController.navigate(Screen.AddMedicine.route)
-                    }
-                )
-            }
+            // Directly navigate from Home add button to AddMedicine (OCR flow disabled)
+            // The old AddMethod / OCR flow remains in source but is not reachable by navigation.
 
             composable(Screen.MedicineDetail.route) {
                 medicineToEdit?.let { medicine ->
