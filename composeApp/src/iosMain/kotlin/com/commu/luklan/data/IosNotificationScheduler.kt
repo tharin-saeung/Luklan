@@ -24,63 +24,82 @@ class IosNotificationScheduler : NotificationScheduler {
     }
 
     private fun scheduleLocalNotification(medicine: Medicine) {
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        
         // Build notification message with dosage and unit
+        val dosageDisplay = if (medicine.amountPerDose.isNotEmpty()) {
+            "${medicine.amountPerDose} ${medicine.unit}".trim()
+        } else if (medicine.dosage.isNotEmpty()) {
+            "${medicine.dosage} ${medicine.unit}".trim()
+        } else ""
+
         val message = buildString {
             append("ได้เวลากินยา ${medicine.name}")
-            if (medicine.dosage.isNotEmpty()) {
-                append(" ${medicine.dosage}")
-                if (medicine.unit.isNotEmpty()) {
-                    append(" ${medicine.unit}")
-                }
+            if (dosageDisplay.isNotEmpty()) {
+                append(" $dosageDisplay")
             }
-            append("แล้วนะครับ")
+            append(" แล้วนะครับ")
         }
         
-        val content = UNMutableNotificationContent().apply {
-            setTitle("⏰ เตือนกินยา")
-            setBody(message)
-            setSound(UNNotificationSound.defaultSound())
-            setBadge(NSNumber(1))
-        }
+        val timesToSchedule = if (medicine.times.isNotEmpty()) medicine.times else listOf(medicine.time)
 
-        // Parse เวลา
-        val timeParts = medicine.time.split(":")
-        if (timeParts.size == 2) {
-            val hour = timeParts[0].toLongOrNull() ?: 0L
-            val minute = timeParts[1].toLongOrNull() ?: 0L
+        timesToSchedule.forEachIndexed { index, timeStr ->
+            val timeParts = timeStr.split(":")
+            if (timeParts.size == 2) {
+                val hour = timeParts[0].toLongOrNull() ?: return@forEachIndexed
+                val minute = timeParts[1].toLongOrNull() ?: return@forEachIndexed
 
-            val dateComponents = NSDateComponents().apply {
-                setHour(hour)
-                setMinute(minute)
-            }
+                val content = UNMutableNotificationContent().apply {
+                    setTitle("⏰ เตือนกินยา")
+                    setBody(message)
+                    setSound(UNNotificationSound.defaultSound())
+                    setBadge(NSNumber(1))
+                    setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr))
+                }
 
-            // สร้าง trigger ที่ repeat ทุกวัน
-            val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
-                dateComponents = dateComponents,
-                repeats = true
-            )
+                val dateComponents = NSDateComponents().apply {
+                    setHour(hour)
+                    setMinute(minute)
+                }
 
-            val request = UNNotificationRequest.requestWithIdentifier(
-                identifier = medicine.id,
-                content = content,
-                trigger = trigger
-            )
+                // สร้าง trigger ที่ repeat ทุกวัน
+                val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
+                    dateComponents = dateComponents,
+                    repeats = true
+                )
 
-            val center = UNUserNotificationCenter.currentNotificationCenter()
-            center.addNotificationRequest(request) { error ->
-                if (error != null) {
-                    println("❌ Error scheduling notification: ${error.localizedDescription}")
-                } else {
-                    println("✅ Notification scheduled for ${medicine.name} at ${medicine.time}")
+                // Unique ID per dose
+                val identifier = "${medicine.id}_$index"
+
+                val request = UNNotificationRequest.requestWithIdentifier(
+                    identifier = identifier,
+                    content = content,
+                    trigger = trigger
+                )
+
+                center.addNotificationRequest(request) { error ->
+                    if (error != null) {
+                        println("❌ Error scheduling notification $index: ${error.localizedDescription}")
+                    } else {
+                        println("✅ Notification $index scheduled for ${medicine.name} at $timeStr")
+                    }
                 }
             }
         }
     }
 
+    override fun cancelSlot(medicine: Medicine, index: Int) {
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        val identifier = "${medicine.id}_$index"
+        center.removePendingNotificationRequestsWithIdentifiers(listOf(identifier))
+    }
+
     override fun cancel(medicine: Medicine) {
         val center = UNUserNotificationCenter.currentNotificationCenter()
-        center.removePendingNotificationRequestsWithIdentifiers(listOf(medicine.id))
-        println("✅ Cancelled notification for ${medicine.name} (ID: ${medicine.id})")
+        // Cancel first 10 possible indices
+        val identifiers = (0 until 10).map { "${medicine.id}_$it" }
+        center.removePendingNotificationRequestsWithIdentifiers(identifiers)
+        println("✅ Cancelled notifications for ${medicine.name} (ID: ${medicine.id})")
     }
 }
 

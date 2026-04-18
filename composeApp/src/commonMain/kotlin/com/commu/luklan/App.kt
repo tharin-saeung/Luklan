@@ -20,7 +20,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
-fun App() {
+fun App(initialMedicineId: String? = null, initialTime: String? = null) {
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = LuklanTheme.colors.Primary,
@@ -37,6 +37,26 @@ fun App() {
     ) {
         val navController = rememberNavController()
             var medicineToEdit by remember { mutableStateOf<Medicine?>(null) }
+            var deepLinkTimeForDetail by remember { mutableStateOf<String?>(null) }
+            val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
+            val medicineRepository = remember { com.commu.luklan.data.getMedicineRepository() }
+            val scope = rememberCoroutineScope()
+
+            LaunchedEffect(initialMedicineId, initialTime) {
+                if (initialMedicineId != null && authRepository.isUserLoggedIn()) {
+                    val userId = authRepository.getCurrentUserId()
+                    if (userId != null) {
+                        medicineRepository.getMedicines(userId).onSuccess { list ->
+                            val target = list.find { it.id == initialMedicineId }
+                            if (target != null) {
+                                medicineToEdit = target
+                                deepLinkTimeForDetail = initialTime
+                                navController.navigate(Screen.MedicineDetail.route)
+                            }
+                        }
+                    }
+                }
+            }
 
         NavHost(navController = navController, startDestination = Screen.Splash.route) {
             composable(Screen.Splash.route) {
@@ -122,7 +142,10 @@ fun App() {
                 medicineToEdit?.let { medicine ->
                     com.commu.luklan.ui.medicine.MedicineDetailScreen(
                         medicine = medicine,
-                        onBack = { navController.popBackStack() },
+                        initialSlotTime = deepLinkTimeForDetail,
+                        onBack = { 
+                            navController.popBackStack()
+                        },
                         onEdit = {
                             navController.navigate(Screen.EditMedicine.route)
                         },
@@ -130,6 +153,10 @@ fun App() {
                             navController.popBackStack()
                         }
                     )
+                    // Clear the deep link time after it's been passed to the screen
+                    SideEffect {
+                        deepLinkTimeForDetail = null
+                    }
                 }
             }
 

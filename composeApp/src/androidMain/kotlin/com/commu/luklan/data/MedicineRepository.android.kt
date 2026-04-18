@@ -17,14 +17,20 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "time" to medicine.time,
                 "times" to medicine.times,
                 "frequency" to medicine.frequency,
+                "timeUnit" to medicine.timeUnit,
+                "frequencyCount" to medicine.frequencyCount,
+                "amountPerDose" to medicine.amountPerDose,
                 "quantity" to medicine.quantity,
                 "unit" to medicine.unit,
+                "startDate" to medicine.startDate,
                 "expiryDate" to medicine.expiryDate,
                 "category" to medicine.category,
+                "mealTiming" to medicine.mealTiming,
                 "storageInstructions" to medicine.storageInstructions,
                 "notes" to medicine.notes,
                 "userId" to medicine.userId,
                 "taken" to medicine.taken,
+                "takenRecords" to medicine.takenRecords,
                 "createdAt" to medicine.createdAt
             )
             medicinesCollection.document(medicine.id).set(medicineMap).await()
@@ -47,14 +53,20 @@ class MedicineRepositoryAndroid : MedicineRepository {
                     times = (doc.get("times") as? List<*>)?.filterIsInstance<String>()
                         ?: listOfNotNull(doc.getString("time")),
                     frequency = doc.getString("frequency") ?: "",
+                    timeUnit = doc.getString("timeUnit") ?: "วัน",
+                    frequencyCount = (doc.getLong("frequencyCount") ?: 1).toInt(),
+                    amountPerDose = doc.getString("amountPerDose") ?: "",
                     quantity = (doc.getLong("quantity") ?: 0).toInt(),
                     unit = doc.getString("unit") ?: "เม็ด",
+                    startDate = doc.getString("startDate") ?: "",
                     expiryDate = doc.getString("expiryDate") ?: "",
                     category = doc.getString("category") ?: "",
+                    mealTiming = doc.getString("mealTiming") ?: "",
                     storageInstructions = doc.getString("storageInstructions") ?: "",
                     notes = doc.getString("notes") ?: "",
                     userId = doc.getString("userId") ?: "",
                     taken = doc.getBoolean("taken") ?: false,
+                    takenRecords = (doc.get("takenRecords") as? Map<*, *>)?.map { (k, v) -> k.toString() to (v as? Boolean ?: false) }?.toMap() ?: emptyMap(),
                     createdAt = doc.getLong("createdAt") ?: 0L
                 )
             }
@@ -74,14 +86,20 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "time" to medicine.time,
                 "times" to medicine.times,
                 "frequency" to medicine.frequency,
+                "timeUnit" to medicine.timeUnit,
+                "frequencyCount" to medicine.frequencyCount,
+                "amountPerDose" to medicine.amountPerDose,
                 "quantity" to medicine.quantity,
                 "unit" to medicine.unit,
+                "startDate" to medicine.startDate,
                 "expiryDate" to medicine.expiryDate,
                 "category" to medicine.category,
+                "mealTiming" to medicine.mealTiming,
                 "storageInstructions" to medicine.storageInstructions,
                 "notes" to medicine.notes,
                 "userId" to medicine.userId,
                 "taken" to medicine.taken,
+                "takenRecords" to medicine.takenRecords,
                 "createdAt" to medicine.createdAt
             )
             medicinesCollection.document(medicine.id).set(medicineMap).await()

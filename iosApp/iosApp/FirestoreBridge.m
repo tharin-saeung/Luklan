@@ -19,13 +19,16 @@
                                 frequency:(NSString *)frequency
                                  quantity:(NSInteger)quantity
                                          unit:(NSString *)unit
+                                startDate:(NSString *)startDate
                              expiryDate:(NSString *)expiryDate
                                  category:(NSString *)category
+                               mealTiming:(NSString *)mealTiming
          storageInstructions:(NSString *)storageInstructions
                                         notes:(NSString *)notes
                                         times:(NSArray * _Nullable)times
                                      userId:(NSString *)userId
                                         taken:(BOOL)taken
+            takenRecords:(NSDictionary * _Nullable)takenRecords
                                 createdAt:(long long)createdAt
                              completion:(void (^)(NSString * _Nullable))completion {
     
@@ -39,13 +42,16 @@
         @"frequency": frequency,
         @"quantity": @(quantity),
         @"unit": unit,
+        @"startDate": startDate,
         @"expiryDate": expiryDate,
         @"category": category,
+        @"mealTiming": mealTiming,
         @"storageInstructions": storageInstructions,
         @"notes": notes,
         @"times": times ?: @[],
         @"userId": userId,
         @"taken": @(taken),
+        @"takenRecords": takenRecords ?: @{},
         @"createdAt": @(createdAt)
     };
     
@@ -68,7 +74,9 @@
         
         NSMutableArray *medicines = [NSMutableArray array];
         for (FIRDocumentSnapshot *doc in snapshot.documents) {
-            [medicines addObject:doc.data];
+            NSMutableDictionary *data = [doc.data mutableCopy];
+            [data setObject:doc.documentID forKey:@"id"];
+            [medicines addObject:data];
         }
         completion(medicines, nil);
     }];
@@ -82,12 +90,15 @@
                                      frequency:(NSString *)frequency
                                         quantity:(NSInteger)quantity
                                                 unit:(NSString *)unit
+                                       startDate:(NSString *)startDate
                                     expiryDate:(NSString *)expiryDate
                                         category:(NSString *)category
+                                      mealTiming:(NSString *)mealTiming
                 storageInstructions:(NSString *)storageInstructions
                                              notes:(NSString *)notes
                                              times:(NSArray * _Nullable)times
                                              taken:(BOOL)taken
+                                     takenRecords:(NSDictionary * _Nullable)takenRecords
                                      createdAt:(long long)createdAt
                                     completion:(void (^)(NSString * _Nullable))completion {
     
@@ -101,11 +112,14 @@
         @"frequency": frequency,
         @"quantity": @(quantity),
         @"unit": unit,
+        @"startDate": startDate,
         @"expiryDate": expiryDate,
         @"category": category,
+        @"mealTiming": mealTiming,
         @"storageInstructions": storageInstructions,
         @"notes": notes,
         @"taken": @(taken),
+        @"takenRecords": takenRecords ?: @{},
         @"createdAt": @(createdAt)
     };
     

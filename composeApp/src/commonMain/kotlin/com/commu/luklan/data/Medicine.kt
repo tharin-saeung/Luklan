@@ -13,12 +13,15 @@ data class Medicine(
     val amountPerDose: String = "", // จำนวนที่กินต่อครั้ง (เช่น "1 เม็ด")
     val quantity: Int = 0, // จำนวนยาที่มี
     val unit: String = "เม็ด", // หน่วย: เม็ด, ขวด, กล่อง
+    val startDate: String = "", // วันที่เริ่มกินยา
     val expiryDate: String = "", // วันหมดอายุ
     val category: String = "", // ประเภทยา: "แก้ปวด", "หัวใจ", "เบาหวาน"
+    val mealTiming: String = "", // เช่น "หลังอาหาร", "ก่อนอาหาร"
     val storageInstructions: String = "", // วิธีเก็บรักษา
     val notes: String = "", // หมายเหตุเพิ่มเติม
     val userId: String = "",
     val taken: Boolean = false,
+    val takenRecords: Map<String, Boolean> = emptyMap(), // Map of time string (e.g., "08:00") to taken status for the current day
     val createdAt: Long = 0L
 )
 

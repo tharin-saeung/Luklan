@@ -33,7 +33,7 @@ fun DropdownSelector(
             value = selectedValue,
             onValueChange = {},
             readOnly = true,
-            label = { Text(label) },
+            label = if (label.isNotEmpty()) { { Text(label) } } else null,
             trailingIcon = {
                 Icon(Icons.Default.ArrowDropDown, contentDescription = null)
             },

@@ -14,13 +14,16 @@ internal fun addMedicineNative(
     frequency: String,
     quantity: Int,
     unit: String,
+    startDate: String,
     expiryDate: String,
     category: String,
+    mealTiming: String,
     storageInstructions: String,
     notes: String,
     times: List<String>,
     userId: String,
     taken: Boolean,
+    takenRecords: Map<String, Boolean>,
     createdAt: Long,
     completion: (String?) -> Unit
 ) {
@@ -33,15 +36,18 @@ internal fun addMedicineNative(
         frequency = frequency,
         quantity = quantity.toLong(),
         unit = unit,
+        startDate = startDate,
         expiryDate = expiryDate,
         category = category,
+        mealTiming = mealTiming,
         storageInstructions = storageInstructions,
-    notes = notes,
-    times = times,
+        notes = notes,
+        times = times,
         userId = userId,
         taken = taken,
+        takenRecords = takenRecords as Map<Any?, *>,
         createdAt = createdAt,
-        completion = { error -> completion(error) }
+        completion = { error: String? -> completion(error) }
     )
 }
 
@@ -52,7 +58,7 @@ internal fun getMedicinesNative(
 ) {
     FirestoreBridge.getMedicinesWithUserId(
         userId = userId,
-        completion = { medicines, error ->
+        completion = { medicines: Any?, error: String? ->
             completion(medicines, error)
         }
     )
@@ -68,12 +74,15 @@ internal fun updateMedicineNative(
     frequency: String,
     quantity: Int,
     unit: String,
+    startDate: String,
     expiryDate: String,
     category: String,
+    mealTiming: String,
     storageInstructions: String,
     notes: String,
     times: List<String>,
     taken: Boolean,
+    takenRecords: Map<String, Boolean>,
     createdAt: Long,
     completion: (String?) -> Unit
 ) {
@@ -86,19 +95,19 @@ internal fun updateMedicineNative(
         frequency = frequency,
         quantity = quantity.toLong(),
         unit = unit,
+        startDate = startDate,
         expiryDate = expiryDate,
         category = category,
+        mealTiming = mealTiming,
         storageInstructions = storageInstructions,
         notes = notes,
         times = times,
         taken = taken,
+        takenRecords = takenRecords as Map<Any?, *>,
         createdAt = createdAt,
-        completion = { error -> completion(error) }
+        completion = { error: String? -> completion(error) }
     )
 }
-
-// Note: the cinterop-generated Kotlin declarations expect Kotlin collections (List) for NSArray parameters,
-// so we pass `List<String>` directly. If a conversion to NSMutableArray is ever required, implement it here.
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun deleteMedicineNative(
@@ -107,6 +116,6 @@ internal fun deleteMedicineNative(
 ) {
     FirestoreBridge.deleteMedicineWithId(
         medicineId = id,
-        completion = { error -> completion(error) }
+        completion = { error: String? -> completion(error) }
     )
 }

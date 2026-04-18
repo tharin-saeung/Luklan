@@ -12,6 +12,8 @@ import com.commu.luklan.R
 class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "ได้เวลากินยาแล้วนะครับ"
+        val medicineId = intent.getStringExtra("EXTRA_MEDICINE_ID")
+        val time = intent.getStringExtra("EXTRA_TIME")
         val title = "เตือนกินยา"
 
         val notificationManager =
@@ -21,6 +23,8 @@ class NotificationReceiver : BroadcastReceiver() {
         val contentIntent =
                 Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra("DEEP_LINK_MEDICINE_ID", medicineId)
+                    putExtra("DEEP_LINK_TIME", time)
                 }
         val contentPendingIntent =
                 PendingIntent.getActivity(

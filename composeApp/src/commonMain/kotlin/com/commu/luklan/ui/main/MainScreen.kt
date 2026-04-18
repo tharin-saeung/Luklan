@@ -1,6 +1,7 @@
 package com.commu.luklan.ui.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -27,12 +29,6 @@ enum class MainTab {
     MENU
 }
 
-data class TabItem(
-    val tab: MainTab,
-    val title: String,
-    val icon: ImageVector
-)
-
 @Composable
 fun MainScreen(
     onNavigateToAddMedicine: () -> Unit,
@@ -42,96 +38,90 @@ fun MainScreen(
     onNavigateToMedicineGroups: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
-    
-    val tabs = listOf(
-        TabItem(MainTab.HOME, "หน้าหลัก", Icons.Outlined.Home),
-        TabItem(MainTab.EMERGENCY, "ฉุกเฉิน", Icons.Default.Add),
-        TabItem(MainTab.MENU, "เมนู", Icons.Default.Apps)
-    )
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = LuklanColors.Background,
-                tonalElevation = 0.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Home,
-                            contentDescription = "หน้าหลัก",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = "หน้าหลัก",
-                            style = LuklanTypography.bodySmall,
-                            fontWeight = if (selectedTab == MainTab.HOME) FontWeight.Bold else FontWeight.Normal
-                        )
-                    },
-                    selected = selectedTab == MainTab.HOME,
-                    onClick = { selectedTab = MainTab.HOME },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = LuklanColors.Primary,
-                        selectedTextColor = LuklanColors.Primary,
-                        unselectedIconColor = Color(0xFF9E9E9E),
-                        unselectedTextColor = Color(0xFF9E9E9E),
-                        indicatorColor = LuklanColors.Primary.copy(alpha = 0.1f)
+                // Main Navigation background
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Home Tab
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable { selectedTab = MainTab.HOME }
+                        ) {
+                            Icon(
+                                imageVector = if (selectedTab == MainTab.HOME) Icons.Filled.Home else Icons.Outlined.Home,
+                                contentDescription = "Home",
+                                tint = LuklanColors.Primary,
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Text(
+                                text = "หน้าหลัก",
+                                style = LuklanTypography.bodySmall,
+                                color = LuklanColors.Primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(Modifier.width(80.dp)) // Space for central emergency button
+
+                        // Menu Tab
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable { selectedTab = MainTab.MENU }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Apps,
+                                contentDescription = "Menu",
+                                tint = LuklanColors.Primary,
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Text(
+                                text = "เมนู",
+                                style = LuklanTypography.bodySmall,
+                                color = LuklanColors.Primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Central Emergency "Hump" Button
+                Box(
+                    modifier = Modifier
+                        .size(width = 120.dp, height = 90.dp)
+                        .offset(y = (-5).dp)
+                        .clip(RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
+                        .background(LuklanColors.Secondary)
+                        .clickable { selectedTab = MainTab.EMERGENCY },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ฉุกเฉิน",
+                        color = Color.White,
+                        style = LuklanTypography.h3,
+                        fontWeight = FontWeight.Bold
                     )
-                )
-                
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "ฉุกเฉิน",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = "ฉุกเฉิน",
-                            style = LuklanTypography.bodySmall,
-                            fontWeight = if (selectedTab == MainTab.EMERGENCY) FontWeight.Bold else FontWeight.Normal
-                        )
-                    },
-                    selected = selectedTab == MainTab.EMERGENCY,
-                    onClick = { selectedTab = MainTab.EMERGENCY },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFFE5A836),
-                        selectedTextColor = Color(0xFFE5A836),
-                        unselectedIconColor = Color(0xFF9E9E9E),
-                        unselectedTextColor = Color(0xFF9E9E9E),
-                        indicatorColor = Color(0xFFE5A836).copy(alpha = 0.1f)
-                    )
-                )
-                
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            Icons.Default.Apps,
-                            contentDescription = "เมนู",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = "เมนู",
-                            style = LuklanTypography.bodySmall,
-                            fontWeight = if (selectedTab == MainTab.MENU) FontWeight.Bold else FontWeight.Normal
-                        )
-                    },
-                    selected = selectedTab == MainTab.MENU,
-                    onClick = { selectedTab = MainTab.MENU },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = LuklanColors.Primary,
-                        selectedTextColor = LuklanColors.Primary,
-                        unselectedIconColor = Color(0xFF9E9E9E),
-                        unselectedTextColor = Color(0xFF9E9E9E),
-                        indicatorColor = LuklanColors.Primary.copy(alpha = 0.1f)
-                    )
-                )
+                }
             }
         },
         containerColor = LuklanColors.Background
@@ -160,10 +150,10 @@ fun EmergencyScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(LuklanSpacing.lg),
-        contentAlignment = androidx.compose.ui.Alignment.Center
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
@@ -200,7 +190,6 @@ fun MenuScreen(
             .fillMaxSize()
             .background(LuklanColors.Background)
     ) {
-        // Header with "เมนู" title
         Text(
             text = "เมนู",
             style = LuklanTypography.h2,
@@ -209,7 +198,6 @@ fun MenuScreen(
             modifier = Modifier.padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.lg)
         )
         
-        // Search Bar
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
@@ -236,155 +224,38 @@ fun MenuScreen(
         
         Spacer(modifier = Modifier.height(LuklanSpacing.md))
         
-        // Large Cards Row (Medicine Groups)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
                 .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.sm),
             colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             onClick = onNavigateToMedicineGroups
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        Icons.Default.Medication,
-                        contentDescription = "Medicine Groups",
-                        tint = Color.White,
-                        modifier = Modifier.size(64.dp)
-                    )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Medication, contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "กลุ่มยา",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "กลุ่มยา", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
         
-        // History Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
                 .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.sm),
             colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             onClick = onNavigateToHistory
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        Icons.Default.History,
-                        contentDescription = "History",
-                        tint = Color.White,
-                        modifier = Modifier.size(64.dp)
-                    )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.History, contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "ประวัติ",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "การกินยา",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(LuklanSpacing.sm))
-        
-        // Small Cards Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = LuklanSpacing.lg),
-            horizontalArrangement = Arrangement.spacedBy(LuklanSpacing.md)
-        ) {
-            // Caregiver Card
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(140.dp),
-                colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-                shape = RoundedCornerShape(16.dp),
-                onClick = onNavigateToProfile
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Caregiver",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "กลุ่มผู้ดูแล",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            
-            // Members Card
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(140.dp),
-                colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Group,
-                            contentDescription = "Members",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "สมาชิก",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(text = "ประวัติการกินยา", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -21,12 +21,15 @@ class MedicineRepositoryIos : MedicineRepository {
                 frequency = medicine.frequency,
                 quantity = medicine.quantity,
                 unit = medicine.unit,
+                startDate = medicine.startDate,
                 expiryDate = medicine.expiryDate,
                 category = medicine.category,
+                mealTiming = medicine.mealTiming,
                 storageInstructions = medicine.storageInstructions,
                 notes = medicine.notes,
                 userId = medicine.userId,
                 taken = medicine.taken,
+                takenRecords = medicine.takenRecords,
                 createdAt = medicine.createdAt
             ) { error: String? ->
                 if (error != null) {
@@ -61,6 +64,19 @@ class MedicineRepositoryIos : MedicineRepository {
                             list
                         }
 
+                        val takenRecordsMap = run {
+                            val d = dict.objectForKey("takenRecords") as? Map<Any?, *>
+                            val map = mutableMapOf<String, Boolean>()
+                            if (d != null) {
+                                for ((k, v) in d) {
+                                    val keyStr = k as? String
+                                    val valBool = v as? Boolean
+                                    if (keyStr != null && valBool != null) map[keyStr] = valBool
+                                }
+                            }
+                            map
+                        }
+
                         val medicine = Medicine(
                             id = (dict.objectForKey("id") as? String) ?: "",
                             name = (dict.objectForKey("name") as? String) ?: "",
@@ -71,12 +87,15 @@ class MedicineRepositoryIos : MedicineRepository {
                             frequency = (dict.objectForKey("frequency") as? String) ?: "",
                             quantity = (dict.objectForKey("quantity") as? Number)?.toInt() ?: 0,
                             unit = (dict.objectForKey("unit") as? String) ?: "เม็ด",
+                            startDate = (dict.objectForKey("startDate") as? String) ?: "",
                             expiryDate = (dict.objectForKey("expiryDate") as? String) ?: "",
                             category = (dict.objectForKey("category") as? String) ?: "",
+                            mealTiming = (dict.objectForKey("mealTiming") as? String) ?: "",
                             storageInstructions = (dict.objectForKey("storageInstructions") as? String) ?: "",
                             notes = (dict.objectForKey("notes") as? String) ?: "",
                             userId = (dict.objectForKey("userId") as? String) ?: "",
                             taken = (dict.objectForKey("taken") as? Boolean) ?: false,
+                            takenRecords = takenRecordsMap,
                             createdAt = (dict.objectForKey("createdAt") as? Number)?.toLong() ?: 0L
                         )
                         medicineList.add(medicine)
@@ -101,11 +120,14 @@ class MedicineRepositoryIos : MedicineRepository {
                 frequency = medicine.frequency,
                 quantity = medicine.quantity,
                 unit = medicine.unit,
+                startDate = medicine.startDate,
                 expiryDate = medicine.expiryDate,
                 category = medicine.category,
+                mealTiming = medicine.mealTiming,
                 storageInstructions = medicine.storageInstructions,
                 notes = medicine.notes,
                 taken = medicine.taken,
+                takenRecords = medicine.takenRecords,
                 createdAt = medicine.createdAt
             ) { error: String? ->
                 if (error != null) {

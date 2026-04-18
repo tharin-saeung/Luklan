@@ -5,23 +5,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 object LuklanTypography {
-    // Headers (เพิ่มขนาดสำหรับผู้สูงอายุ)
+    // Headers (Scaled for accessibility and elegance)
     val h1 = TextStyle(
-        fontSize = 56.sp,           // เพิ่มจาก 48sp
+        fontSize = 32.sp,
         fontWeight = FontWeight.Bold, 
-        lineHeight = 64.sp
+        lineHeight = 38.sp
     )
 
     val h2 = TextStyle(
-        fontSize = 36.sp,           // เพิ่มจาก 32sp
+        fontSize = 26.sp,
         fontWeight = FontWeight.Bold, 
-        lineHeight = 44.sp
+        lineHeight = 32.sp
     )
 
     val h3 = TextStyle(
-        fontSize = 24.sp,           // ลดจาก 28sp (สำหรับ title)
+        fontSize = 20.sp,
         fontWeight = FontWeight.Bold, 
-        lineHeight = 32.sp
+        lineHeight = 26.sp
     )
     
     val h4 = TextStyle(

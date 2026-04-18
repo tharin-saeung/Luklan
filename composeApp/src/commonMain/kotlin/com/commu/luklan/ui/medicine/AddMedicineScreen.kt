@@ -1,491 +1,592 @@
 package com.commu.luklan.ui.medicine
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
- 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material.icons.Icons as MaterialIcons
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
-import com.commu.luklan.ui.theme.LuklanTheme
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.components.WheelTimePicker
+import com.commu.luklan.ui.components.DropdownSelector
+import com.commu.luklan.ui.theme.*
+import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
+import kotlinx.datetime.*
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import com.commu.luklan.ui.ocr.OcrResultStore
-import com.commu.luklan.ui.components.DropdownSelector
-import com.commu.luklan.ui.components.WheelTimePicker
-import com.commu.luklan.ui.components.DatePickerDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalTime::class)
 @Composable
 fun AddMedicineScreen(onNavigateBack: () -> Unit) {
-        val medicineRepository = remember { getMedicineRepository() }
-        val authRepository = remember { AuthRepository() }
-        val notificationScheduler = remember { getNotificationScheduler() }
-        val scope = rememberCoroutineScope()
+    val medicineRepository = remember { getMedicineRepository() }
+    val authRepository = remember { AuthRepository() }
+    val notificationScheduler = remember { getNotificationScheduler() }
+    val scope = rememberCoroutineScope()
 
-                val focusManager = LocalFocusManager.current
-                var formState by remember { mutableStateOf(MedicineFormState()) }
-                // If OCR produced a form, load it and clear the store (harmless if OCR disabled)
-                LaunchedEffect(Unit) {
-                        OcrResultStore.lastForm?.let {
-                                formState = it
-                                OcrResultStore.lastForm = null
-                        }
-                }
+    val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
+    val thaiDays = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
+    val mealTimingOptions = listOf("หลังอาหาร", "ก่อนอาหาร")
 
-                // Multi-step wizard state
-                var step by remember { mutableStateOf(1) }
-                val maxStep = 6
-                var showTimePicker by remember { mutableStateOf(false) }
-                var editingTimeIndex by remember { mutableStateOf(-1) }
-                var showExpiryDatePicker by remember { mutableStateOf(false) }
-                var showMonthDatePicker by remember { mutableStateOf(false) }
-                // Shared times list (so it persists across steps)
-                val times = remember { mutableStateListOf<String>() }
-                // Initialize times from formState when available
-                LaunchedEffect(formState.times) {
-                        if (formState.times.isNotEmpty() && times.isEmpty()) {
-                                times.clear()
-                                times.addAll(formState.times)
-                        }
-                }
-                // Keep times list or month-day selections in sync with frequencyCount
-                LaunchedEffect(formState.frequencyCount, formState.timeUnit) {
-                        if (formState.timeUnit == "วัน" && formState.frequencyCount > 0) {
-                                val target = formState.frequencyCount
-                                while (times.size < target) times.add("")
-                                while (times.size > target) times.removeAt(times.lastIndex)
-                                formState = formState.copy(times = times.toList())
-                        } else if (formState.timeUnit == "เดือน" && formState.frequencyCount > 0) {
-                                // ensure selected month days list matches frequencyCount
-                                val target = formState.frequencyCount
-                                val selected = formState.selectedMonthDays.toMutableList()
-                                while (selected.size < target) selected.add(0)
-                                while (selected.size > target) selected.removeAt(selected.lastIndex)
-                                formState = formState.copy(selectedMonthDays = selected.toList())
-                        }
-                }
+    // Date Logic using project utility to avoid Clock resolution issues on Windows
+    val now = remember {
+        val nowMillis = getCurrentTimeMillis()
+        val instant = Instant.fromEpochMilliseconds(nowMillis)
+        instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    }
+    
+    // Form State
+    var formState by remember { 
+        mutableStateOf<MedicineFormState>(
+            MedicineFormState(
+                startDate = now.dayOfMonth.toString(),
+                mealTiming = "หลังอาหาร",
+                category = "เม็ด"
+            )
+        ) 
+    }
+    
+    // Display State for Calendar Step
+    var displayMonth by remember { mutableStateOf<Int>(now.monthNumber) }
+    var displayYear by remember { mutableStateOf<Int>(now.year) }
+    
+    var step by remember { mutableStateOf<Int>(1) }
+    val maxStep = 6
+    
+    var showTimePicker by remember { mutableStateOf<Boolean>(false) }
+    var showMonthYearPicker by remember { mutableStateOf<Boolean>(false) }
+    var editingTimeIndex by remember { mutableStateOf<Int>(-1) }
+    var isLoading by remember { mutableStateOf<Boolean>(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-                // Auto-select time unit when user picks a category
-                LaunchedEffect(formState.category) {
-                        val mapping = mapOf(
-                                "เม็ด" to "วัน",
-                                "แคปซูล" to "วัน",
-                                "ฉีด" to "วัน",
-                                "อื่นๆ" to "วัน"
-                        )
-                        val mapped = mapping[formState.category] ?: formState.timeUnit
-                        if (mapped != formState.timeUnit) {
-                                formState = formState.copy(timeUnit = mapped)
-                        }
-                }
-        var isLoading by remember { mutableStateOf(false) }
-        var errorMessage by remember { mutableStateOf<String?>(null) }
-
-        Scaffold(
-                topBar = {
-                        CenterAlignedTopAppBar(
-                                title = { Text("เพิ่มยาใหม่", style = LuklanTypography.h3, color = LuklanTheme.colors.OnPrimary) },
-                                navigationIcon = {
-                                        IconButton(onClick = onNavigateBack) {
-                                                Icon(
-                                                        MaterialIcons.AutoMirrored.Filled.ArrowBack,
-                                                        contentDescription = "Back",
-                                                        tint = LuklanTheme.colors.OnPrimary
-                                                )
-                                        }
-                                },
-                                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                        containerColor = LuklanTheme.colors.Primary,
-                                        titleContentColor = LuklanTheme.colors.OnPrimary,
-                                        navigationIconContentColor = LuklanTheme.colors.OnPrimary
-                                )
-                        )
-                },
-                containerColor = LuklanTheme.colors.Primary
-        ) { paddingValues ->
-                Column(
-                        modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues)
-                                .padding(horizontal = LuklanTheme.spacing.lg)
-                ) {
-                        // Step content
-                        Spacer(Modifier.height(LuklanTheme.spacing.sm))
-                        Column(modifier = Modifier.weight(1f)) {
-                                when (step) {
-                                        1 -> {
-                                                // Name, amount per dose, total quantity
-                                                Text("ชื่อยา", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                OutlinedTextField(
-                                                        value = formState.name,
-                                                        onValueChange = { formState = formState.copy(name = it) },
-                                                        placeholder = { Text("กรอกชื่อยา", color = LuklanTheme.colors.TextSecondary) },
-                                                        textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        singleLine = true,
-                                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                                                focusedBorderColor = Color.Black,
-                                                                unfocusedBorderColor = Color.Black,
-                                                                cursorColor = LuklanTheme.colors.TextPrimary
-                                                        )
-                                                )
-                                                Spacer(Modifier.height(12.dp))
-                                                Text("ปริมาณยาที่ใช้ต่อครั้ง", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                OutlinedTextField(
-                                                        value = formState.amountPerDose,
-                                                        onValueChange = { formState = formState.copy(amountPerDose = it) },
-                                                        placeholder = { Text("กรอกปริมาณยาที่ใช้ต่อครั้ง", color = LuklanTheme.colors.TextSecondary) },
-                                                        textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                                                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                                                focusedBorderColor = Color.Black,
-                                                                unfocusedBorderColor = Color.Black,
-                                                                cursorColor = LuklanTheme.colors.TextPrimary
-                                                        )
-                                                )
-                                                Spacer(Modifier.height(12.dp))
-                                                Text("ปริมาณยาทั้งหมด", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                OutlinedTextField(
-                                                        value = formState.quantity,
-                                                        onValueChange = { formState = formState.copy(quantity = it) },
-                                                        placeholder = { Text("กรอกปริมาณยาทั้งหมด", color = LuklanTheme.colors.TextSecondary) },
-                                                        textStyle = TextStyle(color = LuklanTheme.colors.TextPrimary),
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                                                        keyboardActions = KeyboardActions(onNext = { step += 1; focusManager.clearFocus() }),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                                                focusedBorderColor = Color.Black,
-                                                                unfocusedBorderColor = Color.Black,
-                                                                cursorColor = LuklanTheme.colors.TextPrimary
-                                                        )
-                                                )
-                                        }
-                                        2 -> {
-                                                // ลักษณะของยา (ประเภทยา)
-                                                val categoryOptions = listOf("เม็ด","แคปซูล","ฉีด","อื่นๆ")
-                                                Text("ลักษณะของยา", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                DropdownSelector(
-                                                        label = "ลักษณะของยา",
-                                                        selectedValue = if (formState.category.isNotBlank()) formState.category else categoryOptions.first(),
-                                                        options = categoryOptions,
-                                                        onValueChange = { formState = formState.copy(category = it) },
-                                                        modifier = Modifier.fillMaxWidth()
-                                                )
-                                        }
-                                        3 -> {
-                                                // จำนวนครั้งต่อ วัน/สัปดาห์/เดือน
-                                                Text("จำนวนครั้งต่อ", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                OutlinedTextField(
-                                                        value = formState.frequencyCount.takeIf { it>0 }?.toString() ?: "",
-                                                        onValueChange = { v -> formState = formState.copy(frequencyCount = v.toIntOrNull() ?: 0) },
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                                                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                                                focusedBorderColor = Color.Black,
-                                                                unfocusedBorderColor = Color.Black,
-                                                                cursorColor = Color.Black
-                                                        )
-                                                )
-                                                Spacer(Modifier.height(12.dp))
-                                                Text("หน่วยเวลา", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                DropdownSelector(
-                                                        label = "หน่วยเวลา",
-                                                        selectedValue = formState.timeUnit,
-                                                        options = listOf("วัน","สัปดาห์","เดือน"),
-                                                        onValueChange = { formState = formState.copy(timeUnit = it) },
-                                                        modifier = Modifier.fillMaxWidth()
-                                                )
-                                                Spacer(Modifier.height(8.dp))
-                                                if (formState.timeUnit == "สัปดาห์") {
-                                                        Text("เลือกวันของสัปดาห์")
-                                                        Spacer(Modifier.height(8.dp))
-                                                        // Weekday chips Mon(1) .. Sun(7)
-                                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                                val weekLabels = listOf("จ","อ","พ","พฤ","ศ","ส","อา")
-                                                                weekLabels.forEachIndexed { i, label ->
-                                                                        val dayIndex = i + 1
-                                                                        val selected = formState.selectedWeekDays.contains(dayIndex)
-                                                                        OutlinedButton(
-                                                                                onClick = {
-                                                                                        val new = formState.selectedWeekDays.toMutableList()
-                                                                                        if (selected) new.remove(dayIndex) else new.add(dayIndex)
-                                                                                        formState = formState.copy(selectedWeekDays = new.sorted())
-                                                                                },
-                                                                                colors = ButtonDefaults.outlinedButtonColors(
-                                                                                        containerColor = if (selected) LuklanTheme.colors.Surface else LuklanTheme.colors.Surface,
-                                                                                        contentColor = if (selected) LuklanTheme.colors.Primary else LuklanTheme.colors.TextPrimary
-                                                                                )
-                                                                        ) { Text(label) }
-                                                                }
-                                                        }
-                                                } else if (formState.timeUnit == "เดือน") {
-                                                        Text("เลือกวันที่ของเดือน")
-                                                        Spacer(Modifier.height(8.dp))
-                                                        // Show selected month days and a button to pick more via DatePicker
-                                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                                val visible = formState.selectedMonthDays.filter { it > 0 }
-                                                                if (visible.isNotEmpty()) {
-                                                                        visible.forEach { d ->
-                                                                                Surface(shape = RoundedCornerShape(16.dp), color = LuklanTheme.colors.Surface) {
-                                                                                        Text(text = d.toString(), modifier = Modifier.padding(8.dp), color = LuklanTheme.colors.TextPrimary)
-                                                                                }
-                                                                        }
-                                                                }
-                                                        }
-                                                        Spacer(Modifier.height(8.dp))
-                                                        Button(onClick = { showMonthDatePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { Text("เลือกรายการวันที่") }
-                                                }
-                                        }
-                                        4 -> {
-                                                                // เวลาใช้ยา - sync with จำนวนครั้งเมื่อเลือก "วัน"
-                                                                Text("เวลาใช้ยา", color = LuklanTheme.colors.Secondary)
-                                                                Spacer(Modifier.height(8.dp))
-                                                                Column {
-                                                                        if (formState.timeUnit == "วัน") {
-                                                                                // show one field per frequencyCount, not editable add/remove
-                                                                                times.forEachIndexed { idx, t ->
-                                                                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                                                                                Surface(
-                                                                                                        modifier = Modifier
-                                                                                                                .weight(1f)
-                                                                                                                .clickable { editingTimeIndex = idx; showTimePicker = true },
-                                                                                                        shape = RoundedCornerShape(12.dp),
-                                                                                                        color = LuklanTheme.colors.Surface,
-                                                                                                        shadowElevation = 2.dp
-                                                                                                ) {
-                                                                                                        Text(
-                                                                                                                text = if (t.isNotBlank()) t else "--:--",
-                                                                                                                color = LuklanTheme.colors.TextPrimary,
-                                                                                                                modifier = Modifier.padding(16.dp)
-                                                                                                        )
-                                                                                                }
-                                                                                                Spacer(Modifier.width(8.dp))
-                                                                                                Button(onClick = { editingTimeIndex = idx; showTimePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { Text("แก้ไข") }
-                                                                                        }
-                                                                                        Spacer(Modifier.height(8.dp))
-                                                                                }
-                                                                        } else {
-                                                                                // non-daily: single primary time only
-                                                                                val primary = times.firstOrNull() ?: ""
-                                                                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                                                                        Surface(
-                                                                                                modifier = Modifier
-                                                                                                        .weight(1f)
-                                                                                                        .clickable { editingTimeIndex = 0; showTimePicker = true },
-                                                                                                shape = RoundedCornerShape(12.dp),
-                                                                                                color = LuklanTheme.colors.Surface,
-                                                                                                shadowElevation = 2.dp
-                                                                                        ) {
-                                                                                                Text(
-                                                                                                        text = if (primary.isNotBlank()) primary else "--:--",
-                                                                                                        color = LuklanTheme.colors.TextPrimary,
-                                                                                                        modifier = Modifier.padding(16.dp)
-                                                                                                )
-                                                                                        }
-                                                                                        Spacer(Modifier.width(8.dp))
-                                                                                        Button(onClick = { editingTimeIndex = 0; showTimePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { Text("แก้ไข") }
-                                                                                }
-                                                                                Spacer(Modifier.height(8.dp))
-                                                                        }
-                                                                        LaunchedEffect(times.toList()) { formState = formState.copy(times = times.toList()) }
-                                                                }
-                                        }
-                                        5 -> {
-                                                // วันหมดอายุ
-                                                Text("วันหมดอายุ", color = LuklanTheme.colors.Secondary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                                OutlinedTextField(
-                                                        value = formState.expiryDate,
-                                                        onValueChange = { formState = formState.copy(expiryDate = it) },
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        readOnly = true
-                                                )
-                                                Spacer(Modifier.height(8.dp))
-                                                Button(onClick = { showExpiryDatePicker = true }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { Text("เลือกวันหมดอายุ") }
-                                        }
-                                        6 -> {
-                                                // Review
-                                                Text("ตรวจสอบข้อมูลก่อนบันทึก", style = LuklanTypography.h3)
-                                                Spacer(Modifier.height(12.dp))
-                                                Text("ชื่อยา: ${formState.name}")
-                                                Text("ปริมาณต่อครั้ง: ${formState.amountPerDose}")
-                                                Text("ปริมาณทั้งหมด: ${formState.quantity}")
-                                                Text("ลักษณะ: ${formState.category}")
-                                                Text("จำนวนครั้ง: ${formState.frequencyCount} ครั้งต่อ ${formState.timeUnit}")
-                                                Text("เวลา: ${if (formState.times.isNotEmpty()) formState.times.joinToString(", ") else formState.time}")
-                                                Text("วันหมดอายุ: ${formState.expiryDate}")
-                                        }
-                                }
-                        }
-
-                        // Time picker dialog
-                        if (showTimePicker) {
-                                var tempTime by remember { mutableStateOf(if (editingTimeIndex in times.indices && times[editingTimeIndex].isNotBlank()) times[editingTimeIndex] else "08:00") }
-                                AlertDialog(
-                                        onDismissRequest = { showTimePicker = false },
-                                        confirmButton = {
-                                                TextButton(onClick = {
-                                                        if (editingTimeIndex >= 0 && editingTimeIndex in times.indices) {
-                                                                times[editingTimeIndex] = tempTime
-                                                        } else if (editingTimeIndex == -1) {
-                                                                times.add(tempTime)
-                                                        }
-                                                        formState = formState.copy(times = times.toList())
-                                                        showTimePicker = false
-                                                }) { Text("ตกลง", color = LuklanTheme.colors.Primary) }
-                                        },
-                                        dismissButton = {
-                                                TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก", color = LuklanTheme.colors.TextPrimary) }
-                                        },
-                                        text = {
-                                                Column { WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) }
-                                        },
-                                        containerColor = LuklanTheme.colors.SurfaceVariant
-                                )
-                        }
-
-                        // Date picker dialog for expiry
-                        if (showExpiryDatePicker) {
-                                DatePickerDialog(
-                                        initialDate = formState.expiryDate,
-                                        onDateSelected = {
-                                                formState = formState.copy(expiryDate = it)
-                                                showExpiryDatePicker = false
-                                        },
-                                        onDismiss = { showExpiryDatePicker = false }
-                                )
-                        }
-
-                        // Date picker dialog for month-day selection
-                        if (showMonthDatePicker) {
-                                DatePickerDialog(
-                                        initialDate = "",
-                                        onDateSelected = { selected ->
-                                                // selected is yyyy-MM-dd, extract day
-                                                val parts = selected.split("-")
-                                                val day = parts.lastOrNull()?.toIntOrNull()
-                                                if (day != null) {
-                                                        val new = formState.selectedMonthDays.toMutableList()
-                                                        val placeholderIndex = new.indexOfFirst { it == 0 }
-                                                        if (placeholderIndex >= 0) {
-                                                                // replace first placeholder
-                                                                if (!new.contains(day)) new[placeholderIndex] = day
-                                                        } else {
-                                                                if (!new.contains(day)) new.add(day)
-                                                        }
-                                                        formState = formState.copy(selectedMonthDays = new.sorted())
-                                                }
-                                                showMonthDatePicker = false
-                                        },
-                                        onDismiss = { showMonthDatePicker = false }
-                                )
-                        }
-
-                        if (errorMessage != null) {
-                                Text(
-                                        text = errorMessage!!,
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = LuklanTypography.bodySmall,
-                                        modifier = Modifier.padding(bottom = LuklanTheme.spacing.sm)
-                                )
-                        }
-
-                        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
-
-                        // Bottom controls: Previous / Next / Save
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                if (step > 1) {
-                                        OutlinedButton(onClick = { if (step>1) step -= 1 }, colors = ButtonDefaults.outlinedButtonColors(contentColor = LuklanTheme.colors.Primary, containerColor = LuklanTheme.colors.Surface)) { Text("ย้อนกลับ") }
-                                } else Spacer(Modifier.width(8.dp))
-
-                                if (step < maxStep) {
-                                        Button(onClick = { step += 1 }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { Text("ต่อไป") }
-                                } else {
-                                        Button(onClick = {
-                                                val userId = authRepository.getCurrentUserId()
-                                                if (userId == null) { errorMessage = "User not logged in"; return@Button }
-                                                if (formState.name.isBlank()) { errorMessage = "กรุณากรอกชื่อยา"; return@Button }
-                                                // ensure times count matches frequencyCount when unit is วัน
-                                                val times = if (formState.times.isNotEmpty()) formState.times else listOf(formState.time).filter { it.isNotBlank() }
-                                                if (formState.timeUnit == "วัน" && times.size != formState.frequencyCount) { errorMessage = "จำนวนเวลาต้องเท่ากับจำนวนครั้งต่อวัน"; return@Button }
-                                                isLoading = true
-                                                scope.launch {
-                                                        val frequencyStr = if (formState.frequency.isNotBlank()) formState.frequency else if (formState.frequencyCount > 0) {
-                                                                if (formState.timeUnit == "วัน") "วันละ ${formState.frequencyCount} ครั้ง" else "${formState.timeUnit}ละ ${formState.frequencyCount} ครั้ง"
-                                                        } else formState.frequency
-                                                        val medicine = Medicine(
-                                                                id = Uuid.random().toString(),
-                                                                name = formState.name,
-                                                                description = "",
-                                                                dosage = if (formState.amountPerDose.isNotBlank()) formState.amountPerDose else formState.dosage,
-                                                                time = times.firstOrNull() ?: formState.time,
-                                                                times = times,
-                                                                frequency = frequencyStr,
-                                                                timeUnit = formState.timeUnit,
-                                                                frequencyCount = formState.frequencyCount,
-                                                                amountPerDose = formState.amountPerDose,
-                                                                quantity = formState.quantity.toIntOrNull() ?: 0,
-                                                                unit = "",
-                                                                expiryDate = formState.expiryDate,
-                                                                category = formState.category,
-                                                                storageInstructions = "",
-                                                                notes = "",
-                                                                userId = userId,
-                                                                taken = false,
-                                                                createdAt = Clock.System.now().toEpochMilliseconds()
-                                                        )
-                                                        medicineRepository.addMedicine(medicine)
-                                                                .onSuccess {
-                                                                        notificationScheduler.schedule(medicine)
-                                                                        isLoading = false
-                                                                        onNavigateBack()
-                                                                }
-                                                                .onFailure {
-                                                                        isLoading = false
-                                                                        errorMessage = "Failed to save medicine: ${it.message}"
-                                                                }
-                                                }
-                                        }, colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Surface, contentColor = LuklanTheme.colors.Primary)) { if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp)) else Text("บันทึก") }
-                                }
-                        }
-                }
+    fun canNavigateNext(): Boolean {
+        return when (step) {
+            1 -> formState.name.isNotBlank()
+            2 -> formState.amountPerDose.isNotBlank()
+            3 -> formState.startDate.isNotBlank()
+            4 -> formState.category.isNotBlank()
+            5 -> formState.times.isNotEmpty()
+            else -> true
         }
+    }
+
+    Scaffold(
+        containerColor = LuklanColors.Primary
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header Row (Higher title, Back icon included)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { if (step > 1) step -= 1 else onNavigateBack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "เพิ่มยา",
+                    style = LuklanTypography.h1,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.weight(1.3f))
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Main Content Area (Centered)
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                when (step) {
+                    1 -> StepName(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
+                    2 -> StepAmount(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
+                    3 -> StepStartDate(
+                        state = formState, 
+                        days = thaiDays, 
+                        months = thaiMonths,
+                        displayMonth = displayMonth,
+                        displayYear = displayYear,
+                        onShowPicker = { showMonthYearPicker = true }
+                    ) { formState = it }
+                    4 -> StepCategory(formState) { formState = it }
+                    5 -> StepTime(
+                        state = formState, 
+                        mealOptions = mealTimingOptions, 
+                        onAdd = { editingTimeIndex = -1; showTimePicker = true },
+                        onEdit = { idx -> editingTimeIndex = idx; showTimePicker = true }
+                    ) { formState = it }
+                    6 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                        StepSummary(formState, thaiMonths, displayMonth, displayYear)
+                    }
+                }
+            }
+
+            // Error Message
+            if (errorMessage != null) {
+                Text(text = errorMessage!!, color = LuklanColors.Secondary, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+            }
+
+            // Progress Indicator (Bottom)
+            Row(
+                modifier = Modifier.padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                repeat(maxStep) { i ->
+                    Box(
+                        modifier = Modifier
+                            .width(30.dp)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(if (i + 1 == step) LuklanColors.Secondary else Color.White.copy(alpha = 0.3f))
+                    )
+                }
+            }
+
+            // Bottom Buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (step > 1) {
+                    Button(
+                        onClick = { step -= 1; errorMessage = null },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary)
+                    ) {
+                        Text("ย้อนกลับ", style = LuklanTypography.buttonLarge, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        if (step < maxStep) {
+                            if (!canNavigateNext()) {
+                                errorMessage = "กรุณากรอกข้อมูลให้ครบถ้วน"
+                            } else {
+                                errorMessage = null
+                                step += 1
+                            }
+                        } else {
+                            // Save Logic
+                            val userId = authRepository.getCurrentUserId()
+                            if (userId == null) { errorMessage = "Session expired"; return@Button }
+                            
+                            isLoading = true
+                            scope.launch {
+                                // Full formatted date for DB
+                                val fullStartDate = "$displayYear-${displayMonth.toString().padStart(2, '0')}-${formState.startDate.padStart(2, '0')}"
+                                
+                                val medicine = Medicine(
+                                    id = Uuid.random().toString(),
+                                    name = formState.name,
+                                    dosage = formState.amountPerDose,
+                                    time = formState.times.firstOrNull() ?: "",
+                                    times = formState.times,
+                                    frequencyCount = formState.times.size,
+                                    timeUnit = "วัน",
+                                    amountPerDose = formState.amountPerDose,
+                                    unit = formState.unit,
+                                    startDate = fullStartDate,
+                                    category = formState.category,
+                                    mealTiming = formState.mealTiming,
+                                    userId = userId,
+                                    createdAt = getCurrentTimeMillis()
+                                )
+                                medicineRepository.addMedicine(medicine)
+                                    .onSuccess {
+                                        notificationScheduler.schedule(medicine)
+                                        isLoading = false
+                                        onNavigateBack()
+                                    }
+                                    .onFailure {
+                                        isLoading = false
+                                        errorMessage = "บันทึกไม่สำเร็จ: ${it.message}"
+                                    }
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary)
+                ) {
+                    if (isLoading) CircularProgressIndicator(color = LuklanColors.Primary, modifier = Modifier.size(24.dp))
+                    else Text(if (step == maxStep) "เสร็จสิ้น" else "ต่อไป", style = LuklanTypography.buttonLarge, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+
+    // Time Picker Dialog
+    if (showTimePicker) {
+        var tempTime by remember { 
+            mutableStateOf<String>(
+                if (editingTimeIndex >= 0) formState.times[editingTimeIndex] else "08:00"
+            ) 
+        }
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val newList = formState.times.toMutableList()
+                    if (editingTimeIndex >= 0) {
+                        newList[editingTimeIndex] = tempTime
+                    } else {
+                        newList.add(tempTime)
+                    }
+                    formState = formState.copy(times = newList.sorted())
+                    showTimePicker = false
+                }) { Text("ตกลง", color = LuklanColors.Primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก") }
+            },
+            title = { Text(if (editingTimeIndex >= 0) "แก้ไขเวลา" else "เพิ่มเวลา", style = LuklanTypography.h3) },
+            text = { WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // Custom Month/Year Dropdown Picker
+    if (showMonthYearPicker) {
+        var tempMonth by remember { mutableStateOf<Int>(displayMonth) }
+        var tempYear by remember { mutableStateOf<Int>(displayYear) }
+        
+        AlertDialog(
+            onDismissRequest = { showMonthYearPicker = false },
+            title = { Text("เลือกเดือนและปี", style = LuklanTypography.h3) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    DropdownSelector(
+                        label = "เดือน",
+                        selectedValue = thaiMonths[tempMonth - 1],
+                        options = thaiMonths,
+                        onValueChange = { m -> tempMonth = thaiMonths.indexOf(m) + 1 },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    val yearOptions = (now.year..now.year + 5).map { (it + 543).toString() }
+                    DropdownSelector(
+                        label = "ปี",
+                        selectedValue = (tempYear + 543).toString(),
+                        options = yearOptions,
+                        onValueChange = { y -> tempYear = y.toInt() - 543 },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    displayMonth = tempMonth
+                    displayYear = tempYear
+                    showMonthYearPicker = false
+                }) { Text("ตกลง", color = LuklanColors.Primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMonthYearPicker = false }) { Text("ยกเลิก") }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+}
+
+@Composable
+fun StepName(state: MedicineFormState, onNext: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("ยาที่ใช้", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(32.dp))
+        TextField(
+            value = state.name,
+            onValueChange = { onUpdate(state.copy(name = it)) },
+            placeholder = { Text("กรอกชื่อของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = RoundedCornerShape(30.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onNext() })
+        )
+    }
+}
+
+@Composable
+fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("ปริมาณยาที่ใช้", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(32.dp))
+        TextField(
+            value = state.amountPerDose,
+            onValueChange = { onUpdate(state.copy(amountPerDose = it, dosage = it)) },
+            placeholder = { Text("กรอกปริมาณของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = RoundedCornerShape(30.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onNext() }),
+            singleLine = true
+        )
+    }
+}
+
+@Composable
+fun StepStartDate(
+    state: MedicineFormState, 
+    days: List<String>, 
+    months: List<String>,
+    displayMonth: Int,
+    displayYear: Int,
+    onShowPicker: () -> Unit,
+    onUpdate: (MedicineFormState) -> Unit
+) {
+    val monthName = months[displayMonth - 1]
+    val thaiYear = displayYear + 543
+    
+    // Calculate days in selected month
+    val daysInMonth = when (displayMonth) {
+        1, 3, 5, 7, 8, 10, 12 -> 31
+        4, 6, 9, 11 -> 30
+        2 -> if ((displayYear % 4 == 0 && displayYear % 100 != 0) || (displayYear % 400 == 0)) 29 else 28
+        else -> 31
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("เลือกวันเริ่มกินยา", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(32.dp))
+        
+        val listState = rememberLazyListState()
+        
+        // Auto-scroll to selected date
+        LaunchedEffect(state.startDate, displayMonth, displayYear) {
+            val day = state.startDate.toIntOrNull() ?: 1
+            if (day > 3) {
+                listState.scrollToItem(day - 3)
+            } else {
+                listState.scrollToItem(0)
+            }
+        }
+
+        LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(daysInMonth) { i ->
+                val dayNum = i + 1
+                val isSelected = state.startDate == dayNum.toString()
+                
+                // Safe day calculation
+                val dayName = try {
+                    val date = LocalDate(displayYear, displayMonth, dayNum)
+                    days[(date.dayOfWeek.ordinal + 1) % 7]
+                } catch (e: Exception) {
+                    ""
+                }
+
+                Column(
+                    modifier = Modifier
+                        .size(65.dp, 95.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(if (isSelected) LuklanColors.Secondary else LuklanColors.Primary)
+                        .clickable { onUpdate(state.copy(startDate = dayNum.toString())) }
+                        .padding(vertical = 12.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(dayName, color = Color.White, fontSize = 16.sp)
+                    Text(dayNum.toString(), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.White)
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(32.dp))
+        
+        // Month/Year Button
+        Surface(
+            modifier = Modifier.clickable { onShowPicker() },
+            color = Color.Transparent
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("$monthName $thaiYear", color = Color.White, style = LuklanTypography.h3)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.CalendarMonth, contentDescription = "Select Month/Year", tint = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun StepCategory(state: MedicineFormState, onUpdate: (MedicineFormState) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("ลักษณะของยา", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(32.dp))
+        
+        val categories = listOf("แคปซูล", "เม็ด", "ฉีด", "อื่นๆ")
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                CategoryCard(categories[0], "💊", state.category == categories[0]) { onUpdate(state.copy(category = categories[0])) }
+                CategoryCard(categories[1], "💊", state.category == categories[1]) { onUpdate(state.copy(category = categories[1])) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                CategoryCard(categories[2], "💉", state.category == categories[2]) { onUpdate(state.copy(category = categories[2])) }
+                CategoryCard(categories[3], "➕", state.category == categories[3]) { onUpdate(state.copy(category = categories[3])) }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryCard(label: String, icon: String, isSelected: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.size(150.dp).clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) LuklanColors.Secondary else Color.White)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(modifier = Modifier.size(64.dp).clip(CircleShape).background(if (isSelected) Color.White.copy(0.2f) else LuklanColors.Secondary.copy(0.1f)), contentAlignment = Alignment.Center) {
+                Text(icon, fontSize = 36.sp)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = if (isSelected) Color.White else LuklanColors.Primary)
+        }
+    }
+}
+
+@Composable
+fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> Unit, onEdit: (Int) -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+    @OptIn(ExperimentalLayoutApi::class)
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("เวลาการกินยา", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(24.dp))
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White.copy(0.15f)).padding(horizontal = 20.dp, vertical = 10.dp).clickable {
+                val next = if (state.mealTiming == mealOptions[0]) mealOptions[1] else mealOptions[0]
+                onUpdate(state.copy(mealTiming = next))
+            }
+        ) {
+            Icon(Icons.Default.Description, contentDescription = null, tint = Color.White)
+            Spacer(Modifier.width(12.dp))
+            Text(state.mealTiming, color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White)
+        }
+
+        Spacer(Modifier.height(32.dp))
+        
+        state.times.forEachIndexed { index, t ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(index) },
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "$t น.", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+
+        if (state.times.size < 6) {
+            IconButton(
+                onClick = onAdd,
+                modifier = Modifier.padding(top = 16.dp).size(64.dp).clip(CircleShape).background(Color.White)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add", tint = LuklanColors.Secondary, modifier = Modifier.size(36.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun StepSummary(state: MedicineFormState, months: List<String>, displayMonth: Int, displayYear: Int) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        SummaryItem("ชื่อยา", state.name)
+        SummaryItem("ปริมาณ", "${state.amountPerDose} ${state.unit}")
+        SummaryItem("วันที่เริ่มกินยา", "${state.startDate} ${months[displayMonth - 1]} ${displayYear + 543}")
+        SummaryItem("ประเภทยา", state.category)
+        
+        Text("เวลากินยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, start = 12.dp), fontSize = 18.sp)
+        FlowRow(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.times.forEach { t ->
+                Box(modifier = Modifier.padding(bottom = 8.dp).clip(RoundedCornerShape(20.dp)).background(Color.White).padding(horizontal = 20.dp, vertical = 10.dp)) {
+                    Text("$t น.", fontWeight = FontWeight.Bold, color = LuklanColors.Primary, fontSize = 18.sp)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun FlowRow(modifier: Modifier, horizontalArrangement: Arrangement.HorizontalOrVertical, content: @Composable () -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(modifier = modifier, horizontalArrangement = horizontalArrangement) {
+        content()
+    }
+}
+
+@Composable
+fun SummaryItem(label: String, value: String) {
+    Column(modifier = Modifier.padding(vertical = 10.dp)) {
+        Text(label, color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp), fontSize = 18.sp)
+        Spacer(Modifier.height(6.dp))
+        Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(Color.White).padding(horizontal = 24.dp, vertical = 14.dp)) {
+            Text(value, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, color = LuklanColors.Primary, fontSize = 20.sp)
+        }
+    }
 }

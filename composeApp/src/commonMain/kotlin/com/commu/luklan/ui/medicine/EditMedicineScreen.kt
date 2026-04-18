@@ -1,16 +1,32 @@
 package com.commu.luklan.ui.medicine
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
+import com.commu.luklan.ui.components.DropdownSelector
+import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
@@ -23,7 +39,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     var formState by remember {
-        mutableStateOf(
+        mutableStateOf<MedicineFormState>(
             MedicineFormState(
                 name = medicine.name,
                 dosage = medicine.dosage,
@@ -34,7 +50,9 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                 amountPerDose = medicine.amountPerDose,
                 quantity = medicine.quantity.toString(),
                 unit = medicine.unit,
+                startDate = medicine.startDate,
                 category = medicine.category,
+                mealTiming = medicine.mealTiming,
                 expiryDate = medicine.expiryDate,
                 storageInstructions = medicine.storageInstructions,
                 notes = medicine.notes,
@@ -48,76 +66,217 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("แก้ไขยา", style = LuklanTypography.h3) },
+            CenterAlignedTopAppBar(
+                title = { Text("แก้ไขข้อมูลยา", style = LuklanTypography.h3, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = LuklanTheme.colors.TextPrimary
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = LuklanTheme.colors.Background,
-                    titleContentColor = LuklanTheme.colors.TextPrimary,
-                    navigationIconContentColor = LuklanTheme.colors.TextPrimary
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = LuklanColors.Primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
             )
         },
-        containerColor = LuklanTheme.colors.Background
+        containerColor = LuklanColors.Background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = LuklanTheme.spacing.lg)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MedicineFormFields(
-                state = formState,
-                onStateChange = { formState = it },
-                modifier = Modifier.weight(1f)
-            )
+            // Twin Curved Header Block
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(
+                        LuklanColors.Primary,
+                        RoundedCornerShape(bottomStart = 48.dp, bottomEnd = 48.dp)
+                    ),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(90.dp)
+                        .offset(y = 25.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White)
+                        .border(4.dp, LuklanColors.Background, RoundedCornerShape(24.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("💊", fontSize = 48.sp)
+                }
+            }
+
+            Spacer(Modifier.height(40.dp))
+
+            // Editable Summary Cards
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Name & Dosage Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("ชื่อยาและปริมาณ", style = LuklanTypography.h4, color = LuklanColors.Primary)
+                        
+                        OutlinedTextField(
+                            value = formState.name,
+                            onValueChange = { formState = formState.copy(name = it) },
+                            placeholder = { Text("กรอกชื่อยา") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = formState.amountPerDose,
+                                onValueChange = { formState = formState.copy(amountPerDose = it) },
+                                label = { Text("ปริมาณ") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                            OutlinedTextField(
+                                value = formState.unit,
+                                onValueChange = { formState = formState.copy(unit = it) },
+                                label = { Text("หน่วย") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+
+                        val categoryOptions = listOf("เม็ด", "แคปซูล", "ฉีด", "อื่นๆ")
+                        DropdownSelector(
+                            label = "ประเภทยา",
+                            selectedValue = formState.category,
+                            options = categoryOptions,
+                            onValueChange = { formState = formState.copy(category = it) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // Schedule Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("ตารางเวลา", style = LuklanTypography.h4, color = LuklanColors.Primary)
+                        
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = formState.frequencyCount.toString(),
+                                onValueChange = { v -> formState = formState.copy(frequencyCount = v.toIntOrNull() ?: 0) },
+                                label = { Text("จำนวนครั้ง") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                            Text("ต่อ")
+                            OutlinedTextField(
+                                value = formState.timeUnit,
+                                onValueChange = { formState = formState.copy(timeUnit = it) },
+                                label = { Text("หน่วยเวลา") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+
+                        formState.times.forEachIndexed { index, t ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                Icon(Icons.Default.AccessTime, contentDescription = null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text("มื้อที่ ${index + 1}: $t", style = LuklanTypography.bodyLarge)
+                            }
+                        }
+                    }
+                }
+
+                // Inventory & Expiry Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("สินค้าคงคลังและวันหมดอายุ", style = LuklanTypography.h4, color = LuklanColors.Primary)
+                        
+                        OutlinedTextField(
+                            value = formState.quantity,
+                            onValueChange = { formState = formState.copy(quantity = it) },
+                            label = { Text("จำนวนคงเหลือทั้งหมด") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        OutlinedTextField(
+                            value = formState.expiryDate,
+                            onValueChange = { formState = formState.copy(expiryDate = it) },
+                            label = { Text("วันหมดอายุ (ปปปป-ดด-วว)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
 
             if (errorMessage != null) {
                 Text(
                     text = errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
+                    color = LuklanColors.Error,
                     style = LuklanTypography.bodySmall,
-                    modifier = Modifier.padding(bottom = LuklanTheme.spacing.sm)
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 )
+                Spacer(Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
-
+            // Save Button (DesignSystem Style)
             Button(
                 onClick = {
-                    if (formState.name.isNotBlank() && (formState.times.isNotEmpty() || formState.time.isNotBlank())) {
+                    if (formState.name.isNotBlank()) {
                         isLoading = true
                         scope.launch {
+                            val frequencyStr = if (formState.timeUnit == "วัน") "วันละ ${formState.frequencyCount} ครั้ง" else "${formState.timeUnit}ละ ${formState.frequencyCount} ครั้ง"
                             val updatedMedicine = medicine.copy(
                                 name = formState.name,
                                 description = formState.description,
-                                dosage = if (formState.amountPerDose.isNotBlank()) formState.amountPerDose else formState.dosage,
-                                time = (if (formState.times.isNotEmpty()) formState.times.first() else formState.time),
-                                times = if (formState.times.isNotEmpty()) formState.times else listOf(formState.time).filter { it.isNotBlank() },
-                                frequency = if (formState.frequency.isNotBlank()) formState.frequency else if (formState.frequencyCount > 0) {
-                                    if (formState.timeUnit == "วัน") "วันละ ${formState.frequencyCount} ครั้ง" else "${formState.timeUnit}ละ ${formState.frequencyCount} ครั้ง"
-                                } else formState.frequency,
+                                dosage = formState.amountPerDose,
+                                time = formState.times.firstOrNull() ?: formState.time,
+                                times = formState.times,
+                                frequency = frequencyStr,
                                 timeUnit = formState.timeUnit,
                                 frequencyCount = formState.frequencyCount,
                                 amountPerDose = formState.amountPerDose,
                                 quantity = formState.quantity.toIntOrNull() ?: 0,
                                 unit = formState.unit,
+                                startDate = formState.startDate,
                                 expiryDate = formState.expiryDate,
                                 category = formState.category,
+                                mealTiming = formState.mealTiming,
                                 storageInstructions = formState.storageInstructions,
                                 notes = formState.notes
                             )
                             medicineRepository.updateMedicine(updatedMedicine)
                                 .onSuccess {
-                                    // Reschedule notification with updated info
                                     notificationScheduler.cancel(medicine)
                                     notificationScheduler.schedule(updatedMedicine)
                                     isLoading = false
@@ -125,36 +284,23 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                                 }
                                 .onFailure {
                                     isLoading = false
-                                    errorMessage = "Failed to update medicine: ${it.message}"
+                                    errorMessage = "บันทึกไม่สำเร็จ: ${it.message}"
                                 }
                         }
-                    } else {
-                        errorMessage = "กรุณากรอกข้อมูลให้ครบถ้วน"
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(LuklanTheme.dimensions.buttonLarge)
-                    .padding(bottom = LuklanTheme.spacing.md),
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusLarge),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = LuklanTheme.colors.Primary
-                ),
-                enabled = !isLoading
+                    .padding(horizontal = 24.dp)
+                    .height(60.dp),
+                shape = RoundedCornerShape(30.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Primary)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = LuklanTheme.colors.OnPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Text(
-                        text = "บันทึก",
-                        style = LuklanTypography.buttonLarge,
-                        color = LuklanTheme.colors.OnPrimary
-                    )
-                }
+                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                else Text("บันทึกการแก้ไข", style = LuklanTypography.buttonLarge)
             }
+            
+            Spacer(Modifier.height(40.dp))
         }
     }
 }

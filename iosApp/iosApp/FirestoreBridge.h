@@ -20,13 +20,16 @@ NS_ASSUME_NONNULL_BEGIN
                 frequency:(NSString *)frequency
                  quantity:(NSInteger)quantity
                      unit:(NSString *)unit
+                startDate:(NSString *)startDate
                expiryDate:(NSString *)expiryDate
                  category:(NSString *)category
+               mealTiming:(NSString *)mealTiming
      storageInstructions:(NSString *)storageInstructions
                     notes:(NSString *)notes
                    times:(NSArray * _Nullable)times
                    userId:(NSString *)userId
                     taken:(BOOL)taken
+            takenRecords:(NSDictionary * _Nullable)takenRecords
                 createdAt:(long long)createdAt
                completion:(void (^)(NSString * _Nullable error))completion;
 // Note: times is an optional NSArray of NSString timestamps (e.g., @[@"08:00", @"20:00"])
@@ -42,12 +45,15 @@ NS_ASSUME_NONNULL_BEGIN
                    frequency:(NSString *)frequency
                     quantity:(NSInteger)quantity
                         unit:(NSString *)unit
+                   startDate:(NSString *)startDate
                   expiryDate:(NSString *)expiryDate
                     category:(NSString *)category
+                  mealTiming:(NSString *)mealTiming
         storageInstructions:(NSString *)storageInstructions
                        notes:(NSString *)notes
                        times:(NSArray * _Nullable)times
                        taken:(BOOL)taken
+                takenRecords:(NSDictionary * _Nullable)takenRecords
                    createdAt:(long long)createdAt
                   completion:(void (^)(NSString * _Nullable error))completion;
 

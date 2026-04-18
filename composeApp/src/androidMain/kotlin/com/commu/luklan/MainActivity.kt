@@ -12,10 +12,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
+
+    private var deepLinkMedicineId by mutableStateOf<String?>(null)
+    private var deepLinkTime by mutableStateOf<String?>(null)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -28,6 +34,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        handleIntent(intent)
+
         // Request notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
@@ -46,8 +54,18 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel()
 
         setContent {
-            App()
+            App(deepLinkMedicineId, deepLinkTime)
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        deepLinkMedicineId = intent.getStringExtra("DEEP_LINK_MEDICINE_ID")
+        deepLinkTime = intent.getStringExtra("DEEP_LINK_TIME")
     }
     
     private fun checkExactAlarmPermission() {
