@@ -48,7 +48,7 @@ fun HomeScreen(
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
     val dayInitials = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
 
-    // Date Logic using project utility to avoid Clock resolution issues on Windows
+    // Date Logic
     val now = remember {
         val nowMillis = getCurrentTimeMillis()
         val instant = Instant.fromEpochMilliseconds(nowMillis)
@@ -87,44 +87,29 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) { loadMedicines() }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddMedicine,
-                containerColor = Color.White,
-                contentColor = LuklanColors.Primary,
-                shape = CircleShape,
-                modifier = Modifier.padding(bottom = 16.dp, end = 8.dp).size(64.dp),
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(36.dp))
-            }
-        },
-        containerColor = LuklanColors.Background
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Background)) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Header with Profile & Notification Bell
+            // Header with Profile & Notification Bell (Moved higher)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.md),
+                    .padding(horizontal = LuklanSpacing.lg)
+                    .padding(top = 16.dp, bottom = LuklanSpacing.sm), // Tighter vertical padding
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(56.dp)
                         .clip(CircleShape)
                         .background(Color.White)
                         .border(1.dp, LuklanColors.Primary.copy(alpha = 0.1f), CircleShape)
                         .clickable { onNavigateToProfile() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("👤", fontSize = 32.sp)
+                    Text("👤", fontSize = 28.sp)
                 }
 
                 Text(
@@ -135,11 +120,11 @@ fun HomeScreen(
                 )
 
                 IconButton(onClick = { /* TODO: Notification Page */ }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.Black, modifier = Modifier.size(36.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.Black, modifier = Modifier.size(32.dp))
                 }
             }
 
-            // Month/Year Selection Above Dates
+            // Month/Year Selection
             Box(
                 modifier = Modifier
                     .padding(horizontal = LuklanSpacing.lg)
@@ -157,7 +142,7 @@ fun HomeScreen(
                 }
             }
 
-            // Date Selector (Primary Blue unselected, Orange selected)
+            // Date Selector
             val listState = rememberLazyListState()
             LaunchedEffect(displayMonth, displayYear) {
                 val target = if (displayMonth == now.monthNumber && displayYear == now.year) now.dayOfMonth else 1
@@ -174,7 +159,6 @@ fun HomeScreen(
             ) {
                 items(daysInMonth) { index ->
                     val dayNum = index + 1
-                    val isToday = dayNum == now.dayOfMonth && displayMonth == now.monthNumber && displayYear == now.year
                     val isSelected = selectedDay == dayNum && displayMonth == now.monthNumber
                     
                     val dayName = try {
@@ -208,7 +192,7 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(LuklanSpacing.sm))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Section Title with Arrows
             Row(
@@ -255,9 +239,24 @@ fun HomeScreen(
                             onClick = { onNavigateToMedicineDetail(medicine) }
                         )
                     }
-                    item { Spacer(Modifier.height(120.dp)) }
+                    item { Spacer(Modifier.height(12.dp)) } // Optimized tight bottom spacer
                 }
             }
+        }
+
+        // Floating Action Button (Manual placement)
+        FloatingActionButton(
+            onClick = onNavigateToAddMedicine,
+            containerColor = Color.White,
+            contentColor = LuklanColors.Primary,
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 24.dp, end = 16.dp)
+                .size(64.dp),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(36.dp))
         }
     }
 

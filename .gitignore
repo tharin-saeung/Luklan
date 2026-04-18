@@ -55,3 +55,7 @@ xcuserdata/
 *.gcda
 profile.raw
 pod_wrapper.sh
+## Gradle
+gradle/gradle-daemon-jvm.properties
+## Gemini
+.gemini/

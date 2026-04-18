@@ -44,10 +44,10 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp),
+                    .height(110.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                // Main Navigation background
+                // Main Navigation background (80.dp high)
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,11 +105,10 @@ fun MainScreen(
                     }
                 }
 
-                // Central Emergency "Hump" Button
+                // Central Emergency "Hump" Button (Flush with bottom)
                 Box(
                     modifier = Modifier
-                        .size(width = 120.dp, height = 90.dp)
-                        .offset(y = (-5).dp)
+                        .size(width = 120.dp, height = 100.dp)
                         .clip(RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
                         .background(LuklanColors.Secondary)
                         .clickable { selectedTab = MainTab.EMERGENCY },
@@ -119,14 +118,16 @@ fun MainScreen(
                         text = "ฉุกเฉิน",
                         color = Color.White,
                         style = LuklanTypography.h3,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 12.dp) // Adjusted for 100dp height
                     )
                 }
             }
         },
         containerColor = LuklanColors.Background
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        // Use fixed 80.dp instead of calculateBottomPadding (which is 110dp) to remove the gap
+        Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp)) {
             when (selectedTab) {
                 MainTab.HOME -> HomeScreen(
                     onNavigateToAddMedicine = onNavigateToAddMedicine,
