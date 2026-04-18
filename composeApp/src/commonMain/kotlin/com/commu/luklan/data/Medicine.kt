@@ -22,6 +22,6 @@ data class Medicine(
     val userId: String = "",
     val taken: Boolean = false,
     val takenRecords: Map<String, Boolean> = emptyMap(), // Map of time string (e.g., "08:00") to taken status for the current day
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val order: Int = 0 // ลำดับการแสดงผล
 )
-

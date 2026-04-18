@@ -31,7 +31,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "userId" to medicine.userId,
                 "taken" to medicine.taken,
                 "takenRecords" to medicine.takenRecords,
-                "createdAt" to medicine.createdAt
+                "createdAt" to medicine.createdAt,
+                "order" to medicine.order
             )
             medicinesCollection.document(medicine.id).set(medicineMap).await()
             Result.success(Unit)
@@ -67,10 +68,11 @@ class MedicineRepositoryAndroid : MedicineRepository {
                     userId = doc.getString("userId") ?: "",
                     taken = doc.getBoolean("taken") ?: false,
                     takenRecords = (doc.get("takenRecords") as? Map<*, *>)?.map { (k, v) -> k.toString() to (v as? Boolean ?: false) }?.toMap() ?: emptyMap(),
-                    createdAt = doc.getLong("createdAt") ?: 0L
+                    createdAt = doc.getLong("createdAt") ?: 0L,
+                    order = (doc.getLong("order") ?: 0).toInt()
                 )
             }
-            Result.success(medicines)
+            Result.success(medicines.sortedWith(compareBy({ it.order }, { it.times.firstOrNull() ?: it.time })))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -100,7 +102,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 "userId" to medicine.userId,
                 "taken" to medicine.taken,
                 "takenRecords" to medicine.takenRecords,
-                "createdAt" to medicine.createdAt
+                "createdAt" to medicine.createdAt,
+                "order" to medicine.order
             )
             medicinesCollection.document(medicine.id).set(medicineMap).await()
             Result.success(Unit)

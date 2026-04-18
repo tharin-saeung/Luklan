@@ -25,6 +25,7 @@ internal fun addMedicineNative(
     taken: Boolean,
     takenRecords: Map<String, Boolean>,
     createdAt: Long,
+    order: Int,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.addMedicineWithId(
@@ -47,6 +48,7 @@ internal fun addMedicineNative(
         taken = taken,
         takenRecords = takenRecords as Map<Any?, *>,
         createdAt = createdAt,
+        order = order,
         completion = { error: String? -> completion(error) }
     )
 }
@@ -84,6 +86,7 @@ internal fun updateMedicineNative(
     taken: Boolean,
     takenRecords: Map<String, Boolean>,
     createdAt: Long,
+    order: Int,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.updateMedicineWithId(
@@ -105,6 +108,7 @@ internal fun updateMedicineNative(
         taken = taken,
         takenRecords = takenRecords as Map<Any?, *>,
         createdAt = createdAt,
+        order = order,
         completion = { error: String? -> completion(error) }
     )
 }
