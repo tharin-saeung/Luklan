@@ -13,7 +13,6 @@
               mealTiming:(NSString *)mealTiming
        mealTimingMinutes:(int)mealTimingMinutes
                   userId:(NSString *)userId
-            takenRecords:(NSDictionary<NSString *, NSNumber *> *)takenRecords
             takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                createdAt:(long long)createdAt
                    order:(int)order
@@ -29,7 +28,6 @@
                    category:(NSString *)category
                  mealTiming:(NSString *)mealTiming
           mealTimingMinutes:(int)mealTimingMinutes
-               takenRecords:(NSDictionary<NSString *, NSNumber *> *)takenRecords
                takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                   createdAt:(long long)createdAt
                       order:(int)order

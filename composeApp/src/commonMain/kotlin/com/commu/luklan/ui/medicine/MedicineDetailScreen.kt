@@ -30,14 +30,15 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun MedicineDetailScreen(
     medicine: Medicine,
@@ -100,108 +101,71 @@ fun MedicineDetailScreen(
             )
         },
         containerColor = LuklanColors.Primary
-    ) { padding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
-            Spacer(Modifier.height(24.dp))
-            
-            // Large Icon Circle
-            Box(
+            // Header Info
+            Column(
                 modifier = Modifier
-                    .size(160.dp)
-                    .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                when (currentMedicine.category) {
-                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(100.dp))
-                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(100.dp))
-                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(100.dp))
-                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(100.dp))
-                    else -> Text("💊", fontSize = 80.sp)
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Medicine Name
-            Text(
-                text = currentMedicine.name,
-                style = LuklanTypography.h1,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-
-            // Dosage Info Line: Name / Dosage
-            Text(
-                text = "${currentMedicine.dosage} ${currentMedicine.unit}",
-                style = LuklanTypography.bodyLarge,
-                color = Color.White.copy(alpha = 0.9f)
-            )
-            
-            Text(
-                text = "*กินยาติดต่อกันจนหมด",
-                style = LuklanTypography.bodySmall,
-                color = LuklanColors.Secondary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Info Boxes Row
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                val hasMinutes = currentMedicine.mealTimingMinutes > 0 && 
-                    (currentMedicine.mealTiming == "ก่อนอาหาร" || currentMedicine.mealTiming == "หลังอาหาร")
-
-                InfoBox(
-                    modifier = Modifier.weight(if (hasMinutes) 0.85f else 1f),
-                    imageType = when (currentMedicine.category) {
-                        "แคปซูล" -> Res.drawable.capsule
-                        "เม็ด" -> Res.drawable.pill
-                        "ฉีด" -> Res.drawable.inject
-                        "อื่นๆ" -> Res.drawable.other
-                        else -> null
-                    },
-                    label = "ประเภทยา",
-                    value = currentMedicine.category.ifEmpty { "เม็ด" }
-                )
-                
-                val mealTimingDisplay = buildString {
-                    append(currentMedicine.mealTiming.ifEmpty { "หลังอาหาร" })
-                    if (hasMinutes) {
-                        append(" ${currentMedicine.mealTimingMinutes} นาที")
+                // Large Pill Icon
+                Surface(
+                    modifier = Modifier.size(120.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        val iconRes = when(currentMedicine.category) {
+                            "แคปซูล" -> Res.drawable.capsule
+                            "ฉีด" -> Res.drawable.inject
+                            "อื่นๆ" -> Res.drawable.other
+                            else -> Res.drawable.pill
+                        }
+                        Image(
+                            painter = painterResource(iconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp)
+                        )
                     }
                 }
                 
-                InfoBox(
-                    modifier = Modifier.weight(if (hasMinutes) 1.2f else 1f),
-                    icon = Icons.Filled.AccessTimeFilled,
-                    label = "เวลาที่กิน",
-                    value = mealTimingDisplay
+                Spacer(Modifier.height(24.dp))
+                
+                Text(
+                    text = currentMedicine.name,
+                    style = LuklanTypography.h1,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
                 )
+                
+                Text(
+                    text = "${currentMedicine.dosage} ${currentMedicine.unit}",
+                    style = LuklanTypography.h2,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                
+                Surface(
+                    modifier = Modifier.padding(top = 16.dp),
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = currentMedicine.mealTiming,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = Color.White,
+                        style = LuklanTypography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Section Header
-            Text(
-                text = "เวลาการกินยา",
-                style = LuklanTypography.h2,
-                color = Color.White,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Time Slots Block
             Column(
@@ -215,132 +179,92 @@ fun MedicineDetailScreen(
                     val historyKey = "${activeDateStr}_$time"
                     val isTaken = currentMedicine.takenHistory.containsKey(historyKey)
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { 
+                            .padding(vertical = 8.dp)
+                            .clickable {
                                 slotToConfirm = Pair(time, index)
                                 showConfirmationDialog = true
-                            }
-                            .padding(vertical = 12.dp, horizontal = 8.dp)
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "$time น.",
-                            style = LuklanTypography.h3,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            textDecoration = if (isTaken) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
-                        )
-                        Spacer(Modifier.weight(1f))
-                        if (isTaken) {
-                            Box(
-                                modifier = Modifier.size(28.dp).clip(CircleShape).background(LuklanColors.Success),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier.size(28.dp).border(2.dp, Color.White, CircleShape)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = "$time น.",
+                                color = Color.White,
+                                style = LuklanTypography.h2,
+                                fontWeight = FontWeight.Medium
                             )
                         }
+                        
+                        Icon(
+                            imageVector = if (isTaken) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            contentDescription = if (isTaken) "Taken" else "Not taken",
+                            tint = if (isTaken) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.5f),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    if (index < timesToChoose.size - 1) {
+                        Divider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(Modifier.height(32.dp))
 
             // Delete Button
             TextButton(
                 onClick = { showDeleteDialog = true },
-                modifier = Modifier.padding(bottom = 40.dp)
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
-                    Spacer(Modifier.width(8.dp))
-                    Text("ลบยา", color = Color.White.copy(alpha = 0.7f), style = LuklanTypography.bodyLarge)
-                }
+                Text(
+                    "ลบรายการยานี้",
+                    color = Color.White.copy(alpha = 0.6f),
+                    style = LuklanTypography.bodyLarge
+                )
             }
+            
+            Spacer(Modifier.height(48.dp))
         }
     }
 
-    // Taken Confirmation Dialog (Prototype Style)
+    // Confirmation Dialog
     if (showConfirmationDialog && slotToConfirm != null) {
-        Dialog(
-            onDismissRequest = { showConfirmationDialog = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(LuklanColors.Primary)
-                    .padding(20.dp)
-            ) {
-                // Larger Close button more to the top-right
-                IconButton(
-                    onClick = { showConfirmationDialog = false },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 10.dp, y = (-10).dp)
-                ) {
-                    Icon(
-                        Icons.Default.Cancel, 
-                        contentDescription = "Close", 
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+        val time = slotToConfirm!!.first
+        val historyKey = "${activeDateStr}_$time"
+        val isAlreadyTaken = currentMedicine.takenHistory.containsKey(historyKey)
 
+        Dialog(onDismissRequest = { showConfirmationDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color.White,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(Modifier.height(16.dp))
-                    
-                    // Logo in White Circle (Yellow circle removed)
-                    Box(
-                        modifier = Modifier.size(110.dp).clip(CircleShape).background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (currentMedicine.category) {
-                            "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(70.dp))
-                            "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(70.dp))
-                            "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(70.dp))
-                            "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(70.dp))
-                            else -> Text("💊", fontSize = 48.sp)
-                        }
-                    }
-                    
-                    Spacer(Modifier.height(24.dp))
-                    
                     Text(
-                        text = currentMedicine.name,
+                        text = if (isAlreadyTaken) "ยกเลิกการกินยา?" else "บันทึกการกินยา?",
                         style = LuklanTypography.h2,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        color = LuklanColors.Primary,
+                        fontWeight = FontWeight.Bold
                     )
-                    
                     Spacer(Modifier.height(8.dp))
-                    
                     Text(
-                        text = "ใช้ ${currentMedicine.dosage} ${currentMedicine.unit}",
-                        style = LuklanTypography.h3,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        text = "รอบเวลา $time น.",
+                        style = LuklanTypography.bodyLarge,
+                        color = LuklanColors.TextSecondary
                     )
-                    
-                    Text(
-                        text = "เวลา ${slotToConfirm!!.first} น.",
-                        style = LuklanTypography.h3,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(24.dp))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -364,23 +288,15 @@ fun MedicineDetailScreen(
                                 }
                                 showConfirmationDialog = false
                             },
-                            modifier = Modifier.weight(1f).height(90.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.15f)),
-                            contentPadding = PaddingValues(horizontal = 4.dp)
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(
-                                    modifier = Modifier.size(32.dp).clip(CircleShape).background(LuklanColors.Success),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text("ใช้ยาแล้ว", color = Color.White, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 13.sp)
-                            }
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text("กินแล้ว", color = Color.White, fontWeight = FontWeight.Bold)
                         }
-                        
+
                         // Not Taken Button (Red cross)
                         Button(
                             onClick = {
@@ -398,129 +314,50 @@ fun MedicineDetailScreen(
                                 }
                                 showConfirmationDialog = false
                             },
-                            modifier = Modifier.weight(1f).height(90.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.15f)),
-                            contentPadding = PaddingValues(horizontal = 2.dp)
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(
-                                    modifier = Modifier.size(32.dp).clip(CircleShape).background(LuklanColors.Error),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "ยังไม่ได้ใช้ยา",
-                                    color = Color.White,
-                                    style = LuklanTypography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 13.sp
-                                )
-                            }
+                            Icon(Icons.Default.Close, contentDescription = null, tint = Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text("ยังไม่กิน", color = Color.White, fontWeight = FontWeight.Bold)
                         }
+                    }
+                    
+                    TextButton(
+                        onClick = { showConfirmationDialog = false },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Text("ยกเลิก", color = LuklanColors.TextSecondary)
                     }
                 }
             }
         }
     }
 
-    // Delete Dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(24.dp),
-            title = { Text("ต้องการลบยานี้หรอครับ?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold) },
-            text = { Text("คุณต้องการลบยา \"${currentMedicine.name}\" หรือไม่? เราจะหยุดส่งการแจ้งเตือนการกินยานี้ให้คุณ", style = LuklanTypography.bodyLarge) },
+            title = { Text("ลบรายการยา", fontWeight = FontWeight.Bold) },
+            text = { Text("คุณต้องการลบรายการยานี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้") },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
-                        showDeleteDialog = false
                         scope.launch {
-                            notificationScheduler.cancel(currentMedicine)
                             medicineRepository.deleteMedicine(currentMedicine.id)
+                            notificationScheduler.cancel(currentMedicine)
                             onBack()
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Error),
-                    shape = RoundedCornerShape(12.dp)
-                ) { Text("ลบ", color = Color.White) }
+                    }
+                ) {
+                    Text("ลบ", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
-            }
-        )
-    }
-}
-
-@Composable
-fun InfoBox(
-    modifier: Modifier, 
-    icon: ImageVector? = null, 
-    imageType: org.jetbrains.compose.resources.DrawableResource? = null,
-    label: String, 
-    value: String
-) {
-    Box(
-        modifier = modifier
-            .height(90.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(LuklanColors.PrimaryDark.copy(alpha = 0.4f))
-            .padding(horizontal = 8.dp, vertical = 8.dp), // Reduced horizontal padding
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Icon / Image
-            Box(
-                modifier = Modifier.size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (imageType != null) {
-                    Image(
-                        painter = painterResource(imageType),
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp)
-                    )
-                } else if (icon != null) {
-                    // White background for icon center
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                    )
-                    Icon(
-                        icon, 
-                        contentDescription = null, 
-                        tint = LuklanColors.Secondary, 
-                        modifier = Modifier.size(36.dp)
-                    )
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("ยกเลิก")
                 }
             }
-            
-            Spacer(Modifier.width(4.dp)) // Reduced spacing
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label, 
-                    style = LuklanTypography.caption, 
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp, // Fixed size
-                    maxLines = 1
-                )
-                Text(
-                    text = value, 
-                    style = LuklanTypography.bodyLarge, 
-                    color = Color.White, 
-                    fontWeight = FontWeight.Bold, 
-                    maxLines = 1,
-                    fontSize = 16.sp // Fixed size to ensure they look the same
-                )
-            }
-        }
+        )
     }
 }

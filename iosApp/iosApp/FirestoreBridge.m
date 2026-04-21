@@ -14,7 +14,6 @@
               mealTiming:(NSString *)mealTiming
        mealTimingMinutes:(int)mealTimingMinutes
                   userId:(NSString *)userId
-            takenRecords:(NSDictionary<NSString *, NSNumber *> *)takenRecords
             takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                createdAt:(long long)createdAt
                    order:(int)order
@@ -33,13 +32,13 @@
         @"mealTiming": mealTiming,
         @"mealTimingMinutes": @(mealTimingMinutes),
         @"userId": userId,
-        @"takenRecords": takenRecords,
         @"takenHistory": takenHistory,
         @"createdAt": @(createdAt),
         @"order": @(order)
     };
     
-    [[[db collectionWithPath:@"medicines"] documentWithID:medicineId] setData:medicineMap completion:^(NSError * _Nullable error) {
+    NSString *path = [NSString stringWithFormat:@"medicines/%@", medicineId];
+    [[db documentWithPath:path] setData:medicineMap completion:^(NSError * _Nullable error) {
         if (error) {
             completion(error.localizedDescription);
         } else {
@@ -58,30 +57,29 @@
                    category:(NSString *)category
                  mealTiming:(NSString *)mealTiming
           mealTimingMinutes:(int)mealTimingMinutes
-               takenRecords:(NSDictionary<NSString *, NSNumber *> *)takenRecords
                takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                   createdAt:(long long)createdAt
                       order:(int)order
                  completion:(void (^)(NSString * _Nullable error))completion {
 
-          FIRFirestore *db = [FIRFirestore firestore];
-          NSDictionary *medicineMap = @{
-          @"name": name,
-          @"dosage": dosage,
-          @"unit": unit,
-          @"times": times,
-          @"startDate": startDate,
-          @"expiryDate": expiryDate,
-          @"category": category,
-          @"mealTiming": mealTiming,
-          @"mealTimingMinutes": @(mealTimingMinutes),
-          @"takenRecords": takenRecords,
-          @"takenHistory": takenHistory,
-          @"createdAt": @(createdAt),
-          @"order": @(order)
-          };
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSDictionary *medicineMap = @{
+        @"name": name,
+        @"dosage": dosage,
+        @"unit": unit,
+        @"times": times,
+        @"startDate": startDate,
+        @"expiryDate": expiryDate,
+        @"category": category,
+        @"mealTiming": mealTiming,
+        @"mealTimingMinutes": @(mealTimingMinutes),
+        @"takenHistory": takenHistory,
+        @"createdAt": @(createdAt),
+        @"order": @(order)
+    };
     
-    [[[db collectionWithPath:@"medicines"] documentWithID:medicineId] updateData:medicineMap completion:^(NSError * _Nullable error) {
+    NSString *path = [NSString stringWithFormat:@"medicines/%@", medicineId];
+    [[db documentWithPath:path] updateData:medicineMap completion:^(NSError * _Nullable error) {
         if (error) {
             completion(error.localizedDescription);
         } else {
@@ -111,7 +109,8 @@
 + (void)deleteMedicineWithId:(NSString *)medicineId
                  completion:(void (^)(NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"medicines"] documentWithID:medicineId] deleteDocumentWithCompletion:^(NSError * _Nullable error) {
+    NSString *path = [NSString stringWithFormat:@"medicines/%@", medicineId];
+    [[db documentWithPath:path] deleteDocumentWithCompletion:^(NSError * _Nullable error) {
         if (error) {
             completion(error.localizedDescription);
         } else {
@@ -124,7 +123,8 @@
 + (void)getInviteCodeWithUserId:(NSString *)userId
                      completion:(void (^)(NSString * _Nullable code, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"users"] documentWithID:userId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    NSString *path = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:path] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error) {
             completion(nil, error.localizedDescription);
         } else if (snapshot.exists) {
@@ -141,10 +141,12 @@
     FIRFirestore *db = [FIRFirestore firestore];
     FIRWriteBatch *batch = [db batch];
     
-    FIRDocumentReference *codeRef = [[db collectionWithPath:@"invite_codes"] documentWithID:code];
-    [batch setData:@{@"userId": userId, @"createdAt": [FIRTimestamp timestamp]} forDocument:codeRef];
+    NSString *codePath = [NSString stringWithFormat:@"invite_codes/%@", code];
+    FIRDocumentReference *codeRef = [db documentWithPath:codePath];
+    [batch setData:@{@"userId": userId, @"createdAt": [NSDate date]} forDocument:codeRef];
     
-    FIRDocumentReference *userRef = [[db collectionWithPath:@"users"] documentWithID:userId];
+    NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
+    FIRDocumentReference *userRef = [db documentWithPath:userPath];
     [batch setData:@{@"inviteCode": code} forDocument:userRef merge:YES];
     
     [batch commitWithCompletion:^(NSError * _Nullable error) {
@@ -160,7 +162,8 @@
                              inviteCode:(NSString *)inviteCode
                              completion:(void (^)(NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"invite_codes"] documentWithID:inviteCode] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable codeSnapshot, NSError * _Nullable error) {
+    NSString *codePath = [NSString stringWithFormat:@"invite_codes/%@", inviteCode];
+    [[db documentWithPath:codePath] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable codeSnapshot, NSError * _Nullable error) {
         if (error || !codeSnapshot.exists) {
             completion(@"ไม่พบรหัสเชิญนี้");
             return;
@@ -173,10 +176,12 @@
         }
         
         FIRWriteBatch *batch = [db batch];
-        FIRDocumentReference *patientRef = [[db collectionWithPath:@"users"] documentWithID:patientId];
+        NSString *patientPath = [NSString stringWithFormat:@"users/%@", patientId];
+        FIRDocumentReference *patientRef = [db documentWithPath:patientPath];
         [batch updateData:@{@"caretakers": [FIRFieldValue fieldValueForArrayUnion:@[caretakerId]]} forDocument:patientRef];
         
-        FIRDocumentReference *caretakerRef = [[db collectionWithPath:@"users"] documentWithID:caretakerId];
+        NSString *caretakerPath = [NSString stringWithFormat:@"users/%@", caretakerId];
+        FIRDocumentReference *caretakerRef = [db documentWithPath:caretakerPath];
         [batch updateData:@{@"patients": [FIRFieldValue fieldValueForArrayUnion:@[patientId]]} forDocument:caretakerRef];
         
         [batch commitWithCompletion:^(NSError * _Nullable error) {
@@ -197,7 +202,7 @@
     }
     
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"users"] queryWhereField:FIRFieldPath.documentID inAny:userIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    [[[db collectionWithPath:@"users"] queryWhereFieldPath:[FIRFieldPath documentID] in:userIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error) {
             completion(nil, error.localizedDescription);
         } else {
@@ -216,7 +221,8 @@
 + (void)createDefaultGroupWithUser:(NSDictionary *)user
                         completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    NSString *groupId = [[db collectionWithPath:@"care_groups"] documentWithID:@""].documentID;
+    FIRDocumentReference *newGroupRef = [[db collectionWithPath:@"care_groups"] documentWithPath:@""];
+    NSString *groupId = newGroupRef.documentID;
     NSString *userId = user[@"id"];
     NSString *name = [NSString stringWithFormat:@"กลุ่มของ %@", user[@"name"]];
     
@@ -238,8 +244,10 @@
     };
 
     FIRWriteBatch *batch = [db batch];
-    [batch setData:groupMap forDocument:[[db collectionWithPath:@"care_groups"] documentWithID:groupId]];
-    [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[groupId]]} forDocument:[[db collectionWithPath:@"users"] documentWithID:userId]];
+    [batch setData:groupMap forDocument:newGroupRef];
+    
+    NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
+    [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[groupId]]} forDocument:[db documentWithPath:userPath]];
 
     [batch commitWithCompletion:^(NSError * _Nullable error) {
         if (error) {
@@ -272,7 +280,9 @@
 
         FIRWriteBatch *batch = [db batch];
         [batch updateData:@{@"memberIds": [FIRFieldValue fieldValueForArrayUnion:@[userId]]} forDocument:doc.reference];
-        [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[doc.documentID]]} forDocument:[[db collectionWithPath:@"users"] documentWithID:userId]];
+        
+        NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
+        [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[doc.documentID]]} forDocument:[db documentWithPath:userPath]];
 
         [batch commitWithCompletion:^(NSError * _Nullable error) {
             if (error) {
@@ -290,7 +300,8 @@
 + (void)getGroupsForUserId:(NSString *)userId
                 completion:(void (^)(NSArray * _Nullable groups, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"users"] documentWithID:userId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable userSnapshot, NSError * _Nullable error) {
+    NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:userPath] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable userSnapshot, NSError * _Nullable error) {
         if (error || !userSnapshot.exists) {
             completion(@[], error.localizedDescription);
             return;
@@ -302,7 +313,7 @@
             return;
         }
         
-        [[[db collectionWithPath:@"care_groups"] queryWhereField:FIRFieldPath.documentID inAny:groupIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
+        [[[db collectionWithPath:@"care_groups"] queryWhereFieldPath:[FIRFieldPath documentID] in:groupIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
             if (error) {
                 completion(nil, error.localizedDescription);
             } else {
@@ -321,7 +332,8 @@
 + (void)getGroupMembersWithGroupId:(NSString *)groupId
                         completion:(void (^)(NSArray * _Nullable members, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"care_groups"] documentWithID:groupId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error || !snapshot.exists) {
             completion(nil, error.localizedDescription);
             return;
@@ -335,7 +347,8 @@
 + (void)deleteGroupWithGroupId:(NSString *)groupId
                     completion:(void (^)(NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"care_groups"] documentWithID:groupId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error || !snapshot.exists) {
             completion(error.localizedDescription);
             return;
@@ -344,7 +357,8 @@
         NSArray *memberIds = snapshot.data[@"memberIds"];
         FIRWriteBatch *batch = [db batch];
         for (NSString *mId in memberIds) {
-            [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayRemove:@[groupId]]} forDocument:[[db collectionWithPath:@"users"] documentWithID:mId]];
+            NSString *userPath = [NSString stringWithFormat:@"users/%@", mId];
+            [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayRemove:@[groupId]]} forDocument:[db documentWithPath:userPath]];
         }
         [batch deleteDocument:snapshot.reference];
         
@@ -357,7 +371,8 @@
 + (void)getGroupWithGroupId:(NSString *)groupId
                  completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"care_groups"] documentWithID:groupId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error || !snapshot.exists) {
             completion(nil, error.localizedDescription);
         } else {
@@ -373,8 +388,10 @@
                    completion:(void (^)(NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
     FIRWriteBatch *batch = [db batch];
-    [batch updateData:@{@"memberIds": [FIRFieldValue fieldValueForArrayRemove:@[userId]]} forDocument:[[db collectionWithPath:@"care_groups"] documentWithID:groupId]];
-    [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayRemove:@[groupId]]} forDocument:[[db collectionWithPath:@"users"] documentWithID:userId]];
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [batch updateData:@{@"memberIds": [FIRFieldValue fieldValueForArrayRemove:@[userId]]} forDocument:[db documentWithPath:groupPath]];
+    NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
+    [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayRemove:@[groupId]]} forDocument:[db documentWithPath:userPath]];
     [batch commitWithCompletion:^(NSError * _Nullable error) {
         completion(error ? error.localizedDescription : nil);
     }];
@@ -384,7 +401,8 @@
                           newOwnerId:(NSString *)newOwnerId
                           completion:(void (^)(NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"care_groups"] documentWithID:groupId] updateData:@{@"ownerId": newOwnerId} completion:^(NSError * _Nullable error) {
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] updateData:@{@"ownerId": newOwnerId} completion:^(NSError * _Nullable error) {
         completion(error ? error.localizedDescription : nil);
     }];
 }

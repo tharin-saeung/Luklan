@@ -5,7 +5,7 @@ import platform.Foundation.*
 import platform.FirestoreBridge.*
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun addMedicineNative(
+fun addMedicineNative(
     id: String,
     name: String,
     dosage: String,
@@ -42,7 +42,7 @@ internal fun addMedicineNative(
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun getMedicinesNative(
+fun getMedicinesNative(
     userId: String,
     completion: (Any?, String?) -> Unit
 ) {
@@ -55,7 +55,7 @@ internal fun getMedicinesNative(
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun updateMedicineNative(
+fun updateMedicineNative(
     id: String,
     name: String,
     dosage: String,
@@ -90,7 +90,7 @@ internal fun updateMedicineNative(
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun deleteMedicineNative(
+fun deleteMedicineNative(
     id: String,
     completion: (String?) -> Unit
 ) {
@@ -102,29 +102,86 @@ internal fun deleteMedicineNative(
 
 // Caretaker Native Bridge
 @OptIn(ExperimentalForeignApi::class)
-internal fun getInviteCodeNative(userId: String, completion: (String?, String?) -> Unit) {
+fun getInviteCodeNative(userId: String, completion: (String?, String?) -> Unit) {
     FirestoreBridge.getInviteCodeWithUserId(userId) { code, error ->
         completion(code, error)
     }
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun generateInviteCodeNative(userId: String, code: String, completion: (String?) -> Unit) {
+fun generateInviteCodeNative(userId: String, code: String, completion: (String?) -> Unit) {
     FirestoreBridge.generateInviteCodeWithUserId(userId, code) { error ->
         completion(error)
     }
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun connectToPatientNative(caretakerId: String, inviteCode: String, completion: (String?) -> Unit) {
+fun connectToPatientNative(caretakerId: String, inviteCode: String, completion: (String?) -> Unit) {
     FirestoreBridge.connectToPatientWithCaretakerId(caretakerId, inviteCode) { error ->
         completion(error)
     }
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun getUsersWithIdsNative(userIds: List<String>, completion: (Any?, String?) -> Unit) {
+fun getUsersWithIdsNative(userIds: List<String>, completion: (Any?, String?) -> Unit) {
     FirestoreBridge.getUsersWithIds(userIds) { users, error ->
         completion(users, error)
+    }
+}
+
+// CareGroup Native Bridge
+@OptIn(ExperimentalForeignApi::class)
+fun createDefaultGroupNative(user: Map<String, Any>, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.createDefaultGroupWithUser(user as Map<Any?, *>) { group, error ->
+        completion(group, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun joinGroupNative(userId: String, inviteCode: String, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.joinGroupWithUserId(userId, inviteCode) { group, error ->
+        completion(group, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun getGroupsForUserNative(userId: String, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.getGroupsForUserId(userId) { groups, error ->
+        completion(groups, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun getGroupMembersNative(groupId: String, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.getGroupMembersWithGroupId(groupId) { members, error ->
+        completion(members, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun deleteGroupNative(groupId: String, completion: (String?) -> Unit) {
+    FirestoreBridge.deleteGroupWithGroupId(groupId) { error ->
+        completion(error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun getGroupByIdNative(groupId: String, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.getGroupWithGroupId(groupId) { group, error ->
+        completion(group, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun kickMemberNative(groupId: String, userId: String, completion: (String?) -> Unit) {
+    FirestoreBridge.kickMemberWithGroupId(groupId, userId) { error ->
+        completion(error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun transferOwnershipNative(groupId: String, newOwnerId: String, completion: (String?) -> Unit) {
+    FirestoreBridge.transferOwnershipWithGroupId(groupId, newOwnerId) { error ->
+        completion(error)
     }
 }

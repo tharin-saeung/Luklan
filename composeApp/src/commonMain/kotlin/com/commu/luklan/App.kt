@@ -13,14 +13,15 @@ import com.commu.luklan.ui.main.MainScreen
 import com.commu.luklan.ui.login.LoginScreen
 import com.commu.luklan.ui.medicine.AddMedicineScreen
 import com.commu.luklan.ui.medicine.EditMedicineScreen
+import com.commu.luklan.ui.medicine.MedicineDetailScreen
 import com.commu.luklan.ui.onboarding.OnboardingScreen
 import com.commu.luklan.ui.signup.SignupScreen
 import com.commu.luklan.ui.splash.SplashScreen
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -66,7 +67,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         if (target != null) {
                             medicineToEdit = target
                             deepLinkTimeForDetail = initialTime
-                            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                             val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
                             navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
                         }
@@ -266,9 +267,9 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
             }
 
             composable("${Screen.MedicineDetail.route}/{selectedDate}") { backStackEntry ->
-                val date = backStackEntry.arguments?.getString("selectedDate")
+                val date = backStackEntry.arguments?.equals("selectedDate") as? String
                 medicineToEdit?.let { medicine ->
-                    com.commu.luklan.ui.medicine.MedicineDetailScreen(
+                    MedicineDetailScreen(
                         medicine = medicine,
                         initialSlotTime = deepLinkTimeForDetail,
                         selectedDate = date,
