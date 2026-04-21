@@ -67,7 +67,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         if (target != null) {
                             medicineToEdit = target
                             deepLinkTimeForDetail = initialTime
-                            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            val now = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                             val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
 
                             navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
@@ -310,7 +310,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                     onBack = { navController.popBackStack() },
                     onMedicineClick = { medicine ->
                         medicineToEdit = medicine
-                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                        val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
                         val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
 
 

@@ -30,7 +30,7 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
@@ -62,7 +62,7 @@ fun MedicineDetailScreen(
     // Use current date as fallback if none provided
     val activeDateStr = remember(selectedDate) {
         selectedDate ?: run {
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
             "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
         }
     }
