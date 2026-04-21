@@ -19,9 +19,10 @@ import com.commu.luklan.ui.signup.SignupScreen
 import com.commu.luklan.ui.splash.SplashScreen
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -67,7 +68,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         if (target != null) {
                             medicineToEdit = target
                             deepLinkTimeForDetail = initialTime
-                            val now = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
                             val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
 
                             navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
