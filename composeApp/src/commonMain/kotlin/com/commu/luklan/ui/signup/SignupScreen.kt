@@ -1,25 +1,37 @@
 package com.commu.luklan.ui.signup
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.AuthRepository
-import com.commu.luklan.ui.theme.LuklanTheme
+import com.commu.luklan.data.getAuthRepository
+import com.commu.luklan.ui.theme.LuklanColors
+import com.commu.luklan.ui.theme.LuklanSpacing
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignupScreen(onNavigateToHome: () -> Unit, onNavigateToLogin: () -> Unit) {
+fun SignupScreen(
+    role: String = "user",
+    onNavigateToHome: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
+    val authRepository = remember { getAuthRepository() }
+    val scope = rememberCoroutineScope()
+    
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -27,178 +39,189 @@ fun SignupScreen(onNavigateToHome: () -> Unit, onNavigateToLogin: () -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val scope = rememberCoroutineScope()
-    val authRepository = remember { AuthRepository() }
-    val scrollState = rememberScrollState()
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    Column(
-            modifier =
-                    Modifier.fillMaxSize()
-                            .background(LuklanTheme.colors.Background)
-                            .padding(LuklanTheme.spacing.xl)
-                            .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.xxl))
+    val roleTitle = when(role) {
+        "patient" -> "สมัครสมาชิก (ผู้ป่วย)"
+        "caretaker" -> "สมัครสมาชิก (ผู้ดูแล)"
+        else -> "สมัครสมาชิก"
+    }
 
-        Text(
-                text = "สมัครสมาชิก",
-                style = LuklanTheme.typography.h1,
-                color = LuklanTheme.colors.TextPrimary
-        )
+    Scaffold(
+        containerColor = LuklanColors.Background
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = roleTitle,
+                style = LuklanTypography.h1,
+                color = LuklanColors.Primary,
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.xxl))
-
-        // Name Input
-        OutlinedTextField(
+            // Name Field
+            OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
                 label = { Text("ชื่อ") },
-                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
-                colors =
-                        OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                                unfocusedBorderColor = LuklanTheme.colors.Indicator
-                        )
-        )
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Email Input
-        OutlinedTextField(
+            // Email Field
+            OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("อีเมล") },
                 modifier = Modifier.fillMaxWidth(),
+                label = { Text("อีเมล") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                shape = RoundedCornerShape(16.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                placeholder = { Text("example@email.com") },
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
-                colors =
-                        OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                                unfocusedBorderColor = LuklanTheme.colors.Indicator
-                        )
-        )
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Password Input
-        OutlinedTextField(
+            // Password Field
+            OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
+                modifier = Modifier.fillMaxWidth(),
                 label = { Text("รหัสผ่าน") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
-                colors =
-                        OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                                unfocusedBorderColor = LuklanTheme.colors.Indicator
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
                         )
-        )
-
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
-
-        // Confirm Password Input
-        OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("ยืนยันรหัสผ่าน") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
-                colors =
-                        OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = LuklanTheme.colors.Surface,
-                                unfocusedContainerColor = LuklanTheme.colors.Surface,
-                                focusedBorderColor = LuklanTheme.colors.TextSecondary,
-                                unfocusedBorderColor = LuklanTheme.colors.Indicator
-                        )
-        )
-
-        if (errorMessage != null) {
-            Spacer(modifier = Modifier.height(LuklanTheme.spacing.sm))
-            Text(
-                    text = errorMessage!!,
-                    color = LuklanTheme.colors.Error,
-                    style = LuklanTypography.bodyMedium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.xl))
-
-        Button(
-                onClick = {
-                    when {
-                        name.isBlank() || email.isBlank() || password.isBlank() -> {
-                            errorMessage = "กรุณากรอกข้อมูลให้ครบถ้วน"
-                        }
-                        password != confirmPassword -> {
-                            errorMessage = "รหัสผ่านไม่ตรงกัน"
-                        }
-                        password.length < 6 -> {
-                            errorMessage = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
-                        }
-                        else -> {
-                            isLoading = true
-                            errorMessage = null
-                            scope.launch {
-                                val result = authRepository.signUpWithEmail(email, password, name)
-                                isLoading = false
-                                if (result.isSuccess) {
-                                    onNavigateToHome()
-                                } else {
-                                    errorMessage = "สมัครสมาชิกไม่สำเร็จ: ${result.exceptionOrNull()?.message}"
-                                }
-                            }
-                        }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(LuklanTheme.dimensions.buttonLarge),
-                shape = RoundedCornerShape(LuklanTheme.dimensions.radiusLarge),
-                colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Primary),
-                enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = LuklanTheme.colors.OnPrimary)
-            } else {
+                shape = RoundedCornerShape(16.dp),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Confirm Password Field
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("ยืนยันรหัสผ่าน") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                        text = "สมัครสมาชิก",
-                        style = LuklanTypography.bodyLarge,
-                        color = LuklanTheme.colors.OnPrimary
+                    text = errorMessage!!,
+                    color = LuklanColors.Error,
+                    style = LuklanTypography.bodySmall
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                    text = "มีบัญชีอยู่แล้ว? ",
-                    style = LuklanTypography.bodyMedium,
-                    color = LuklanTheme.colors.TextSecondary
-            )
-            Text(
-                    text = "เข้าสู่ระบบ",
-                    style = LuklanTypography.bodyMedium,
-                    color = LuklanTheme.colors.Primary,
-                    modifier = Modifier.clickable { onNavigateToLogin() }
-            )
+            Button(
+                onClick = {
+                    if (password != confirmPassword) {
+                        errorMessage = "รหัสผ่านไม่ตรงกัน"
+                        return@Button
+                    }
+                    if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                        errorMessage = "กรุณากรอกข้อมูลให้ครบถ้วน"
+                        return@Button
+                    }
+                    
+                    scope.launch {
+                        isLoading = true
+                        errorMessage = null
+                        authRepository.signUpWithEmail(email, password, name, role)
+                            .onSuccess {
+                                onNavigateToHome()
+                            }
+                            .onFailure {
+                                errorMessage = it.message ?: "สมัครสมาชิกไม่สำเร็จ"
+                            }
+                        isLoading = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Primary),
+                shape = RoundedCornerShape(28.dp),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("สมัครสมาชิก", style = LuklanTypography.h3, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("มีบัญชีอยู่แล้ว?", style = LuklanTypography.bodyLarge, color = LuklanColors.TextSecondary)
+                TextButton(onClick = onNavigateToLogin) {
+                    Text(
+                        text = "เข้าสู่ระบบ",
+                        style = LuklanTypography.bodyLarge,
+                        color = LuklanColors.Primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
-        
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.xl))
     }
 }

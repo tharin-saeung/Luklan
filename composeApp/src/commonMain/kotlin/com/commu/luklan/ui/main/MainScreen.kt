@@ -1,27 +1,35 @@
 package com.commu.luklan.ui.main
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.Medicine
+import com.commu.luklan.data.User
+import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.ui.home.HomeScreen
 import com.commu.luklan.ui.theme.*
+import luklan.composeapp.generated.resources.Res
+import luklan.composeapp.generated.resources.capsule2
+import org.jetbrains.compose.resources.painterResource
 
 enum class MainTab {
     HOME,
@@ -31,114 +39,88 @@ enum class MainTab {
 
 @Composable
 fun MainScreen(
+    selectedTab: MainTab = MainTab.HOME,
+    onTabSelected: (MainTab) -> Unit,
     onNavigateToAddMedicine: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToMedicineDetail: (Medicine) -> Unit,
+    onNavigateToMedicineDetail: (Medicine, String) -> Unit,
     onNavigateToHistory: () -> Unit,
-    onNavigateToMedicineGroups: () -> Unit
+    onNavigateToMedicineGroups: () -> Unit,
+    onNavigateToInviteCaretaker: () -> Unit,
+    onNavigateToCaretakerDashboard: () -> Unit,
+    onNavigateToPatientTimeline: (String, String) -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(MainTab.HOME) }
+    val authRepository = remember { getAuthRepository() }
+    var userProfile by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(Unit) {
+        authRepository.getCurrentUserId()?.let { uid ->
+            authRepository.getUserProfile(uid).onSuccess { userProfile = it }
+        }
+    }
 
     Scaffold(
         bottomBar = {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp),
+                modifier = Modifier.fillMaxWidth().height(110.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                // Main Navigation background (80.dp high)
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp),
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                     color = Color.White,
                     shadowElevation = 8.dp
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 32.dp),
+                        modifier = Modifier.fillMaxSize(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Home Tab
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { selectedTab = MainTab.HOME }
-                        ) {
-                            Icon(
-                                imageVector = if (selectedTab == MainTab.HOME) Icons.Filled.Home else Icons.Outlined.Home,
-                                contentDescription = "Home",
-                                tint = LuklanColors.Primary,
-                                modifier = Modifier.size(30.dp)
-                            )
-                            Text(
-                                text = "หน้าหลัก",
-                                style = LuklanTypography.bodySmall,
-                                color = LuklanColors.Primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        TabItem(
+                            icon = Icons.Filled.Home,
+                            label = "หน้าหลัก",
+                            isSelected = selectedTab == MainTab.HOME,
+                            onClick = { onTabSelected(MainTab.HOME) },
+                            modifier = Modifier.weight(1f)
+                        )
 
-                        Spacer(Modifier.width(80.dp)) // Space for central emergency button
+                        Box(modifier = Modifier.weight(1.25f)) // Spacer for center button
 
-                        // Menu Tab
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { selectedTab = MainTab.MENU }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Apps,
-                                contentDescription = "Menu",
-                                tint = LuklanColors.Primary,
-                                modifier = Modifier.size(30.dp)
-                            )
-                            Text(
-                                text = "เมนู",
-                                style = LuklanTypography.bodySmall,
-                                color = LuklanColors.Primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        TabItem(
+                            icon = Icons.Default.Apps,
+                            label = "เมนู",
+                            isSelected = selectedTab == MainTab.MENU,
+                            onClick = { onTabSelected(MainTab.MENU) },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
-
-                // Central Emergency "Hump" Button (Flush with bottom)
-                Box(
-                    modifier = Modifier
-                        .size(width = 120.dp, height = 100.dp)
-                        .clip(RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                        .background(LuklanColors.Secondary)
-                        .clickable { selectedTab = MainTab.EMERGENCY },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "ฉุกเฉิน",
-                        color = Color.White,
-                        style = LuklanTypography.h3,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 12.dp) // Adjusted for 100dp height
-                    )
-                }
+                
+                EmergencyButton(
+                    onTrigger = { onTabSelected(MainTab.EMERGENCY) },
+                    modifier = Modifier.width(150.dp).height(110.dp)
+                )
             }
         },
         containerColor = LuklanColors.Background
-    ) { paddingValues ->
-        // Use fixed 80.dp instead of calculateBottomPadding (which is 110dp) to remove the gap
+    ) { _ ->
         Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp)) {
             when (selectedTab) {
-                MainTab.HOME -> HomeScreen(
-                    onNavigateToAddMedicine = onNavigateToAddMedicine,
-                    onNavigateToProfile = onNavigateToProfile,
-                    onNavigateToMedicineDetail = onNavigateToMedicineDetail
-                )
-                MainTab.EMERGENCY -> EmergencyScreen()
+                MainTab.HOME -> {
+                    HomeScreen(
+                        onNavigateToAddMedicine = onNavigateToAddMedicine,
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToMedicineDetail = onNavigateToMedicineDetail
+                    )
+                }
+                MainTab.EMERGENCY -> EmergencyScreen(onBack = { onTabSelected(MainTab.HOME) })
                 MainTab.MENU -> MenuScreen(
+                    userRole = userProfile?.role,
                     onNavigateToProfile = onNavigateToProfile,
                     onNavigateToHistory = onNavigateToHistory,
-                    onNavigateToMedicineGroups = onNavigateToMedicineGroups
+                    onNavigateToMedicineGroups = onNavigateToMedicineGroups,
+                    onNavigateToInviteCaretaker = onNavigateToInviteCaretaker,
+                    onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard
                 )
             }
         }
@@ -146,119 +128,237 @@ fun MainScreen(
 }
 
 @Composable
-fun EmergencyScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(LuklanSpacing.lg),
-        contentAlignment = Alignment.Center
+fun TabItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    label: String, 
+    isSelected: Boolean, 
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable { onClick() }
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                Icons.Default.LocalHospital,
-                contentDescription = "Emergency",
-                tint = LuklanColors.Primary,
-                modifier = Modifier.size(64.dp)
-            )
-            Text(
-                text = "ฉุกเฉิน",
-                style = LuklanTypography.h2,
-                fontWeight = FontWeight.Bold,
-                color = LuklanColors.TextPrimary
-            )
-            Text(
-                text = "ฟีเจอร์นี้จะพร้อมใช้งานเร็วๆ นี้",
-                style = LuklanTypography.bodyLarge,
-                color = LuklanColors.TextSecondary
-            )
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (isSelected) LuklanColors.Primary else LuklanColors.Primary.copy(alpha = 0.5f),
+            modifier = Modifier.size(30.dp)
+        )
+        Text(
+            text = label,
+            style = LuklanTypography.bodySmall,
+            color = if (isSelected) LuklanColors.Primary else LuklanColors.Primary.copy(alpha = 0.5f),
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
+    var isHolding by remember { mutableStateOf(false) }
+    val progress by animateFloatAsState(
+        targetValue = if (isHolding) 1f else 0f,
+        animationSpec = if (isHolding) tween(2000, easing = LinearEasing) else tween(300),
+        label = "SOSProgress"
+    )
+
+    LaunchedEffect(progress) {
+        if (progress == 1f) {
+            onTrigger()
+            isHolding = false
         }
     }
+
+    val bellShape = GenericShape { size, _ ->
+        val w = size.width
+        val h = size.height
+        moveTo(0f, h)
+        cubicTo(w * 0.1f, h, w * 0.15f, h * 0.7f, w * 0.2f, h * 0.35f)
+        cubicTo(w * 0.3f, 0f, w * 0.7f, 0f, w * 0.8f, h * 0.35f)
+        cubicTo(w * 0.85f, h * 0.7f, w * 0.9f, h, w, h)
+        close()
+    }
+
+    Box(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    isHolding = true
+                    try { awaitRelease() } finally { isHolding = false }
+                })
+            },
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .clip(bellShape)
+                .background(LuklanColors.Secondary),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(progress).background(LuklanColors.Primary))
+            Text("ฉุกเฉิน", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 32.dp))
+        }
+    }
+}
+
+@Composable
+fun EmergencyScreen(onBack: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Primary).padding(LuklanSpacing.lg), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+            Box(Modifier.size(120.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.LocalHospital, null, tint = LuklanColors.Error, modifier = Modifier.size(80.dp))
+            }
+            Text("กำลังส่งสัญญาณฉุกเฉิน...", style = LuklanTypography.h1, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+            Text("ผู้ดูแลของคุณได้รับแจ้งเตือนแล้ว", style = LuklanTypography.bodyLarge, color = Color.White.copy(alpha = 0.8f))
+            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text("ยกเลิก", style = LuklanTypography.h3)
+            }
+        }
+    }
+}
+
+@Composable
+fun PillIcon(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(Res.drawable.capsule2),
+        contentDescription = null,
+        modifier = modifier
+    )
 }
 
 @Composable
 fun MenuScreen(
+    userRole: String?,
     onNavigateToProfile: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    onNavigateToMedicineGroups: () -> Unit
+    onNavigateToMedicineGroups: () -> Unit,
+    onNavigateToInviteCaretaker: () -> Unit,
+    onNavigateToCaretakerDashboard: () -> Unit
 ) {
     var searchText by remember { mutableStateOf("") }
-    
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LuklanColors.Background)
+        modifier = Modifier.fillMaxSize().background(LuklanColors.Background),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(Modifier.height(48.dp))
+        
         Text(
-            text = "เมนู",
-            style = LuklanTypography.h2,
-            fontWeight = FontWeight.Bold,
+            "เมนู", 
+            style = LuklanTypography.h1, 
+            fontWeight = FontWeight.Bold, 
             color = LuklanColors.Primary,
-            modifier = Modifier.padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.lg)
+            fontSize = 32.sp
         )
         
+        Spacer(Modifier.height(24.dp))
+        
         OutlinedTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.sm),
-            placeholder = { Text("ค้นหา", color = Color(0xFF9E9E9E)) },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = LuklanColors.Primary
-                )
-            },
-            shape = RoundedCornerShape(50.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = LuklanColors.Primary.copy(alpha = 0.3f),
-                unfocusedBorderColor = Color(0xFFE0E0E0)
-            ),
+            value = searchText, 
+            onValueChange = { searchText = it }, 
+            modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg), 
+            placeholder = { Text("ค้นหา") }, 
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = LuklanColors.Primary) }, 
+            shape = RoundedCornerShape(50.dp), 
+            colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), 
             singleLine = true
         )
         
-        Spacer(modifier = Modifier.height(LuklanSpacing.md))
+        Spacer(Modifier.height(LuklanSpacing.lg))
         
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.sm),
-            colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-            shape = RoundedCornerShape(24.dp),
-            onClick = onNavigateToMedicineGroups
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Medication, contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "กลุ่มยา", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                }
-            }
+            MenuCardWide(
+                icon = Icons.Default.Medication,
+                label = "กลุ่มยา", 
+                onClick = onNavigateToMedicineGroups, 
+                color = LuklanColors.Primary
+            )
+            
+            MenuCardWide(
+                icon = Icons.Default.History, 
+                label = "ประวัติการกินยา", 
+                onClick = onNavigateToHistory, 
+                color = LuklanColors.Primary
+            )
+            
+            MenuCardWide(
+                icon = Icons.Default.People, 
+                label = "กลุ่มผู้ดูแล", 
+                onClick = onNavigateToCaretakerDashboard, 
+                color = LuklanColors.Primary
+            )
         }
         
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .padding(horizontal = LuklanSpacing.lg, vertical = LuklanSpacing.sm),
-            colors = CardDefaults.cardColors(containerColor = LuklanColors.Primary),
-            shape = RoundedCornerShape(24.dp),
-            onClick = onNavigateToHistory
+        Spacer(Modifier.weight(1f))
+        
+        ListItem(
+            headlineContent = { Text("ข้อมูลส่วนตัว", style = LuklanTypography.bodyLarge) }, 
+            leadingContent = { Icon(Icons.Default.Person, null, tint = LuklanColors.Primary) }, 
+            trailingContent = { Icon(Icons.Default.ChevronRight, null) }, 
+            modifier = Modifier.clickable { onNavigateToProfile() }
+        )
+    }
+}
+
+@Composable
+fun MenuCardWide(
+    icon: Any, 
+    label: String, 
+    onClick: () -> Unit, 
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth().height(140.dp), 
+        colors = CardDefaults.cardColors(containerColor = color), 
+        shape = RoundedCornerShape(24.dp), 
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.History, contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "ประวัติการกินยา", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier.size(80.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (label == "กลุ่มยา") {
+                    PillIcon(modifier = Modifier.size(65.dp))
+                } else if (icon is org.jetbrains.compose.resources.DrawableResource) {
+                    Image(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(75.dp)
+                    )
+                } else if (icon is androidx.compose.ui.graphics.vector.ImageVector) {
+                    Icon(
+                        icon, 
+                        null, 
+                        tint = Color.White, 
+                        modifier = Modifier.size(70.dp)
+                    )
                 }
             }
+            
+            Spacer(Modifier.width(24.dp))
+            
+            Text(
+                label, 
+                color = Color.White, 
+                style = LuklanTypography.h2,
+                fontWeight = FontWeight.Bold, 
+                textAlign = TextAlign.Start,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

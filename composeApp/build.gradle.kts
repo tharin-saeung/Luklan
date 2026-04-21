@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
             implementation(libs.kotlinx.datetime)
+            implementation(libs.qr.kit)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -15,9 +15,9 @@ actual class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
-    actual suspend fun signUpWithEmail(email: String, password: String, name: String): Result<Unit> {
+    actual suspend fun signUpWithEmail(email: String, password: String, name: String, role: String): Result<Unit> {
         return try {
-            Log.d("AuthRepository", "Starting signup for email: $email")
+            Log.d("AuthRepository", "Starting signup for email: $email with role: $role")
             
             // Create authentication account
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
@@ -30,7 +30,10 @@ actual class AuthRepository {
                 "email" to email,
                 "name" to name,
                 "createdAt" to com.google.firebase.Timestamp.now(),
-                "role" to "user"
+                "role" to role,
+                "groupIds" to emptyList<String>(),
+                "caretakers" to emptyList<String>(),
+                "patients" to emptyList<String>()
             )
 
             var saved = false
@@ -42,16 +45,22 @@ actual class AuthRepository {
                         .document(userId)
                         .set(userData)
                         .await()
+                    
+                    // NEW: Create default group for patient
+                    if (role == "patient") {
+                        val groupRepo = getGroupRepository()
+                        val user = User(id = userId, name = name, role = role)
+                        groupRepo.createDefaultGroup(user)
+                    }
+
                     Log.d("AuthRepository", "User data saved to Firestore successfully (attempt $attempt)")
                     saved = true
                     break
                 } catch (e: Exception) {
                     lastError = e
                     Log.w("AuthRepository", "Failed to save user data to Firestore (attempt $attempt): ${e.message}")
-                    // If non-transient (permission denied), don't keep retrying.
                     val msg = e.message ?: ""
                     if (msg.contains("PERMISSION_DENIED", ignoreCase = true) || msg.contains("permission denied", ignoreCase = true)) {
-                        Log.w("AuthRepository", "Firestore permission denied when writing user document: ${e.message}")
                         break
                     }
                     if (attempt < maxAttempts) delay(500L * attempt)
@@ -59,10 +68,10 @@ actual class AuthRepository {
             }
 
             if (!saved) {
-                // Auth account was created but writing user profile failed. This can confuse users if we show
-                // a raw error. We'll treat signup as successful (so user can sign in) but log the failure.
-                Log.e("AuthRepository", "User created but Firestore write failed after $maxAttempts attempts: ${lastError?.message}")
-                // Optionally you could attempt to delete the auth user here to avoid orphaned accounts.
+                // Critical: if we can't save the profile, the app will break later.
+                // We should delete the auth account to prevent orphaned entries and inform the user.
+                auth.currentUser?.delete()?.await()
+                throw lastError ?: Exception("ไม่สามารถบันทึกข้อมูลโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง")
             }
 
             Result.success(Unit)
@@ -101,8 +110,34 @@ actual class AuthRepository {
         return auth.currentUser?.uid
     }
 
+    actual suspend fun getUserProfile(userId: String): Result<User> {
+        return try {
+            val doc = firestore.collection("users").document(userId).get().await()
+            if (doc.exists()) {
+                Result.success(doc.toUser())
+            } else {
+                Result.failure(Exception("User not found"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     actual fun signOut() {
         auth.signOut()
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toUser(): User {
+        return User(
+            id = id,
+            name = getString("name") ?: "",
+            email = getString("email") ?: "",
+            role = getString("role") ?: "user",
+            groupIds = (get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            inviteCode = getString("inviteCode") ?: "",
+            caretakers = (get("caretakers") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            patients = (get("patients") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        )
     }
 }
 

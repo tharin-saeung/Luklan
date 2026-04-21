@@ -1,40 +1,16 @@
 package com.commu.luklan.data
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class MedicineRepositoryAndroid : MedicineRepository {
     private val db = FirebaseFirestore.getInstance()
-    private val medicinesCollection = db.collection("medicines")
+    private val collection = db.collection("medicines")
 
     override suspend fun addMedicine(medicine: Medicine): Result<Unit> {
         return try {
-            val medicineMap = mapOf(
-                "id" to medicine.id,
-                "name" to medicine.name,
-                "description" to medicine.description,
-                "dosage" to medicine.dosage,
-                "time" to medicine.time,
-                "times" to medicine.times,
-                "frequency" to medicine.frequency,
-                "timeUnit" to medicine.timeUnit,
-                "frequencyCount" to medicine.frequencyCount,
-                "amountPerDose" to medicine.amountPerDose,
-                "quantity" to medicine.quantity,
-                "unit" to medicine.unit,
-                "startDate" to medicine.startDate,
-                "expiryDate" to medicine.expiryDate,
-                "category" to medicine.category,
-                "mealTiming" to medicine.mealTiming,
-                "storageInstructions" to medicine.storageInstructions,
-                "notes" to medicine.notes,
-                "userId" to medicine.userId,
-                "taken" to medicine.taken,
-                "takenRecords" to medicine.takenRecords,
-                "createdAt" to medicine.createdAt,
-                "order" to medicine.order
-            )
-            medicinesCollection.document(medicine.id).set(medicineMap).await()
+            collection.document(medicine.id).set(medicine.toMap()).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -43,36 +19,9 @@ class MedicineRepositoryAndroid : MedicineRepository {
 
     override suspend fun getMedicines(userId: String): Result<List<Medicine>> {
         return try {
-            val snapshot = medicinesCollection.whereEqualTo("userId", userId).get().await()
-            val medicines = snapshot.documents.mapNotNull { doc ->
-                Medicine(
-                    id = doc.getString("id") ?: "",
-                    name = doc.getString("name") ?: "",
-                    description = doc.getString("description") ?: "",
-                    dosage = doc.getString("dosage") ?: "",
-                    time = doc.getString("time") ?: "",
-                    times = (doc.get("times") as? List<*>)?.filterIsInstance<String>()
-                        ?: listOfNotNull(doc.getString("time")),
-                    frequency = doc.getString("frequency") ?: "",
-                    timeUnit = doc.getString("timeUnit") ?: "วัน",
-                    frequencyCount = (doc.getLong("frequencyCount") ?: 1).toInt(),
-                    amountPerDose = doc.getString("amountPerDose") ?: "",
-                    quantity = (doc.getLong("quantity") ?: 0).toInt(),
-                    unit = doc.getString("unit") ?: "เม็ด",
-                    startDate = doc.getString("startDate") ?: "",
-                    expiryDate = doc.getString("expiryDate") ?: "",
-                    category = doc.getString("category") ?: "",
-                    mealTiming = doc.getString("mealTiming") ?: "",
-                    storageInstructions = doc.getString("storageInstructions") ?: "",
-                    notes = doc.getString("notes") ?: "",
-                    userId = doc.getString("userId") ?: "",
-                    taken = doc.getBoolean("taken") ?: false,
-                    takenRecords = (doc.get("takenRecords") as? Map<*, *>)?.map { (k, v) -> k.toString() to (v as? Boolean ?: false) }?.toMap() ?: emptyMap(),
-                    createdAt = doc.getLong("createdAt") ?: 0L,
-                    order = (doc.getLong("order") ?: 0).toInt()
-                )
-            }
-            Result.success(medicines.sortedWith(compareBy({ it.order }, { it.times.firstOrNull() ?: it.time })))
+            val snapshot = collection.whereEqualTo("userId", userId).get().await()
+            val list = snapshot.documents.mapNotNull { it.toMedicine() }
+            Result.success(list.sortedBy { it.order })
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -80,32 +29,7 @@ class MedicineRepositoryAndroid : MedicineRepository {
 
     override suspend fun updateMedicine(medicine: Medicine): Result<Unit> {
         return try {
-            val medicineMap = mapOf(
-                "id" to medicine.id,
-                "name" to medicine.name,
-                "description" to medicine.description,
-                "dosage" to medicine.dosage,
-                "time" to medicine.time,
-                "times" to medicine.times,
-                "frequency" to medicine.frequency,
-                "timeUnit" to medicine.timeUnit,
-                "frequencyCount" to medicine.frequencyCount,
-                "amountPerDose" to medicine.amountPerDose,
-                "quantity" to medicine.quantity,
-                "unit" to medicine.unit,
-                "startDate" to medicine.startDate,
-                "expiryDate" to medicine.expiryDate,
-                "category" to medicine.category,
-                "mealTiming" to medicine.mealTiming,
-                "storageInstructions" to medicine.storageInstructions,
-                "notes" to medicine.notes,
-                "userId" to medicine.userId,
-                "taken" to medicine.taken,
-                "takenRecords" to medicine.takenRecords,
-                "createdAt" to medicine.createdAt,
-                "order" to medicine.order
-            )
-            medicinesCollection.document(medicine.id).set(medicineMap).await()
+            collection.document(medicine.id).set(medicine.toMap(), SetOptions.merge()).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -114,10 +38,50 @@ class MedicineRepositoryAndroid : MedicineRepository {
 
     override suspend fun deleteMedicine(medicineId: String): Result<Unit> {
         return try {
-            medicinesCollection.document(medicineId).delete().await()
+            collection.document(medicineId).delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private fun Medicine.toMap() = mapOf(
+        "id" to id,
+        "name" to name,
+        "dosage" to dosage,
+        "unit" to unit,
+        "times" to times,
+        "startDate" to startDate,
+        "expiryDate" to expiryDate,
+        "category" to category,
+        "mealTiming" to mealTiming,
+        "mealTimingMinutes" to mealTimingMinutes,
+        "userId" to userId,
+        "takenHistory" to takenHistory,
+        "createdAt" to createdAt,
+        "order" to order
+    )
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toMedicine(): Medicine? {
+        return try {
+            Medicine(
+                id = id,
+                name = getString("name") ?: "",
+                dosage = getString("dosage") ?: "",
+                unit = getString("unit") ?: "เม็ด",
+                times = (get("times") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                startDate = getString("startDate") ?: "",
+                expiryDate = getString("expiryDate") ?: "",
+                category = getString("category") ?: "เม็ด",
+                mealTiming = getString("mealTiming") ?: "ก่อนอาหาร",
+                mealTimingMinutes = getLong("mealTimingMinutes")?.toInt() ?: 30,
+                userId = getString("userId") ?: "",
+                takenHistory = (get("takenHistory") as? Map<*, *>)?.filter { it.key is String && it.value is Long } as? Map<String, Long> ?: emptyMap(),
+                createdAt = getLong("createdAt") ?: 0L,
+                order = getLong("order")?.toInt() ?: 0
+            )
+        } catch (e: Exception) {
+            null
         }
     }
 }

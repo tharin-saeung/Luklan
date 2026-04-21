@@ -2,28 +2,22 @@ package com.commu.luklan.data
 
 import kotlinx.cinterop.*
 import platform.Foundation.*
-import platform.FirestoreBridge.FirestoreBridge
+import platform.FirestoreBridge.*
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun addMedicineNative(
     id: String,
     name: String,
-    description: String,
     dosage: String,
-    time: String,
-    frequency: String,
-    quantity: Int,
     unit: String,
+    times: List<String>,
     startDate: String,
     expiryDate: String,
     category: String,
     mealTiming: String,
-    storageInstructions: String,
-    notes: String,
-    times: List<String>,
+    mealTimingMinutes: Int,
     userId: String,
-    taken: Boolean,
-    takenRecords: Map<String, Boolean>,
+    takenHistory: Map<String, Long>,
     createdAt: Long,
     order: Int,
     completion: (String?) -> Unit
@@ -31,22 +25,16 @@ internal fun addMedicineNative(
     FirestoreBridge.addMedicineWithId(
         medicineId = id,
         name = name,
-        description = description,
         dosage = dosage,
-        time = time,
-        frequency = frequency,
-        quantity = quantity.toLong(),
         unit = unit,
+        times = times,
         startDate = startDate,
         expiryDate = expiryDate,
         category = category,
         mealTiming = mealTiming,
-        storageInstructions = storageInstructions,
-        notes = notes,
-        times = times,
+        mealTimingMinutes = mealTimingMinutes,
         userId = userId,
-        taken = taken,
-        takenRecords = takenRecords as Map<Any?, *>,
+        takenHistory = takenHistory as Map<Any?, *>,
         createdAt = createdAt,
         order = order,
         completion = { error: String? -> completion(error) }
@@ -70,21 +58,15 @@ internal fun getMedicinesNative(
 internal fun updateMedicineNative(
     id: String,
     name: String,
-    description: String,
     dosage: String,
-    time: String,
-    frequency: String,
-    quantity: Int,
     unit: String,
+    times: List<String>,
     startDate: String,
     expiryDate: String,
     category: String,
     mealTiming: String,
-    storageInstructions: String,
-    notes: String,
-    times: List<String>,
-    taken: Boolean,
-    takenRecords: Map<String, Boolean>,
+    mealTimingMinutes: Int,
+    takenHistory: Map<String, Long>,
     createdAt: Long,
     order: Int,
     completion: (String?) -> Unit
@@ -92,21 +74,15 @@ internal fun updateMedicineNative(
     FirestoreBridge.updateMedicineWithId(
         medicineId = id,
         name = name,
-        description = description,
         dosage = dosage,
-        time = time,
-        frequency = frequency,
-        quantity = quantity.toLong(),
         unit = unit,
+        times = times,
         startDate = startDate,
         expiryDate = expiryDate,
         category = category,
         mealTiming = mealTiming,
-        storageInstructions = storageInstructions,
-        notes = notes,
-        times = times,
-        taken = taken,
-        takenRecords = takenRecords as Map<Any?, *>,
+        mealTimingMinutes = mealTimingMinutes,
+        takenHistory = takenHistory as Map<Any?, *>,
         createdAt = createdAt,
         order = order,
         completion = { error: String? -> completion(error) }
@@ -122,4 +98,33 @@ internal fun deleteMedicineNative(
         medicineId = id,
         completion = { error: String? -> completion(error) }
     )
+}
+
+// Caretaker Native Bridge
+@OptIn(ExperimentalForeignApi::class)
+internal fun getInviteCodeNative(userId: String, completion: (String?, String?) -> Unit) {
+    FirestoreBridge.getInviteCodeWithUserId(userId) { code, error ->
+        completion(code, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun generateInviteCodeNative(userId: String, code: String, completion: (String?) -> Unit) {
+    FirestoreBridge.generateInviteCodeWithUserId(userId, code) { error ->
+        completion(error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun connectToPatientNative(caretakerId: String, inviteCode: String, completion: (String?) -> Unit) {
+    FirestoreBridge.connectToPatientWithCaretakerId(caretakerId, inviteCode) { error ->
+        completion(error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun getUsersWithIdsNative(userIds: List<String>, completion: (Any?, String?) -> Unit) {
+    FirestoreBridge.getUsersWithIds(userIds) { users, error ->
+        completion(users, error)
+    }
 }

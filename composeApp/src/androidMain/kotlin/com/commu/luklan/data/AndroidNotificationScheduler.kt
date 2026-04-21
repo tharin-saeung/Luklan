@@ -15,7 +15,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         // Clear existing alarms for this medicine first
         cancel(medicine)
 
-        val timesToSchedule = if (medicine.times.isNotEmpty()) medicine.times else listOf(medicine.time)
+        val timesToSchedule = medicine.times
         
         timesToSchedule.forEachIndexed { index, timeStr ->
             val timeParts = timeStr.split(":")
@@ -24,14 +24,12 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                 val minute = timeParts[1].toIntOrNull() ?: return@forEachIndexed
 
                 // Build notification message with dosage and unit
-                val dosageDisplay = if (medicine.amountPerDose.isNotEmpty()) {
-                    "${medicine.amountPerDose} ${medicine.unit}".trim()
-                } else if (medicine.dosage.isNotEmpty()) {
+                val dosageDisplay = if (medicine.dosage.isNotEmpty()) {
                     "${medicine.dosage} ${medicine.unit}".trim()
                 } else ""
 
                 val message = buildString {
-                    append("ได้เวลากินยา ${medicine.name}")
+                    append("ได้เวลาใช้ยา ${medicine.name}")
                     if (dosageDisplay.isNotEmpty()) {
                         append(" $dosageDisplay")
                     }
@@ -59,6 +57,12 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     set(Calendar.MINUTE, minute)
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
+                    
+                    // Adjust time based on mealTimingMinutes
+                    when (medicine.mealTiming) {
+                        "ก่อนอาหาร" -> add(Calendar.MINUTE, -medicine.mealTimingMinutes)
+                        "หลังอาหาร" -> add(Calendar.MINUTE, medicine.mealTimingMinutes)
+                    }
                 }
 
                 // If the time has already passed today, schedule for tomorrow
@@ -71,6 +75,25 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                         AlarmManager.RTC_WAKEUP,
                         calendar.timeInMillis,
                         pendingIntent
+                    )
+                    
+                    // Schedule Check-in reminder (10 minutes after adjusted dose time)
+                    val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
+                        putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการกินยา ${medicine.name} เลยนะครับ")
+                        putExtra("EXTRA_MEDICINE_ID", medicine.id)
+                        putExtra("EXTRA_TIME", timeStr)
+                        putExtra("EXTRA_IS_CHECKIN", true)
+                    }
+                    val checkinPendingIntent = PendingIntent.getBroadcast(
+                        context,
+                        requestCode + 1000, // Offset for check-in
+                        checkinIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis + (10 * 60 * 1000), // +10 mins
+                        checkinPendingIntent
                     )
                 } catch (e: SecurityException) {
                     e.printStackTrace()
@@ -92,12 +115,23 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
         }
+        
+        // Also cancel check-in
+        val checkinReq = requestCode + 1000
+        val checkinPI = PendingIntent.getBroadcast(
+            context,
+            checkinReq,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (checkinPI != null) {
+            alarmManager.cancel(checkinPI)
+            checkinPI.cancel()
+        }
     }
 
     override fun cancel(medicine: Medicine) {
         val intent = Intent(context, NotificationReceiver::class.java)
-        // We need to cancel all possible indices. 
-        // Typically a medicine won't have more than say 10 doses a day.
         for (index in 0 until 10) {
             val requestCode = medicine.id.hashCode() + index
             val pendingIntent = PendingIntent.getBroadcast(
@@ -109,6 +143,18 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
             if (pendingIntent != null) {
                 alarmManager.cancel(pendingIntent)
                 pendingIntent.cancel()
+            }
+            
+            val checkinReq = requestCode + 1000
+            val checkinPI = PendingIntent.getBroadcast(
+                context,
+                checkinReq,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (checkinPI != null) {
+                alarmManager.cancel(checkinPI)
+                checkinPI.cancel()
             }
         }
     }

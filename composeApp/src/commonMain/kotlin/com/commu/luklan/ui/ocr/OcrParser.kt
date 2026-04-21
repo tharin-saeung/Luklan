@@ -269,13 +269,13 @@ fun parseOcrToForm(text: String): MedicineFormState {
         name = name,
         dosage = dosage,
         unit = unit,
-        time = primaryTime,
+        // time = primaryTime, // Field removed
         times = timesList,
-        quantity = quantity,
-        frequency = finalFrequency,
+        // quantity = quantity, // Field removed
+        // frequency = finalFrequency, // Field removed
         expiryDate = expiry,
-        timeUnit = timeUnit,
-        frequencyCount = frequencyCount,
-        amountPerDose = amountPerDose
+        // timeUnit = timeUnit, // Field removed
+        // frequencyCount = frequencyCount, // Field removed
+        // amountPerDose = amountPerDose // Field removed
     )
 }

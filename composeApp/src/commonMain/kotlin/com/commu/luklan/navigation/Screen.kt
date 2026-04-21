@@ -16,6 +16,9 @@ sealed class Screen(val route: String) {
     object AddMethod : Screen("add_method")
     object OcrScan : Screen("ocr_scan")
     object InviteCaretaker : Screen("invite_caretaker")
-    object QRScanner : Screen("qr_scanner")
-    object CaretakerDashboard : Screen("caretaker_dashboard")
+    object QRScanner : Screen("qr_scanner") // Renaming internally to JoinGroup
+    object JoinGroup : Screen("join_group")
+    object CaretakerDashboard : Screen("caretaker_dashboard") // Renaming internally to GroupList
+    object GroupMembers : Screen("group_members")
+    object PatientTimeline : Screen("patient_timeline")
 }

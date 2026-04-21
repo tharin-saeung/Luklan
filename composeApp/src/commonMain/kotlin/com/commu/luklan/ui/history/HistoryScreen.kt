@@ -1,5 +1,6 @@
 package com.commu.luklan.ui.history
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,15 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import luklan.composeapp.generated.resources.Res
+import luklan.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.painterResource
 import kotlin.time.ExperimentalTime
+
+data class HistoryEntry(
+    val medicine: Medicine,
+    val timestamp: Long
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +45,10 @@ fun HistoryScreen(
     val medicineRepository = remember { getMedicineRepository() }
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
-    var takenMedicines by remember { mutableStateOf<List<Medicine>>(emptyList()) }
+    var historyEntries by remember { mutableStateOf<List<HistoryEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    fun loadTakenMedicines() {
+    fun loadHistory() {
         isLoading = true
         scope.launch {
             val userId = authRepository.getCurrentUserId()
@@ -47,10 +56,13 @@ fun HistoryScreen(
                 medicineRepository
                     .getMedicines(userId)
                     .onSuccess { medicines ->
-                        // Filter medicines that have been taken and sort by createdAt (most recent first)
-                        takenMedicines = medicines
-                            .filter { it.taken }
-                            .sortedByDescending { it.createdAt }
+                        val entries = mutableListOf<HistoryEntry>()
+                        medicines.forEach { med ->
+                            med.takenHistory.forEach { (_, timestamp) ->
+                                entries.add(HistoryEntry(med, timestamp))
+                            }
+                        }
+                        historyEntries = entries.sortedByDescending { it.timestamp }
                         isLoading = false
                     }
                     .onFailure { isLoading = false }
@@ -60,7 +72,7 @@ fun HistoryScreen(
         }
     }
 
-    LaunchedEffect(Unit) { loadTakenMedicines() }
+    LaunchedEffect(Unit) { loadHistory() }
 
     Scaffold(
         topBar = {
@@ -98,22 +110,9 @@ fun HistoryScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            color = LuklanColors.Primary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "กำลังโหลดข้อมูล...",
-                            style = LuklanTypography.bodyLarge,
-                            color = LuklanColors.TextSecondary
-                        )
-                    }
+                    CircularProgressIndicator(color = LuklanColors.Primary)
                 }
-            } else if (takenMedicines.isEmpty()) {
+            } else if (historyEntries.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -140,15 +139,10 @@ fun HistoryScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(
-                        start = LuklanSpacing.lg,
-                        top = LuklanSpacing.md,
-                        end = LuklanSpacing.lg,
-                        bottom = LuklanSpacing.lg
-                    )
+                    contentPadding = PaddingValues(LuklanSpacing.lg)
                 ) {
-                    items(takenMedicines) { medicine ->
-                        HistoryMedicineCard(medicine = medicine)
+                    items(historyEntries) { entry ->
+                        HistoryMedicineCard(medicine = entry.medicine, timestamp = entry.timestamp)
                     }
                 }
             }
@@ -157,7 +151,7 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryMedicineCard(medicine: Medicine) {
+fun HistoryMedicineCard(medicine: Medicine, timestamp: Long) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -178,7 +172,13 @@ fun HistoryMedicineCard(medicine: Medicine) {
                     .background(LuklanColors.Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("💊", fontSize = 28.sp)
+                when (medicine.category) {
+                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
+                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
+                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
+                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
+                    else -> Text("💊", fontSize = 28.sp)
+                }
             }
 
             Spacer(modifier = Modifier.width(LuklanSpacing.md))
@@ -202,10 +202,6 @@ fun HistoryMedicineCard(medicine: Medicine) {
                             append(" ${medicine.unit}")
                         }
                     }
-                    if (medicine.frequency.isNotEmpty()) {
-                        if (isNotEmpty()) append(" • ")
-                        append(medicine.frequency)
-                    }
                 }
                 
                 if (dosageText.isNotEmpty()) {
@@ -228,7 +224,7 @@ fun HistoryMedicineCard(medicine: Medicine) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = formatDateTime(medicine.createdAt),
+                        text = formatDateTime(timestamp),
                         fontSize = 13.sp,
                         color = LuklanColors.TextSecondary
                     )

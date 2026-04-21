@@ -8,5 +8,7 @@
 	<string>แอปต้องการส่งการแจ้งเตือนเพื่อเตือนให้คุณกินยาตามเวลาที่กำหนด</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>แอปต้องการเข้าถึงรูปภาพเพื่อใช้สแกนฉลากยา</string>
+	<key>NSCameraUsageDescription</key>
+	<string>แอปต้องการใช้กล้องเพื่อสแกนรหัส QR เพื่อเข้าร่วมกลุ่ม</string>
 </dict>
 </plist>

@@ -10,23 +10,17 @@ class MedicineRepositoryIos : MedicineRepository {
     override suspend fun addMedicine(medicine: Medicine): Result<Unit> = suspendCoroutine { continuation ->
         addMedicineNative(
             id = medicine.id,
+            userId = medicine.userId,
             name = medicine.name,
-            description = medicine.description,
             dosage = medicine.dosage,
-            time = medicine.time,
-            frequency = medicine.frequency,
-            quantity = medicine.quantity,
             unit = medicine.unit,
+            times = medicine.times,
             startDate = medicine.startDate,
             expiryDate = medicine.expiryDate,
             category = medicine.category,
             mealTiming = medicine.mealTiming,
-            storageInstructions = medicine.storageInstructions,
-            notes = medicine.notes,
-            times = medicine.times,
-            userId = medicine.userId,
-            taken = medicine.taken,
-            takenRecords = medicine.takenRecords,
+            mealTimingMinutes = medicine.mealTimingMinutes,
+            takenHistory = medicine.takenHistory,
             createdAt = medicine.createdAt,
             order = medicine.order,
             completion = { error ->
@@ -51,53 +45,31 @@ class MedicineRepositoryIos : MedicineRepository {
                     for (i in 0 until nsArray.count.toInt()) {
                         val dict = nsArray.objectAtIndex(i.toULong()) as? NSDictionary
                         if (dict != null) {
-                            val timesList = run {
-                                val arr = dict.objectForKey("times") as? NSArray
-                                val list = mutableListOf<String>()
-                                if (arr != null) {
-                                    for (j in 0 until arr.count.toInt()) {
-                                        val v = arr.objectAtIndex(j.toULong()) as? String
-                                        if (v != null) list.add(v)
-                                    }
-                                }
-                                list
-                            }
+                            val timesList = (dict.objectForKey("times") as? NSArray)?.let { arr ->
+                                (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
+                            } ?: emptyList()
 
-                            val takenRecordsMap = run {
-                                val d = dict.objectForKey("takenRecords") as? Map<Any?, *>
-                                val map = mutableMapOf<String, Boolean>()
-                                if (d != null) {
-                                    for ((k, v) in d) {
-                                        val keyStr = k as? String
-                                        val valBool = v as? Boolean
-                                        if (keyStr != null && valBool != null) map[keyStr] = valBool
-                                    }
-                                }
-                                map
-                            }
+                            val takenHistoryMap = (dict.objectForKey("takenHistory") as? Map<Any?, *>)?.let { d ->
+                                d.entries.mapNotNull { 
+                                    val k = it.key as? String
+                                    val v = (it.value as? NSNumber)?.longValue
+                                    if (k != null && v != null) k to v else null
+                                }.toMap()
+                            } ?: emptyMap()
 
                             val medicine = Medicine(
                                 id = dict.objectForKey("id") as? String ?: "",
                                 name = dict.objectForKey("name") as? String ?: "",
-                                description = dict.objectForKey("description") as? String ?: "",
                                 dosage = dict.objectForKey("dosage") as? String ?: "",
-                                time = dict.objectForKey("time") as? String ?: "",
-                                times = timesList,
-                                frequency = dict.objectForKey("frequency") as? String ?: "",
-                                timeUnit = dict.objectForKey("timeUnit") as? String ?: "วัน",
-                                frequencyCount = (dict.objectForKey("frequencyCount") as? NSNumber)?.intValue ?: 1,
-                                amountPerDose = dict.objectForKey("amountPerDose") as? String ?: "",
-                                quantity = (dict.objectForKey("quantity") as? NSNumber)?.intValue ?: 0,
                                 unit = dict.objectForKey("unit") as? String ?: "เม็ด",
+                                times = timesList,
                                 startDate = dict.objectForKey("startDate") as? String ?: "",
                                 expiryDate = dict.objectForKey("expiryDate") as? String ?: "",
-                                category = dict.objectForKey("category") as? String ?: "",
-                                mealTiming = dict.objectForKey("mealTiming") as? String ?: "",
-                                storageInstructions = dict.objectForKey("storageInstructions") as? String ?: "",
-                                notes = dict.objectForKey("notes") as? String ?: "",
+                                category = dict.objectForKey("category") as? String ?: "เม็ด",
+                                mealTiming = dict.objectForKey("mealTiming") as? String ?: "ก่อนอาหาร",
+                                mealTimingMinutes = (dict.objectForKey("mealTimingMinutes") as? NSNumber)?.intValue ?: 30,
                                 userId = dict.objectForKey("userId") as? String ?: "",
-                                taken = (dict.objectForKey("taken") as? NSNumber)?.boolValue ?: false,
-                                takenRecords = takenRecordsMap,
+                                takenHistory = takenHistoryMap,
                                 createdAt = (dict.objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L,
                                 order = (dict.objectForKey("order") as? NSNumber)?.intValue ?: 0
                             )
@@ -105,7 +77,7 @@ class MedicineRepositoryIos : MedicineRepository {
                         }
                     }
                 }
-                continuation.resume(Result.success(list.sortedWith(compareBy({ it.order }, { it.times.firstOrNull() ?: it.time }))))
+                continuation.resume(Result.success(list.sortedBy { it.order }))
             }
         }
     }
@@ -114,21 +86,15 @@ class MedicineRepositoryIos : MedicineRepository {
         updateMedicineNative(
             id = medicine.id,
             name = medicine.name,
-            description = medicine.description,
             dosage = medicine.dosage,
-            time = medicine.time,
-            frequency = medicine.frequency,
-            quantity = medicine.quantity,
             unit = medicine.unit,
+            times = medicine.times,
             startDate = medicine.startDate,
             expiryDate = medicine.expiryDate,
             category = medicine.category,
             mealTiming = medicine.mealTiming,
-            storageInstructions = medicine.storageInstructions,
-            notes = medicine.notes,
-            times = medicine.times,
-            taken = medicine.taken,
-            takenRecords = medicine.takenRecords,
+            mealTimingMinutes = medicine.mealTimingMinutes,
+            takenHistory = medicine.takenHistory,
             createdAt = medicine.createdAt,
             order = medicine.order,
             completion = { error ->

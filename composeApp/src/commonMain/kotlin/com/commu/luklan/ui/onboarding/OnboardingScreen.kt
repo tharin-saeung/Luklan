@@ -1,6 +1,5 @@
 package com.commu.luklan.ui.onboarding
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -8,148 +7,149 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun OnboardingScreen(onNavigateToLogin: () -> Unit, onNavigateToSignup: () -> Unit) {
-    val onboardingPages = remember {
-        listOf(
-                OnboardingPage(
-                        title = "แจ้งเตือนการกินยาได้\nอย่างแม่นยำ",
-                        description = "ติดตามการกินยาของคุณอย่างสม่ำเสมอ",
-                        imageDescription = "💊"
-                ),
-                OnboardingPage(
-                        title = "สามารถจัดกลุ่มยาได้\nตามต้องการ",
-                        description = "จัดกลุ่มยาตามประเภทหรือวิธีการใช้งาน",
-                        imageDescription = "📋"
-                ),
-                OnboardingPage(
-                        title = "สามารถอ่านรายละเอียดเกี่ยวกับยาเบื้องต้น",
-                        description = "อ่านรายละเอียดเกี่ยวกับยาของคุณเพิ่มเติม",
-                        imageDescription = "📖"
-                ),
-                OnboardingPage(
-                        title = "สามารถส่งสัญญาณ SOS ได้เมื่อมีเหตุฉุกเฉิน",
-                        description = "แจ้งเตือนผู้ดูแลเมื่อมีเหตุฉุกเฉิน",
-                        imageDescription = "🚨"
-                ),
-                OnboardingPage(
-                        title = "ยินดีต้อนรับสู่แอปพลิเคชัน\nลูกหลาน",
-                        description = "ดูแลท่านเสมือนกับลูกหลาน\nที่คอยอยู่เคียงข้าง",
-                        imageDescription = "🎉",
-                        isLastPage = true
-                )
+fun OnboardingScreen(
+    initialPage: Int = 0,
+    onNavigateToLogin: () -> Unit,
+    onNavigateToSignup: (role: String) -> Unit
+) {
+    val pages = listOf(
+        OnboardingData(
+            "จัดการเรื่องยาให้เป็นเรื่องง่าย",
+            "บันทึกและติดตามการกินยาของคุณและคนที่คุณรักได้อย่างแม่นยำ",
+            "💊"
+        ),
+        OnboardingData(
+            "แจ้งเตือนไม่ให้ลืม",
+            "ระบบแจ้งเตือนที่ออกแบบมาเพื่อคนทุกวัย ชัดเจนและเข้าใจง่าย",
+            "⏰"
+        ),
+        OnboardingData(
+            "ดูแลกันได้จากทุกที่",
+            "เชื่อมต่อข้อมูลระหว่างผู้ป่วยและผู้ดูแล เพื่อความอุ่นใจของคนในครอบครัว",
+            "👨‍👩‍👧‍👦"
+        ),
+        OnboardingData(
+            "ยินดีต้อนรับสู่แอปพลิเคชัน\nลูกหลาน",
+            "ดูแลท่านเสมือนกับลูกหลาน\nที่คอยอยู่เคียงข้าง",
+            "🎉"
         )
-    }
+    )
 
-    val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { pages.size }
+    )
     val scope = rememberCoroutineScope()
 
-    Column(
-            modifier =
-                    Modifier.fillMaxSize()
-                            .background(LuklanTheme.colors.Background)
-                            .statusBarsPadding() // Only status bar padding
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LuklanTheme.colors.Background)
     ) {
-        HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
-            if (page < onboardingPages.size) {
-                OnboardingPageContent(
-                        page = onboardingPages[page],
-                        modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
+        Column(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) { page ->
+                OnboardingPage(data = pages[page], isLastPage = page == pages.size - 1) {
+                    // Role selection for last page
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Button(
+                            onClick = { onNavigateToSignup("patient") },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Primary)
+                        ) {
+                            Text("ฉันเป็นผู้ป่วย", style = LuklanTypography.h3, color = Color.White)
+                        }
+                        
+                        Button(
+                            onClick = { onNavigateToSignup("caretaker") },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Secondary)
+                        ) {
+                            Text("ฉันเป็นผู้ดูแล", style = LuklanTypography.h3, color = Color.White)
+                        }
 
-        Column(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .padding(horizontal = LuklanTheme.spacing.xl)
-                                .padding(
-                                        bottom = LuklanTheme.spacing.xl
-                                ) // Consistent padding for both platforms
-                                .navigationBarsPadding(), // Only navigation bar padding
-                horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Page indicators
-            Row(horizontalArrangement = Arrangement.spacedBy(LuklanTheme.spacing.sm)) {
-                repeat(onboardingPages.size) { index ->
-                    Box(
-                            modifier =
-                                    Modifier.size(LuklanTheme.dimensions.indicatorSize)
-                                            .clip(CircleShape)
-                                            .background(
-                                                    if (index == pagerState.currentPage)
-                                                            LuklanTheme.colors.IndicatorActive
-                                                    else LuklanTheme.colors.Indicator
-                                            )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(LuklanTheme.spacing.xl))
-
-            // Action button
-            if (pagerState.currentPage == onboardingPages.size - 1) {
-                // Last page - show "เริ่มต้น" button
-                Button(
-                        onClick = onNavigateToSignup,
-                        modifier =
-                                Modifier.fillMaxWidth().height(LuklanTheme.dimensions.buttonLarge),
-                        shape = RoundedCornerShape(LuklanTheme.dimensions.radiusLarge),
-                        colors =
-                                ButtonDefaults.buttonColors(
-                                        containerColor = LuklanTheme.colors.Primary
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "มีบัญชีอยู่แล้ว?",
+                                style = LuklanTypography.bodyLarge,
+                                color = LuklanTheme.colors.TextSecondary
+                            )
+                            TextButton(onClick = onNavigateToLogin) {
+                                Text(
+                                    text = "เข้าสู่ระบบ",
+                                    style = LuklanTypography.bodyLarge,
+                                    color = LuklanTheme.colors.Primary,
+                                    fontWeight = FontWeight.Bold
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Page Indicator
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                            text = "สมัครสมาชิกเลย",
-                            style = LuklanTypography.bodyLarge,
-                            color = LuklanTheme.colors.OnPrimary
-                    )
+                    repeat(pages.size) { iteration ->
+                        val color = if (pagerState.currentPage == iteration) 
+                            LuklanTheme.colors.Secondary else Color.LightGray
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(LuklanTheme.spacing.sm))
-
-                TextButton(onClick = onNavigateToLogin) {
-                    Text(
-                            text = "เข้าสู่ระบบ",
-                            fontSize = LuklanTypography.bodyMedium.fontSize,
-                            color = LuklanTheme.colors.Primary
-                    )
-                }
-            } else {
-                // Other pages - show "ต่อไป" button
-                Button(
+                // Next/Get Started Button
+                if (pagerState.currentPage < pages.size - 1) {
+                    TextButton(
                         onClick = {
                             scope.launch {
-                                if (pagerState.currentPage < onboardingPages.size - 1) {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
-                        },
-                        modifier = Modifier.size(LuklanTheme.dimensions.buttonCircle),
-                        shape = CircleShape,
-                        colors =
-                                ButtonDefaults.buttonColors(
-                                        containerColor = LuklanTheme.colors.Primary
-                                ),
-                        contentPadding = PaddingValues(0.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        }
+                    ) {
                         Text(
-                                text = "→",
-                                style = LuklanTheme.typography.navigationIcon,
-                                color = LuklanTheme.colors.OnPrimary
+                            text = "ถัดไป",
+                            color = LuklanTheme.colors.Primary,
+                            style = LuklanTypography.h3,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -158,51 +158,57 @@ fun OnboardingScreen(onNavigateToLogin: () -> Unit, onNavigateToSignup: () -> Un
     }
 }
 
+data class OnboardingData(
+    val title: String,
+    val description: String,
+    val emoji: String
+)
+
 @Composable
-private fun OnboardingPageContent(page: OnboardingPage, modifier: Modifier = Modifier) {
+fun OnboardingPage(
+    data: OnboardingData,
+    isLastPage: Boolean,
+    roleSelection: @Composable () -> Unit
+) {
     Column(
-            modifier = modifier.padding(LuklanTheme.spacing.xl),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        // Image container
         Box(
-                modifier =
-                        Modifier.size(LuklanTheme.dimensions.imageContainer)
-                                .clip(RoundedCornerShape(LuklanTheme.dimensions.radiusMedium))
-                                .background(LuklanTheme.colors.Surface),
-                contentAlignment = Alignment.Center
+            modifier = Modifier
+                .size(200.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color.White),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                    text = page.imageDescription,
-                    fontSize = LuklanTypography.h1.fontSize,
-                    textAlign = TextAlign.Center
-            )
+            Text(data.emoji, fontSize = 80.sp)
         }
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.xxl))
+        Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-                text = page.title,
-                style = LuklanTheme.typography.h3,
-                textAlign = TextAlign.Center,
-                color = LuklanTheme.colors.TextPrimary
+            text = data.title,
+            style = LuklanTypography.h2,
+            textAlign = TextAlign.Center,
+            color = LuklanTheme.colors.TextPrimary,
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(LuklanTheme.spacing.md))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-                text = page.description,
-                style = LuklanTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = LuklanTheme.colors.TextSecondary
+            text = data.description,
+            style = LuklanTypography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = LuklanTheme.colors.TextSecondary
         )
+
+        if (isLastPage) {
+            Spacer(modifier = Modifier.height(48.dp))
+            roleSelection()
+        }
     }
 }
-
-data class OnboardingPage(
-        val title: String,
-        val description: String,
-        val imageDescription: String,
-        val isLastPage: Boolean = false
-)

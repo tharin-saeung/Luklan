@@ -1,5 +1,6 @@
 package com.commu.luklan.ui.groups
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +21,9 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
+import luklan.composeapp.generated.resources.Res
+import luklan.composeapp.generated.resources.*
 
 data class MedicineGroup(
     val category: String,
@@ -49,7 +53,6 @@ fun MedicineGroupsScreen(
                     .onSuccess { medicines ->
                         // Group medicines by category
                         val grouped = medicines
-                            .filter { !it.taken } // Only show active medicines
                             .groupBy { it.category }
                             .map { (category, meds) ->
                                 MedicineGroup(
@@ -201,17 +204,18 @@ fun GroupCard(
                         modifier = Modifier
                             .size(48.dp)
                             .background(
-                                LuklanColors.Primary.copy(alpha = 0.1f),
+                                LuklanColors.Primary.copy(alpha = 0.05f),
                                 RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Category,
-                            contentDescription = null,
-                            tint = LuklanColors.Primary,
-                            modifier = Modifier.size(28.dp)
-                        )
+                        when (group.category) {
+                            "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
+                            "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
+                            "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
+                            "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
+                            else -> Icon(Icons.Default.Category, null, tint = LuklanColors.Primary, modifier = Modifier.size(28.dp))
+                        }
                     }
                     
                     Spacer(modifier = Modifier.width(LuklanSpacing.md))
@@ -275,7 +279,18 @@ fun MedicineItemInGroup(
                 .padding(LuklanSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("💊", fontSize = 24.sp)
+            Box(
+                modifier = Modifier.size(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                when (medicine.category) {
+                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.fillMaxSize())
+                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.fillMaxSize())
+                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.fillMaxSize())
+                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.fillMaxSize())
+                    else -> Text("💊", fontSize = 24.sp)
+                }
+            }
             
             Spacer(modifier = Modifier.width(LuklanSpacing.sm))
             

@@ -1,5 +1,6 @@
 package com.commu.luklan.ui.medicine
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,13 +28,21 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.painterResource
+import luklan.composeapp.generated.resources.Res
+import luklan.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineDetailScreen(
     medicine: Medicine,
     initialSlotTime: String? = null,
+    selectedDate: String? = null, // yyyy-MM-dd
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onMedicineTaken: () -> Unit
@@ -47,7 +56,15 @@ fun MedicineDetailScreen(
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var slotToConfirm by remember { mutableStateOf<Pair<String, Int>?>(null) }
 
-    val timesToChoose = if (currentMedicine.times.isNotEmpty()) currentMedicine.times else listOf(currentMedicine.time)
+    val timesToChoose = currentMedicine.times
+
+    // Use current date as fallback if none provided
+    val activeDateStr = remember(selectedDate) {
+        selectedDate ?: run {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+        }
+    }
 
     // Trigger confirmation dialog if initialSlotTime is provided (Deep Link)
     LaunchedEffect(initialSlotTime) {
@@ -101,10 +118,16 @@ fun MedicineDetailScreen(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Text("💊", fontSize = 80.sp)
+                when (currentMedicine.category) {
+                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(100.dp))
+                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(100.dp))
+                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(100.dp))
+                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(100.dp))
+                    else -> Text("💊", fontSize = 80.sp)
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
             // Medicine Name
             Text(
@@ -115,12 +138,8 @@ fun MedicineDetailScreen(
             )
 
             // Dosage Info Line: Name / Dosage
-            val subtext = buildString {
-                if (currentMedicine.description.isNotEmpty()) append(currentMedicine.description + " ")
-                append("${currentMedicine.amountPerDose} ${currentMedicine.unit}")
-            }
             Text(
-                text = subtext,
+                text = "${currentMedicine.dosage} ${currentMedicine.unit}",
                 style = LuklanTypography.bodyLarge,
                 color = Color.White.copy(alpha = 0.9f)
             )
@@ -138,19 +157,36 @@ fun MedicineDetailScreen(
             // Info Boxes Row
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val hasMinutes = currentMedicine.mealTimingMinutes > 0 && 
+                    (currentMedicine.mealTiming == "ก่อนอาหาร" || currentMedicine.mealTiming == "หลังอาหาร")
+
                 InfoBox(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Medication,
+                    modifier = Modifier.weight(if (hasMinutes) 0.85f else 1f),
+                    imageType = when (currentMedicine.category) {
+                        "แคปซูล" -> Res.drawable.capsule
+                        "เม็ด" -> Res.drawable.pill
+                        "ฉีด" -> Res.drawable.inject
+                        "อื่นๆ" -> Res.drawable.other
+                        else -> null
+                    },
                     label = "ประเภทยา",
                     value = currentMedicine.category.ifEmpty { "เม็ด" }
                 )
+                
+                val mealTimingDisplay = buildString {
+                    append(currentMedicine.mealTiming.ifEmpty { "หลังอาหาร" })
+                    if (hasMinutes) {
+                        append(" ${currentMedicine.mealTimingMinutes} นาที")
+                    }
+                }
+                
                 InfoBox(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.AccessTime,
+                    modifier = Modifier.weight(if (hasMinutes) 1.2f else 1f),
+                    icon = Icons.Filled.AccessTimeFilled,
                     label = "เวลาที่กิน",
-                    value = currentMedicine.mealTiming.ifEmpty { "หลังอาหาร" }
+                    value = mealTimingDisplay
                 )
             }
 
@@ -176,7 +212,8 @@ fun MedicineDetailScreen(
                     .padding(16.dp)
             ) {
                 timesToChoose.forEachIndexed { index, time ->
-                    val isTaken = currentMedicine.takenRecords[time] == true
+                    val historyKey = "${activeDateStr}_$time"
+                    val isTaken = currentMedicine.takenHistory.containsKey(historyKey)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -238,32 +275,40 @@ fun MedicineDetailScreen(
                     .fillMaxWidth(0.85f)
                     .clip(RoundedCornerShape(32.dp))
                     .background(LuklanColors.Primary)
-                    .padding(24.dp)
+                    .padding(20.dp)
             ) {
-                // Close button X
+                // Larger Close button more to the top-right
                 IconButton(
                     onClick = { showConfirmationDialog = false },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 10.dp, y = (-10).dp)
                 ) {
-                    Icon(Icons.Default.Cancel, contentDescription = "Close", tint = Color.White)
+                    Icon(
+                        Icons.Default.Cancel, 
+                        contentDescription = "Close", 
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(16.dp))
                     
-                    // Orange Icon in White Circle
+                    // Logo in White Circle (Yellow circle removed)
                     Box(
                         modifier = Modifier.size(110.dp).clip(CircleShape).background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier.size(80.dp).clip(CircleShape).background(LuklanColors.Secondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("💊", fontSize = 48.sp)
+                        when (currentMedicine.category) {
+                            "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(70.dp))
+                            "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(70.dp))
+                            "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(70.dp))
+                            "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(70.dp))
+                            else -> Text("💊", fontSize = 48.sp)
                         }
                     }
                     
@@ -280,7 +325,7 @@ fun MedicineDetailScreen(
                     Spacer(Modifier.height(8.dp))
                     
                     Text(
-                        text = "รับประทาน ${currentMedicine.amountPerDose} ${currentMedicine.unit}",
+                        text = "ใช้ ${currentMedicine.dosage} ${currentMedicine.unit}",
                         style = LuklanTypography.h3,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -306,10 +351,12 @@ fun MedicineDetailScreen(
                             onClick = {
                                 val time = slotToConfirm!!.first
                                 val index = slotToConfirm!!.second
-                                val newRecords = currentMedicine.takenRecords.toMutableMap()
-                                newRecords[time] = true
-                                val allTaken = timesToChoose.all { newRecords[it] == true }
-                                val updatedMed = currentMedicine.copy(takenRecords = newRecords, taken = allTaken)
+                                val historyKey = "${activeDateStr}_$time"
+                                
+                                val newHistory = currentMedicine.takenHistory.toMutableMap()
+                                newHistory[historyKey] = getCurrentTimeMillis()
+                                
+                                val updatedMed = currentMedicine.copy(takenHistory = newHistory)
                                 currentMedicine = updatedMed
                                 scope.launch {
                                     notificationScheduler.cancelSlot(updatedMed, index)
@@ -330,17 +377,20 @@ fun MedicineDetailScreen(
                                     Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text("รับประทานแล้ว", color = Color.White, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text("ใช้ยาแล้ว", color = Color.White, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 13.sp)
                             }
                         }
                         
-                            // Not Taken Button (Red cross)
+                        // Not Taken Button (Red cross)
                         Button(
                             onClick = {
                                 val time = slotToConfirm!!.first
-                                val newRecords = currentMedicine.takenRecords.toMutableMap()
-                                newRecords[time] = false
-                                val updatedMed = currentMedicine.copy(takenRecords = newRecords, taken = false)
+                                val historyKey = "${activeDateStr}_$time"
+
+                                val newHistory = currentMedicine.takenHistory.toMutableMap()
+                                newHistory.remove(historyKey)
+                                
+                                val updatedMed = currentMedicine.copy(takenHistory = newHistory)
                                 currentMedicine = updatedMed
                                 scope.launch {
                                     notificationScheduler.schedule(updatedMed)
@@ -362,12 +412,13 @@ fun MedicineDetailScreen(
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "ยังไม่รับประทาน",
+                                    text = "ยังไม่ได้ใช้ยา",
                                     color = Color.White,
-                                    style = LuklanTypography.caption,
+                                    style = LuklanTypography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 13.sp
                                 )
                             }
                         }
@@ -407,26 +458,68 @@ fun MedicineDetailScreen(
 }
 
 @Composable
-fun InfoBox(modifier: Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+fun InfoBox(
+    modifier: Modifier, 
+    icon: ImageVector? = null, 
+    imageType: org.jetbrains.compose.resources.DrawableResource? = null,
+    label: String, 
+    value: String
+) {
     Box(
         modifier = modifier
             .height(90.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(LuklanColors.PrimaryDark.copy(alpha = 0.4f))
-            .padding(12.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp), // Reduced horizontal padding
         contentAlignment = Alignment.CenterStart
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Icon / Image
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(LuklanColors.Secondary),
+                modifier = Modifier.size(40.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                if (imageType != null) {
+                    Image(
+                        painter = painterResource(imageType),
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp)
+                    )
+                } else if (icon != null) {
+                    // White background for icon center
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    )
+                    Icon(
+                        icon, 
+                        contentDescription = null, 
+                        tint = LuklanColors.Secondary, 
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(text = label, style = LuklanTypography.bodySmall, color = Color.White.copy(alpha = 0.8f))
-                Text(text = value, style = LuklanTypography.bodyLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+            
+            Spacer(Modifier.width(4.dp)) // Reduced spacing
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label, 
+                    style = LuklanTypography.caption, 
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 12.sp, // Fixed size
+                    maxLines = 1
+                )
+                Text(
+                    text = value, 
+                    style = LuklanTypography.bodyLarge, 
+                    color = Color.White, 
+                    fontWeight = FontWeight.Bold, 
+                    maxLines = 1,
+                    fontSize = 16.sp // Fixed size to ensure they look the same
+                )
             }
         }
     }

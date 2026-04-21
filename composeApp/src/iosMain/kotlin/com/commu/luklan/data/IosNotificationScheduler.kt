@@ -27,21 +27,19 @@ class IosNotificationScheduler : NotificationScheduler {
         val center = UNUserNotificationCenter.currentNotificationCenter()
         
         // Build notification message with dosage and unit
-        val dosageDisplay = if (medicine.amountPerDose.isNotEmpty()) {
-            "${medicine.amountPerDose} ${medicine.unit}".trim()
-        } else if (medicine.dosage.isNotEmpty()) {
+        val dosageDisplay = if (medicine.dosage.isNotEmpty()) {
             "${medicine.dosage} ${medicine.unit}".trim()
         } else ""
 
         val message = buildString {
-            append("ได้เวลากินยา ${medicine.name}")
+            append("ได้เวลาใช้ยา ${medicine.name}")
             if (dosageDisplay.isNotEmpty()) {
                 append(" $dosageDisplay")
             }
             append(" แล้วนะครับ")
         }
         
-        val timesToSchedule = if (medicine.times.isNotEmpty()) medicine.times else listOf(medicine.time)
+        val timesToSchedule = medicine.times.ifEmpty { listOf("08:00") }
 
         timesToSchedule.forEachIndexed { index, timeStr ->
             val timeParts = timeStr.split(":")
@@ -57,32 +55,68 @@ class IosNotificationScheduler : NotificationScheduler {
                     setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr))
                 }
 
-                val dateComponents = NSDateComponents().apply {
+                val calendar = NSCalendar.currentCalendar
+                val components = NSDateComponents().apply {
                     setHour(hour)
                     setMinute(minute)
                 }
+                
+                // Get absolute base date for adjustment
+                val baseDate = calendar.dateFromComponents(components)
+                var adjustedDate = baseDate
+                
+                if (baseDate != null) {
+                    when (medicine.mealTiming) {
+                        "ก่อนอาหาร" -> adjustedDate = calendar.dateByAddingUnit(
+                            NSCalendarUnitMinute, 
+                            -(medicine.mealTimingMinutes.toLong()), 
+                            baseDate, 
+                            0.toULong()
+                        )
+                        "หลังอาหาร" -> adjustedDate = calendar.dateByAddingUnit(
+                            NSCalendarUnitMinute, 
+                            medicine.mealTimingMinutes.toLong(), 
+                            baseDate, 
+                            0.toULong()
+                        )
+                    }
+                }
+                
+                val adjustedComponents = adjustedDate?.let { 
+                    calendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, it) 
+                } ?: components
 
-                // สร้าง trigger ที่ repeat ทุกวัน
+                // Primary Trigger
                 val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
-                    dateComponents = dateComponents,
+                    dateComponents = adjustedComponents,
                     repeats = true
                 )
 
-                // Unique ID per dose
                 val identifier = "${medicine.id}_$index"
-
-                val request = UNNotificationRequest.requestWithIdentifier(
-                    identifier = identifier,
-                    content = content,
-                    trigger = trigger
-                )
-
-                center.addNotificationRequest(request) { error ->
-                    if (error != null) {
-                        println("❌ Error scheduling notification $index: ${error.localizedDescription}")
-                    } else {
-                        println("✅ Notification $index scheduled for ${medicine.name} at $timeStr")
+                val request = UNNotificationRequest.requestWithIdentifier(identifier, content, trigger)
+                center.addNotificationRequest(request) { _ -> }
+                
+                // Check-in Reminder (Adjusted + 10 mins)
+                val checkinDate = adjustedDate?.let {
+                    calendar.dateByAddingUnit(NSCalendarUnitMinute, 10, it, 0.toULong())
+                }
+                val checkinComponents = checkinDate?.let {
+                    calendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, it)
+                }
+                
+                if (checkinComponents != null) {
+                    val checkinContent = UNMutableNotificationContent().apply {
+                        setTitle("⏰ ยังไม่ทานยาใช่ไหม?")
+                        setBody("คุณยังไม่ได้บันทึกการกินยา ${medicine.name} เลยนะครับ")
+                        setSound(UNNotificationSound.defaultSound())
+                        setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to true))
                     }
+                    val checkinTrigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
+                        dateComponents = checkinComponents,
+                        repeats = true
+                    )
+                    val checkinIdentifier = "${medicine.id}_${index}_checkin"
+                    center.addNotificationRequest(UNNotificationRequest.requestWithIdentifier(checkinIdentifier, checkinContent, checkinTrigger)) { _ -> }
                 }
             }
         }

@@ -16,8 +16,14 @@ import com.commu.luklan.ui.medicine.EditMedicineScreen
 import com.commu.luklan.ui.onboarding.OnboardingScreen
 import com.commu.luklan.ui.signup.SignupScreen
 import com.commu.luklan.ui.splash.SplashScreen
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @Composable
 @Preview
 fun App(initialMedicineId: String? = null, initialTime: String? = null) {
@@ -27,122 +33,245 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
             onPrimary = LuklanTheme.colors.OnPrimary,
             secondary = LuklanTheme.colors.Secondary,
             onSecondary = LuklanTheme.colors.OnSecondary,
-                background = LuklanTheme.colors.Background,
+            background = LuklanTheme.colors.Background,
             surface = LuklanTheme.colors.Surface,
-                surfaceVariant = LuklanTheme.colors.SurfaceVariant,
+            surfaceVariant = LuklanTheme.colors.SurfaceVariant,
             error = LuklanTheme.colors.Error,
             onBackground = LuklanTheme.colors.TextPrimary,
             onSurface = LuklanTheme.colors.TextPrimary
         )
     ) {
         val navController = rememberNavController()
-            var medicineToEdit by remember { mutableStateOf<Medicine?>(null) }
-            var deepLinkTimeForDetail by remember { mutableStateOf<String?>(null) }
-            val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
-            val medicineRepository = remember { com.commu.luklan.data.getMedicineRepository() }
-            val scope = rememberCoroutineScope()
+        var medicineToEdit by remember { mutableStateOf<Medicine?>(null) }
+        var deepLinkTimeForDetail by remember { mutableStateOf<String?>(null) }
+        var selectedSignupRole by remember { mutableStateOf("patient") }
+        var onboardingInitialPage by remember { mutableStateOf(0) }
+        
+        var selectedPatientId by remember { mutableStateOf("") }
+        var selectedPatientName by remember { mutableStateOf("") }
+        var selectedGroupId by remember { mutableStateOf("") }
+        var selectedGroupName by remember { mutableStateOf("") }
+        var selectedMainTab by remember { mutableStateOf(com.commu.luklan.ui.main.MainTab.HOME) }
 
-            LaunchedEffect(initialMedicineId, initialTime) {
-                if (initialMedicineId != null && authRepository.isUserLoggedIn()) {
-                    val userId = authRepository.getCurrentUserId()
-                    if (userId != null) {
-                        medicineRepository.getMedicines(userId).onSuccess { list ->
-                            val target = list.find { it.id == initialMedicineId }
-                            if (target != null) {
-                                medicineToEdit = target
-                                deepLinkTimeForDetail = initialTime
-                                navController.navigate(Screen.MedicineDetail.route)
-                            }
+        val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
+        val medicineRepository = remember { com.commu.luklan.data.getMedicineRepository() }
+        val scope = rememberCoroutineScope()
+
+        LaunchedEffect(initialMedicineId, initialTime) {
+            if (initialMedicineId != null && authRepository.isUserLoggedIn()) {
+                val userId = authRepository.getCurrentUserId()
+                if (userId != null) {
+                    medicineRepository.getMedicines(userId).onSuccess { list ->
+                        val target = list.find { it.id == initialMedicineId }
+                        if (target != null) {
+                            medicineToEdit = target
+                            deepLinkTimeForDetail = initialTime
+                            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+                            navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
                         }
                     }
                 }
             }
+        }
 
         NavHost(navController = navController, startDestination = Screen.Splash.route) {
             composable(Screen.Splash.route) {
                 SplashScreen(
-                        onNavigateToOnboarding = {
-                            navController.navigate(Screen.Onboarding.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
-                            }
-                        },
-                        onNavigateToHome = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
-                            }
+                    onNavigateToOnboarding = {
+                        onboardingInitialPage = 0
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
                         }
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
                 )
             }
 
             composable(Screen.Onboarding.route) {
                 OnboardingScreen(
-                        onNavigateToLogin = {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(Screen.Onboarding.route) { inclusive = true }
-                            }
-                        },
-                        onNavigateToSignup = {
-                            navController.navigate(Screen.Signup.route) {
-                                popUpTo(Screen.Onboarding.route) { inclusive = true }
-                            }
-                        }
+                    initialPage = onboardingInitialPage,
+                    onNavigateToLogin = {
+                        navController.navigate(Screen.Login.route)
+                    },
+                    onNavigateToSignup = { role ->
+                        selectedSignupRole = role
+                        navController.navigate(Screen.Signup.route)
+                    }
                 )
             }
 
             composable(Screen.Login.route) {
                 LoginScreen(
-                        onNavigateToHome = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                    onNavigateToHome = {
+                        scope.launch {
+                            val userId = authRepository.getCurrentUserId()
+                            if (userId != null) {
+                                authRepository.getUserProfile(userId).onSuccess { user ->
+                                    if (user.role == "caretaker") {
+                                        navController.navigate(Screen.JoinGroup.route) {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    } else {
+                                        navController.navigate(Screen.InviteCaretaker.route) {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                }.onFailure {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            } else {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
-                        },
-                        onNavigateToSignup = { navController.navigate(Screen.Signup.route) }
+                        }
+                    },
+                    onNavigateToSignup = { 
+                        onboardingInitialPage = 3 // Last page
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
                 )
             }
 
             composable(Screen.Signup.route) {
                 SignupScreen(
-                        onNavigateToHome = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Signup.route) { inclusive = true }
+                    role = selectedSignupRole,
+                    onNavigateToHome = {
+                        if (selectedSignupRole == "caretaker") {
+                            navController.navigate(Screen.JoinGroup.route) {
+                                popUpTo(0) { inclusive = true }
                             }
-                        },
-                        onNavigateToLogin = {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(Screen.Signup.route) { inclusive = true }
+                        } else {
+                            navController.navigate(Screen.InviteCaretaker.route) {
+                                popUpTo(0) { inclusive = true }
                             }
                         }
+                    },
+                    onNavigateToLogin = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Signup.route) { inclusive = true }
+                        }
+                    }
                 )
             }
 
             composable(Screen.Home.route) {
+                LaunchedEffect(Unit) { selectedPatientId = "" }
                 MainScreen(
-                    onNavigateToAddMedicine = {
-                        // Skip AddMethod/OCR flow and go straight to manual AddMedicine
-                        navController.navigate(Screen.AddMedicine.route)
+                    selectedTab = selectedMainTab,
+                    onTabSelected = { selectedMainTab = it },
+                    onNavigateToAddMedicine = { 
+                        selectedPatientId = ""
+                        navController.navigate(Screen.AddMedicine.route) 
                     },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                    onNavigateToMedicineDetail = { medicine ->
-                        medicineToEdit = medicine
-                        navController.navigate(Screen.MedicineDetail.route)
+                    onNavigateToMedicineDetail = { med, date -> 
+                        medicineToEdit = med
+                        navController.navigate("${Screen.MedicineDetail.route}/$date") 
                     },
                     onNavigateToHistory = { navController.navigate(Screen.History.route) },
-                    onNavigateToMedicineGroups = { navController.navigate(Screen.MedicineGroups.route) }
+                    onNavigateToMedicineGroups = { navController.navigate(Screen.MedicineGroups.route) },
+                    onNavigateToInviteCaretaker = { navController.navigate(Screen.InviteCaretaker.route) },
+                    onNavigateToCaretakerDashboard = { navController.navigate(Screen.CaretakerDashboard.route) },
+                    onNavigateToPatientTimeline = { id, name ->
+                        selectedPatientId = id
+                        selectedPatientName = name
+                        navController.navigate(Screen.PatientTimeline.route)
+                    }
+                )
+            }
+
+            composable(Screen.PatientTimeline.route) {
+                com.commu.luklan.ui.home.HomeScreen(
+                    targetUserId = selectedPatientId,
+                    targetUserName = selectedPatientName,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                    onNavigateToMedicineDetail = { medicine, date ->
+                        medicineToEdit = medicine
+                        navController.navigate("${Screen.MedicineDetail.route}/$date")
+                    }
+                )
+            }
+
+            composable(Screen.InviteCaretaker.route) {
+                com.commu.luklan.ui.caretaker.InviteCaretakerScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.CaretakerDashboard.route) {
+                com.commu.luklan.ui.caretaker.CaretakerDashboardScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToJoin = { navController.navigate(Screen.JoinGroup.route) },
+                    onNavigateToMembers = { id, name ->
+                        selectedGroupId = id
+                        selectedGroupName = name
+                        navController.navigate(Screen.GroupMembers.route)
+                    }
+                )
+            }
+
+            composable(Screen.GroupMembers.route) {
+                com.commu.luklan.ui.caretaker.GroupMembersScreen(
+                    groupId = selectedGroupId,
+                    groupName = selectedGroupName,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToInvite = { navController.navigate(Screen.InviteCaretaker.route) },
+                    onNavigateToPatientTimeline = { id, name ->
+                        selectedPatientId = id
+                        selectedPatientName = name
+                        navController.navigate(Screen.PatientTimeline.route)
+                    }
+                )
+            }
+
+            composable(Screen.JoinGroup.route) {
+                com.commu.luklan.ui.caretaker.JoinCaretakerScreen(
+                    onBack = { navController.popBackStack() },
+                    onSuccess = {
+                        navController.navigate(Screen.CaretakerDashboard.route) {
+                            popUpTo(Screen.JoinGroup.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.QRScanner.route) {
+                com.commu.luklan.ui.caretaker.JoinCaretakerScreen(
+                    onBack = { navController.popBackStack() },
+                    onSuccess = {
+                        navController.navigate(Screen.CaretakerDashboard.route) {
+                            popUpTo(Screen.QRScanner.route) { inclusive = true }
+                        }
+                    }
                 )
             }
 
             composable(Screen.AddMedicine.route) {
-                AddMedicineScreen(onNavigateBack = { navController.popBackStack() })
+                AddMedicineScreen(
+                    targetUserId = selectedPatientId.takeIf { it.isNotEmpty() },
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
-            // Directly navigate from Home add button to AddMedicine (OCR flow disabled)
-            // The old AddMethod / OCR flow remains in source but is not reachable by navigation.
-
-            composable(Screen.MedicineDetail.route) {
+            composable("${Screen.MedicineDetail.route}/{selectedDate}") { backStackEntry ->
+                val date = backStackEntry.arguments?.getString("selectedDate")
                 medicineToEdit?.let { medicine ->
                     com.commu.luklan.ui.medicine.MedicineDetailScreen(
                         medicine = medicine,
                         initialSlotTime = deepLinkTimeForDetail,
+                        selectedDate = date,
                         onBack = { 
                             navController.popBackStack()
                         },
@@ -153,7 +282,6 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             navController.popBackStack()
                         }
                     )
-                    // Clear the deep link time after it's been passed to the screen
                     SideEffect {
                         deepLinkTimeForDetail = null
                     }
@@ -180,19 +308,21 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                     onBack = { navController.popBackStack() },
                     onMedicineClick = { medicine ->
                         medicineToEdit = medicine
-                        navController.navigate(Screen.MedicineDetail.route)
+                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                        val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+                        navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
                     }
                 )
             }
 
             composable(Screen.Profile.route) {
                 com.commu.luklan.ui.profile.ProfileScreen(
-                        onNavigateBack = { navController.popBackStack() },
-                        onLogoutSuccess = {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0) { inclusive = true } // Clear entire stack
-                            }
+                    onNavigateBack = { navController.popBackStack() },
+                    onLogoutSuccess = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
                         }
+                    }
                 )
             }
         }
