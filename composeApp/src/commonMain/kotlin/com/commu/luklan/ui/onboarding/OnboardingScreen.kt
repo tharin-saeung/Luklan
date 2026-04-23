@@ -191,7 +191,7 @@ fun OnboardingPage(
 
         Text(
             text = data.title,
-            style = LuklanTypography.h2,
+            style = if (data.title.length > 20) LuklanTypography.h3 else LuklanTypography.h2,
             textAlign = TextAlign.Center,
             color = LuklanTheme.colors.TextPrimary,
             fontWeight = FontWeight.Bold

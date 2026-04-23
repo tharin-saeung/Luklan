@@ -354,10 +354,12 @@ fun MenuCardWide(
             Text(
                 label, 
                 color = Color.White, 
-                style = LuklanTypography.h2,
+                style = LuklanTypography.h3,
                 fontWeight = FontWeight.Bold, 
                 textAlign = TextAlign.Start,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                softWrap = true
             )
         }
     }
