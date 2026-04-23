@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.commu.luklan.data.Medicine
+import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.navigation.Screen
 import com.commu.luklan.ui.main.MainScreen
 import com.commu.luklan.ui.login.LoginScreen
@@ -132,8 +133,17 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                 composable(Screen.Login.route) {
                     LoginScreen(
                         onNavigateToHome = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(0) { inclusive = true }
+                            scope.launch {
+                                val userId = authRepository.getCurrentUserId()
+                                if (userId != null) {
+                                    // Sync notifications on login
+                                    medicineRepository.getMedicines(userId).onSuccess { meds ->
+                                        meds.forEach { getNotificationScheduler().schedule(it) }
+                                    }
+                                }
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                         },
                         onNavigateToSignup = {

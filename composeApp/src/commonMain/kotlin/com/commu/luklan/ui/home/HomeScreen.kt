@@ -72,6 +72,13 @@ fun HomeScreen(
             medicineRepository.getMedicines(userId).onSuccess { list ->
                 medicines.clear()
                 medicines.addAll(list.sortedBy { it.order })
+                
+                // Sync notifications for self only
+                if (!isCaretakerView) {
+                    val scheduler = com.commu.luklan.data.getNotificationScheduler()
+                    list.forEach { scheduler.schedule(it) }
+                }
+                
                 isLoading = false
             }.onFailure { isLoading = false }
         }

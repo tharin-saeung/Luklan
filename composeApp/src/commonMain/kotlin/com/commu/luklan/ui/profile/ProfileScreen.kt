@@ -124,6 +124,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onLogoutSuccess: () -> Unit) {
             Button(
                 onClick = {
                     scope.launch {
+                        com.commu.luklan.data.getNotificationScheduler().cancelAll()
                         authRepository.signOut()
                         onLogoutSuccess()
                     }

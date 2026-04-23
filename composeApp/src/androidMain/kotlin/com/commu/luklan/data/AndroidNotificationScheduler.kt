@@ -10,6 +10,19 @@ import java.util.Calendar
 class AndroidNotificationScheduler(private val context: Context) : NotificationScheduler {
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private val prefs = context.getSharedPreferences("luklan_notifications", Context.MODE_PRIVATE)
+
+    private fun trackRequestCode(code: Int) {
+        val codes = prefs.getStringSet("scheduled_codes", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        codes.add(code.toString())
+        prefs.edit().putStringSet("scheduled_codes", codes).apply()
+    }
+
+    private fun untrackRequestCode(code: Int) {
+        val codes = prefs.getStringSet("scheduled_codes", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        codes.remove(code.toString())
+        prefs.edit().putStringSet("scheduled_codes", codes).apply()
+    }
 
     override fun schedule(medicine: Medicine) {
         // Clear existing alarms for this medicine first
@@ -76,6 +89,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                         calendar.timeInMillis,
                         pendingIntent
                     )
+                    trackRequestCode(requestCode)
                     
                     // Schedule Check-in reminder (10 minutes after adjusted dose time)
                     val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
@@ -84,9 +98,10 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                         putExtra("EXTRA_TIME", timeStr)
                         putExtra("EXTRA_IS_CHECKIN", true)
                     }
+                    val checkinReq = requestCode + 1000
                     val checkinPendingIntent = PendingIntent.getBroadcast(
                         context,
-                        requestCode + 1000, // Offset for check-in
+                        checkinReq, // Offset for check-in
                         checkinIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
@@ -95,6 +110,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                         calendar.timeInMillis + (10 * 60 * 1000), // +10 mins
                         checkinPendingIntent
                     )
+                    trackRequestCode(checkinReq)
                 } catch (e: SecurityException) {
                     e.printStackTrace()
                 }
@@ -114,6 +130,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         if (pendingIntent != null) {
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
+            untrackRequestCode(requestCode)
         }
         
         // Also cancel check-in
@@ -127,6 +144,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         if (checkinPI != null) {
             alarmManager.cancel(checkinPI)
             checkinPI.cancel()
+            untrackRequestCode(checkinReq)
         }
     }
 
@@ -144,6 +162,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
             if (pendingIntent != null) {
                 alarmManager.cancel(pendingIntent)
                 pendingIntent.cancel()
+                untrackRequestCode(requestCode)
             }
             
             val checkinReq = requestCode + 1000
@@ -156,8 +175,31 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
             if (checkinPI != null) {
                 alarmManager.cancel(checkinPI)
                 checkinPI.cancel()
+                untrackRequestCode(checkinReq)
             }
         }
+    }
+
+    override fun cancelAll() {
+        val codes = prefs.getStringSet("scheduled_codes", emptySet()) ?: emptySet()
+        val intent = Intent(context, NotificationReceiver::class.java)
+        
+        codes.forEach { codeStr ->
+            val code = codeStr.toIntOrNull() ?: return@forEach
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                code,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (pendingIntent != null) {
+                alarmManager.cancel(pendingIntent)
+                pendingIntent.cancel()
+            }
+        }
+        
+        prefs.edit().remove("scheduled_codes").apply()
+        println("✅ Cancelled all tracked Android notifications")
     }
 }
 

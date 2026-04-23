@@ -140,6 +140,12 @@ class IosNotificationScheduler : NotificationScheduler {
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         println("✅ Cancelled notifications for ${medicine.name} (ID: ${medicine.id})")
     }
+
+    override fun cancelAll() {
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        center.removeAllPendingNotificationRequests()
+        println("✅ Cancelled all pending notifications")
+    }
 }
 
 actual fun getNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()

@@ -4,6 +4,7 @@ interface NotificationScheduler {
     fun schedule(medicine: Medicine)
     fun cancel(medicine: Medicine)
     fun cancelSlot(medicine: Medicine, index: Int)
+    fun cancelAll()
 }
 
 expect fun getNotificationScheduler(): NotificationScheduler
