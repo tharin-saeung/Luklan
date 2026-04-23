@@ -216,17 +216,17 @@ fun MemberItem(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Text(
+                    text = user.name, 
+                    style = LuklanTypography.h2, 
+                    color = LuklanColors.TextPrimary, 
+                    fontWeight = FontWeight.Bold
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = user.name, 
-                        style = LuklanTypography.h2, 
-                        color = LuklanColors.TextPrimary, 
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f, fill = false)
+                        text = if (user.role == "patient") "ผู้ป่วย" else "ผู้ดูแล", 
+                        style = LuklanTypography.bodySmall, 
+                        color = LuklanColors.TextSecondary
                     )
                     if (isOwner) {
                         Spacer(Modifier.width(8.dp))
@@ -246,11 +246,6 @@ fun MemberItem(
                         }
                     }
                 }
-                Text(
-                    text = if (user.role == "patient") "ผู้ป่วย" else "ผู้ดูแล", 
-                    style = LuklanTypography.bodySmall, 
-                    color = LuklanColors.TextSecondary
-                )
             }
             
             if (canManage) {
