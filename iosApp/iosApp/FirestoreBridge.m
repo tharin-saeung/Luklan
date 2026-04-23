@@ -224,8 +224,9 @@
     NSString *uuid = [[NSUUID UUID] UUIDString];
     FIRDocumentReference *newGroupRef = [[db collectionWithPath:@"care_groups"] documentWithPath:uuid];
     NSString *groupId = newGroupRef.documentID;
-    NSString *userId = user[@"id"];
-    NSString *name = [NSString stringWithFormat:@"กลุ่มของ %@", user[@"name"]];
+    NSString *userId = user[@"id"] ?: @"";
+    NSString *userName = user[@"name"] ?: @"User";
+    NSString *name = [NSString stringWithFormat:@"กลุ่มของ %@", userName];
     
     // Generate code
     NSString *letters = @"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
