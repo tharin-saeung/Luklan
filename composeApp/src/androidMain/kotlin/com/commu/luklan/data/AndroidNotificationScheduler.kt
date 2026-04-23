@@ -132,7 +132,8 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
 
     override fun cancel(medicine: Medicine) {
         val intent = Intent(context, NotificationReceiver::class.java)
-        for (index in 0 until 10) {
+        val timesCount = if (medicine.times.isEmpty()) 1 else medicine.times.size
+        for (index in 0 until timesCount) {
             val requestCode = medicine.id.hashCode() + index
             val pendingIntent = PendingIntent.getBroadcast(
                 context,

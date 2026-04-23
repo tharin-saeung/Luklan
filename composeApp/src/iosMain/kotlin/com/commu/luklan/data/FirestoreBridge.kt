@@ -180,8 +180,9 @@ fun kickMemberNative(groupId: String, userId: String, completion: (String?) -> U
 }
 
 @OptIn(ExperimentalForeignApi::class)
-fun transferOwnershipNative(groupId: String, newOwnerId: String, completion: (String?) -> Unit) {
-    FirestoreBridge.transferOwnershipWithGroupId(groupId, newOwnerId) { error ->
+fun saveUserProfileNative(userId: String, name: String, email: String, role: String, completion: (String?) -> Unit) {
+    FirestoreBridge.saveUserProfileWithId(userId, name, email, role) { error ->
         completion(error)
     }
 }
+

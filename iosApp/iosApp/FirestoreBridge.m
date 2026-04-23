@@ -178,11 +178,11 @@
         FIRWriteBatch *batch = [db batch];
         NSString *patientPath = [NSString stringWithFormat:@"users/%@", patientId];
         FIRDocumentReference *patientRef = [db documentWithPath:patientPath];
-        [batch updateData:@{@"caretakers": [FIRFieldValue fieldValueForArrayUnion:@[caretakerId]]} forDocument:patientRef];
+        [batch setData:@{@"caretakers": [FIRFieldValue fieldValueForArrayUnion:@[caretakerId]]} forDocument:patientRef merge:YES];
         
         NSString *caretakerPath = [NSString stringWithFormat:@"users/%@", caretakerId];
         FIRDocumentReference *caretakerRef = [db documentWithPath:caretakerPath];
-        [batch updateData:@{@"patients": [FIRFieldValue fieldValueForArrayUnion:@[patientId]]} forDocument:caretakerRef];
+        [batch setData:@{@"patients": [FIRFieldValue fieldValueForArrayUnion:@[patientId]]} forDocument:caretakerRef merge:YES];
         
         [batch commitWithCompletion:^(NSError * _Nullable error) {
             if (error) {
@@ -247,7 +247,7 @@
     [batch setData:groupMap forDocument:newGroupRef];
     
     NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
-    [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[groupId]]} forDocument:[db documentWithPath:userPath]];
+    [batch setData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[groupId]]} forDocument:[db documentWithPath:userPath] merge:YES];
 
     [batch commitWithCompletion:^(NSError * _Nullable error) {
         if (error) {
@@ -282,7 +282,7 @@
         [batch updateData:@{@"memberIds": [FIRFieldValue fieldValueForArrayUnion:@[userId]]} forDocument:doc.reference];
         
         NSString *userPath = [NSString stringWithFormat:@"users/%@", userId];
-        [batch updateData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[doc.documentID]]} forDocument:[db documentWithPath:userPath]];
+        [batch setData:@{@"groupIds": [FIRFieldValue fieldValueForArrayUnion:@[doc.documentID]]} forDocument:[db documentWithPath:userPath] merge:YES];
 
         [batch commitWithCompletion:^(NSError * _Nullable error) {
             if (error) {
@@ -404,6 +404,32 @@
     NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
     [[db documentWithPath:groupPath] updateData:@{@"ownerId": newOwnerId} completion:^(NSError * _Nullable error) {
         completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)saveUserProfileWithId:(NSString *)userId
+                         name:(NSString *)name
+                        email:(NSString *)email
+                         role:(NSString *)role
+                   completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSDictionary *userMap = @{
+        @"id": userId,
+        @"name": name,
+        @"email": email,
+        @"role": role,
+        @"caretakers": @[],
+        @"patients": @[],
+        @"groupIds": @[]
+    };
+    
+    NSString *path = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:path] setData:userMap merge:YES completion:^(NSError * _Nullable error) {
+        if (error) {
+            completion(error.localizedDescription);
+        } else {
+            completion(nil);
+        }
     }];
 }
 

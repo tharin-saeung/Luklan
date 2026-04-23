@@ -140,32 +140,27 @@ actual suspend fun pickImageFromDevice(): ByteArray? = withContext(Dispatchers.M
     val windowsCount = windows?.count()?.toInt() ?: 0
     println("ImagePicker: windows.count=${windowsCount} keyWindow=${key != null}")
 
-        var presenter: UIViewController? = null
-        // Prefer keyWindow's rootViewController
-        presenter = key?.rootViewController
-        if (presenter == null) {
-            // Find first window with a rootViewController
-            if (windows != null) {
-                for (i in 0 until windows.count().toInt()) {
-                    val w = windows.objectAtIndex(i.toULong()) as? UIWindow
-                    if (w != null && w.rootViewController != null) {
-                        presenter = w.rootViewController
-                        break
-                    }
+        var rootVC: UIViewController? = key?.rootViewController
+        if (rootVC == null && windows != null && windows.isNotEmpty()) {
+            for (i in 0 until windows.size) {
+                val w = windows[i] as? UIWindow
+                if (w != null && w.rootViewController != null) {
+                    rootVC = w.rootViewController
+                    break
                 }
             }
         }
 
-        // Finally, try application delegate window (older APIs)
-        if (presenter == null) {
+        if (rootVC == null) {
             try {
                 val appDelWindow = app.delegate?.window as? UIWindow
-                if (appDelWindow != null && appDelWindow.rootViewController != null) presenter = appDelWindow.rootViewController
+                if (appDelWindow != null && appDelWindow.rootViewController != null) rootVC = appDelWindow.rootViewController
             } catch (e: Throwable) {
                 // ignore
             }
         }
 
+        val presenter = topViewController(rootVC)
         println("ImagePicker: presenter found=${presenter != null}")
 
         if (presenter != null) {

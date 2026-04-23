@@ -132,29 +132,8 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                 composable(Screen.Login.route) {
                     LoginScreen(
                         onNavigateToHome = {
-                            scope.launch {
-                                val userId = authRepository.getCurrentUserId()
-                                if (userId != null) {
-                                    authRepository.getUserProfile(userId).onSuccess { user ->
-                                        if (user.role == "caretaker") {
-                                            navController.navigate(Screen.JoinGroup.route) {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        } else {
-                                            navController.navigate(Screen.InviteCaretaker.route) {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        }
-                                    }.onFailure {
-                                        navController.navigate(Screen.Home.route) {
-                                            popUpTo(0) { inclusive = true }
-                                        }
-                                    }
-                                } else {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                }
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(0) { inclusive = true }
                             }
                         },
                         onNavigateToSignup = {
@@ -230,13 +209,25 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
 
                 composable(Screen.InviteCaretaker.route) {
                     com.commu.luklan.ui.caretaker.InviteCaretakerScreen(
-                        onBack = { navController.popBackStack() }
+                        onBack = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        }
                     )
                 }
 
                 composable(Screen.CaretakerDashboard.route) {
                     com.commu.luklan.ui.caretaker.CaretakerDashboardScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
                         onNavigateToJoin = { navController.navigate(Screen.JoinGroup.route) },
                         onNavigateToMembers = { id, name ->
                             selectedGroupId = id
@@ -250,7 +241,13 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                     com.commu.luklan.ui.caretaker.GroupMembersScreen(
                         groupId = selectedGroupId,
                         groupName = selectedGroupName,
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
                         onNavigateToInvite = { navController.navigate(Screen.InviteCaretaker.route) },
                         onNavigateToPatientTimeline = { id, name ->
                             selectedPatientId = id
@@ -262,7 +259,13 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
 
                 composable(Screen.JoinGroup.route) {
                     com.commu.luklan.ui.caretaker.JoinCaretakerScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
                         onSuccess = {
                             navController.navigate(Screen.CaretakerDashboard.route) {
                                 popUpTo(Screen.JoinGroup.route) { inclusive = true }
@@ -290,7 +293,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                 }
 
                 composable("${Screen.MedicineDetail.route}/{selectedDate}") { backStackEntry ->
-                    val date = backStackEntry.arguments?.equals("selectedDate") as? String
+                    val date = backStackEntry.savedStateHandle.get<String>("selectedDate")
                     medicineToEdit?.let { medicine ->
                         MedicineDetailScreen(
                             medicine = medicine,

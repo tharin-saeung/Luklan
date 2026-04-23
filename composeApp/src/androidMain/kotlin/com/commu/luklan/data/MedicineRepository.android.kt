@@ -29,7 +29,7 @@ class MedicineRepositoryAndroid : MedicineRepository {
 
     override suspend fun updateMedicine(medicine: Medicine): Result<Unit> {
         return try {
-            collection.document(medicine.id).set(medicine.toMap(), SetOptions.merge()).await()
+            collection.document(medicine.id).set(medicine.toMap()).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

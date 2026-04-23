@@ -189,7 +189,19 @@ fun SignupScreen(
                         errorMessage = null
                         authRepository.signUpWithEmail(email, password, name, role)
                             .onSuccess {
-                                onNavigateToHome()
+                                if (role == "patient") {
+                                    val userId = authRepository.getCurrentUserId()
+                                    if (userId != null) {
+                                        val user = com.commu.luklan.data.User(id = userId, name = name, role = role)
+                                        com.commu.luklan.data.getGroupRepository().createDefaultGroup(user)
+                                            .onSuccess { onNavigateToHome() }
+                                            .onFailure { errorMessage = "สร้างกลุ่มไม่สำเร็จ: ${it.message}" }
+                                    } else {
+                                        onNavigateToHome()
+                                    }
+                                } else {
+                                    onNavigateToHome()
+                                }
                             }
                             .onFailure {
                                 errorMessage = it.message ?: "สมัครสมาชิกไม่สำเร็จ"

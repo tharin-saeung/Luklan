@@ -82,4 +82,10 @@
                           newOwnerId:(NSString *)newOwnerId
                           completion:(void (^)(NSString * _Nullable error))completion;
 
++ (void)saveUserProfileWithId:(NSString *)userId
+                         name:(NSString *)name
+                        email:(NSString *)email
+                         role:(NSString *)role
+                   completion:(void (^)(NSString * _Nullable error))completion;
+
 @end

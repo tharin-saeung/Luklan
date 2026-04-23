@@ -125,13 +125,18 @@ class IosNotificationScheduler : NotificationScheduler {
     override fun cancelSlot(medicine: Medicine, index: Int) {
         val center = UNUserNotificationCenter.currentNotificationCenter()
         val identifier = "${medicine.id}_$index"
-        center.removePendingNotificationRequestsWithIdentifiers(listOf(identifier))
+        val checkinIdentifier = "${medicine.id}_${index}_checkin"
+        center.removePendingNotificationRequestsWithIdentifiers(listOf(identifier, checkinIdentifier))
     }
 
     override fun cancel(medicine: Medicine) {
         val center = UNUserNotificationCenter.currentNotificationCenter()
-        // Cancel first 10 possible indices
-        val identifiers = (0 until 10).map { "${medicine.id}_$it" }
+        val timesCount = if (medicine.times.isEmpty()) 1 else medicine.times.size
+        val identifiers = mutableListOf<String>()
+        for (i in 0 until timesCount) {
+            identifiers.add("${medicine.id}_$i")
+            identifiers.add("${medicine.id}_${i}_checkin")
+        }
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
         println("✅ Cancelled notifications for ${medicine.name} (ID: ${medicine.id})")
     }

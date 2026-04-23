@@ -45,6 +45,9 @@ fun GroupMembersScreen(
     var currentUserId by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
+    var showKickConfirm by remember { mutableStateOf<User?>(null) }
+    var showTransferConfirm by remember { mutableStateOf<User?>(null) }
+
     fun loadData() {
         scope.launch {
             currentUserId = authRepository.getCurrentUserId()
@@ -59,6 +62,58 @@ fun GroupMembersScreen(
     }
 
     LaunchedEffect(groupId) { loadData() }
+
+    if (showKickConfirm != null) {
+        AlertDialog(
+            onDismissRequest = { showKickConfirm = null },
+            title = { Text("ยืนยันการลบ", fontWeight = FontWeight.Bold) },
+            text = { Text("คุณแน่ใจหรือไม่ว่าต้องการลบ ${showKickConfirm?.name} ออกจากกลุ่ม?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val userToKick = showKickConfirm!!
+                        showKickConfirm = null
+                        scope.launch {
+                            groupRepository.kickMember(groupId, userToKick.id).onSuccess { loadData() }
+                        }
+                    }
+                ) {
+                    Text("ลบ", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showKickConfirm = null }) {
+                    Text("ยกเลิก")
+                }
+            }
+        )
+    }
+
+    if (showTransferConfirm != null) {
+        AlertDialog(
+            onDismissRequest = { showTransferConfirm = null },
+            title = { Text("ยืนยันการโอนความเป็นเจ้าของ", fontWeight = FontWeight.Bold) },
+            text = { Text("คุณแน่ใจหรือไม่ว่าต้องการโอนความเป็นเจ้าของกลุ่มให้ ${showTransferConfirm?.name}?\n(คุณจะเสียสิทธิ์ในการดูแลกลุ่ม)") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val newUser = showTransferConfirm!!
+                        showTransferConfirm = null
+                        scope.launch {
+                            groupRepository.transferOwnership(groupId, newUser.id).onSuccess { loadData() }
+                        }
+                    }
+                ) {
+                    Text("โอนสิทธิ์", color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTransferConfirm = null }) {
+                    Text("ยกเลิก")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -94,16 +149,8 @@ fun GroupMembersScreen(
                                         onNavigateToPatientTimeline(member.id, member.name)
                                     }
                                 },
-                                onKick = {
-                                    scope.launch {
-                                        groupRepository.kickMember(groupId, member.id).onSuccess { loadData() }
-                                    }
-                                },
-                                onTransfer = {
-                                    scope.launch {
-                                        groupRepository.transferOwnership(groupId, member.id).onSuccess { loadData() }
-                                    }
-                                }
+                                onKick = { showKickConfirm = member },
+                                onTransfer = { showTransferConfirm = member }
                             )
                         }
                     }
@@ -172,14 +219,14 @@ fun MemberItem(
                     if (isOwner) {
                         Spacer(Modifier.width(8.dp))
                         Surface(
-                            color = LuklanColors.Secondary.copy(alpha = 0.1f),
+                            color = LuklanColors.Secondary,
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                "หัวหน้า", 
+                                "เจ้าของกลุ่ม", 
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = LuklanTypography.bodySmall,
-                                color = LuklanColors.Secondary,
+                                color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -204,14 +251,14 @@ fun MemberItem(
                         modifier = Modifier.background(Color.White)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("โอนความเป็นเจ้าของ", color = LuklanColors.TextPrimary) },
+                            text = { Text("โอนความเป็นเจ้าของ", color = LuklanColors.TextPrimary, fontWeight = FontWeight.Bold) },
                             onClick = { 
                                 onTransfer()
                                 showMenu = false 
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("ลบออกจากกลุ่ม", color = Color.Red) },
+                            text = { Text("ลบออกจากกลุ่ม", color = Color.Red, fontWeight = FontWeight.Bold) },
                             onClick = { 
                                 onKick()
                                 showMenu = false 
@@ -222,13 +269,13 @@ fun MemberItem(
             } else if (user.role == "patient") {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = LuklanColors.Primary.copy(alpha = 0.1f)
+                    color = LuklanColors.Primary
                 ) {
                     Text(
                         "ดูข้อมูล", 
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         style = LuklanTypography.bodySmall,
-                        color = LuklanColors.Primary,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 }

@@ -20,7 +20,17 @@ actual class AuthRepository actual constructor() {
                     continuation.resume(Result.failure(Exception(error.localizedDescription)))
                 } else if (result != null) {
                     val userId = result.user()?.uid()
-                    continuation.resume(Result.success(Unit))
+                    if (userId != null) {
+                        saveUserProfileNative(userId, name, email, role) { firestoreError ->
+                            if (firestoreError != null) {
+                                continuation.resume(Result.failure(Exception(firestoreError)))
+                            } else {
+                                continuation.resume(Result.success(Unit))
+                            }
+                        }
+                    } else {
+                        continuation.resume(Result.success(Unit))
+                    }
                 } else {
                     continuation.resume(Result.failure(Exception("Sign up failed")))
                 }
