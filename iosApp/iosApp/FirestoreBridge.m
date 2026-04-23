@@ -221,7 +221,11 @@
 + (void)createDefaultGroupWithUser:(NSDictionary *)user
                         completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    FIRDocumentReference *newGroupRef = [[db collectionWithPath:@"care_groups"] documentWithPath:@""];
+    FIRDocumentReference *newGroupRef = [[db collectionWithPath:@"care_groups"] documentWithID:[[NSUUID UUID] UUIDString]];
+    if (!newGroupRef) {
+        completion(nil, @"Failed to generate group ID");
+        return;
+    }
     NSString *groupId = newGroupRef.documentID;
     NSString *userId = user[@"id"];
     NSString *name = [NSString stringWithFormat:@"กลุ่มของ %@", user[@"name"]];
