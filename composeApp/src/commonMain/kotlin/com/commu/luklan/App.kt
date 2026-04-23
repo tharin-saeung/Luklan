@@ -360,6 +360,14 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                 composable(Screen.Profile.route) {
                     com.commu.luklan.ui.profile.ProfileScreen(
                         onNavigateBack = { navController.popBackStack() },
+                        onGoToLogoutScreen = {
+                            navController.navigate("logout")
+                        }
+                    )
+                }
+                composable("logout") {
+                    com.commu.luklan.ui.logout.logoutScreen(
+                        onNavigateBack = { navController.popBackStack() },
                         onLogoutSuccess = {
                             navController.navigate(Screen.Login.route) {
                                 popUpTo(0) { inclusive = true }
