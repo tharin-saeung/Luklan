@@ -40,6 +40,7 @@ class IosNotificationScheduler : NotificationScheduler {
         }
         
         val timesToSchedule = medicine.times.ifEmpty { listOf("08:00") }
+        println("🔔 iOS Scheduling notifications for: ${medicine.name} at $timesToSchedule")
 
         timesToSchedule.forEachIndexed { index, timeStr ->
             val timeParts = timeStr.split(":")

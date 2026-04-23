@@ -29,6 +29,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         cancel(medicine)
 
         val timesToSchedule = medicine.times
+        println("🔔 Scheduling notifications for: ${medicine.name} at $timesToSchedule")
         
         timesToSchedule.forEachIndexed { index, timeStr ->
             val timeParts = timeStr.split(":")
