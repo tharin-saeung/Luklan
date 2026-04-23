@@ -192,7 +192,8 @@ fun MemberItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, LuklanColors.Primary.copy(alpha = 0.1f), RoundedCornerShape(24.dp)),
+            .border(1.dp, LuklanColors.Primary.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(24.dp)
     ) {
@@ -215,8 +216,18 @@ fun MemberItem(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = user.name, style = LuklanTypography.h2, color = LuklanColors.TextPrimary, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = user.name, 
+                        style = LuklanTypography.h2, 
+                        color = LuklanColors.TextPrimary, 
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
                     if (isOwner) {
                         Spacer(Modifier.width(8.dp))
                         Surface(
@@ -229,7 +240,8 @@ fun MemberItem(
                                 style = LuklanTypography.bodySmall,
                                 color = Color.White,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
                         }
                     }

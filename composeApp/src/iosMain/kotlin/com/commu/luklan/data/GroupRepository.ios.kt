@@ -142,8 +142,9 @@ class GroupRepositoryIos : GroupRepository {
     }
 
     private fun NSDictionary.toUser(): User {
+        val id = (objectForKey("id") as? String) ?: (objectForKey("userId") as? String) ?: ""
         return User(
-            id = (objectForKey("id") as? String) ?: "",
+            id = id,
             name = (objectForKey("name") as? String) ?: "ไม่ระบุชื่อ",
             email = (objectForKey("email") as? String) ?: "",
             role = (objectForKey("role") as? String) ?: "user",
