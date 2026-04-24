@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +31,7 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.home.HomeScreen
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.utils.getCurrentTimeMillis
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
@@ -65,31 +67,42 @@ fun MainScreen(
     var userProfile by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
 
-    var lastNotifiedAlertId by remember { mutableStateOf<String?>(null) }
+    var lastNotifiedAlertId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pollingJob by remember { mutableStateOf<Job?>(null) }
 
-    LaunchedEffect(Unit) {
-        authRepository.getCurrentUserId()?.let { uid ->
-            authRepository.getUserProfile(uid).onSuccess { 
-                userProfile = it
-                scope.launch {
-                    println("🔔 Starting alert polling for $uid")
-                    while(true) {
-                        alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
-                            val latest = alerts.firstOrNull()
-                            if (latest != null && latest.id != lastNotifiedAlertId && latest.timestamp > (getCurrentTimeMillis() - 120000)) {
-                                if (latest.senderId != uid) {
-                                    println("🆘 Triggering local notif for SOS: ${latest.id}")
-                                    notificationScheduler.showImmediateNotification(
-                                        "🆘 SOS จาก ${latest.senderName}",
-                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                    )
-                                    lastNotifiedAlertId = latest.id
-                                }
+    LaunchedEffect(userProfile) {
+        val uid = userProfile?.id ?: return@LaunchedEffect
+        if (pollingJob?.isActive == true) return@LaunchedEffect
+
+        pollingJob = scope.launch {
+            println("🔔 Starting alert polling for $uid")
+            var isFirstPoll = (lastNotifiedAlertId == null)
+            while(true) {
+                alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
+                    val latest = alerts.firstOrNull()
+                    if (latest != null) {
+                        if (isFirstPoll) {
+                            // On first run or reset, just remember the latest ID
+                            lastNotifiedAlertId = latest.id
+                            isFirstPoll = false
+                            println("🔔 Initial poll done. Latest alert: ${latest.id}")
+                        } else if (latest.id != lastNotifiedAlertId && latest.timestamp > (getCurrentTimeMillis() - 120000)) {
+                            // Only notify if alert is new and within last 2 minutes
+                            if (latest.senderId != uid) {
+                                println("🆘 Triggering local notif for SOS: ${latest.id}")
+                                notificationScheduler.showImmediateNotification(
+                                    "🆘 SOS จาก ${latest.senderName}",
+                                    "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                )
+                                lastNotifiedAlertId = latest.id
                             }
                         }
-                        delay(15000) // Poll every 15s
+                    } else {
+                        // If no alerts found, we can safely say first poll (for nothing) is done
+                        isFirstPoll = false
                     }
                 }
+                delay(15000)
             }
         }
     }

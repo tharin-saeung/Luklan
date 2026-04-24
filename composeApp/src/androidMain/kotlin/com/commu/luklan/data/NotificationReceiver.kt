@@ -21,44 +21,42 @@ class NotificationReceiver : BroadcastReceiver() {
         val db = FirebaseFirestore.getInstance()
 
         if (isCheckin && medicineId != null && time != null) {
-            // Check if taken before notifying
+            // Check if taken before notifying user
             db.collection("medicines").document(medicineId).get().addOnSuccessListener { doc ->
                 val takenHistory = doc.get("takenHistory") as? Map<String, Long> ?: emptyMap()
-                
-                // Format for history key usually "yyyy-MM-dd_HH:mm"
-                // For simplicity here, we just check if any key ends with the time slot
                 val isTaken = takenHistory.keys.any { it.endsWith("_$time") }
                 
                 if (!isTaken) {
+                    // Alert user locally
                     showNotification(context, "เตือนกินยา (ยังไม่ได้ทาน)", message, medicineId, time)
-                    if (userId != null) syncAlertToFirebase(db, userId, "CHECKIN", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
+                    // Log to DB for caretaker to see in history/dashboard
+                    if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
                 }
             }
         } else {
+            // Initial alarm: Only notify user locally
             showNotification(context, "เตือนกินยา", message, medicineId, time)
-            if (userId != null) syncAlertToFirebase(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
         }
     }
 
-    private fun syncAlertToFirebase(db: FirebaseFirestore, userId: String, type: String, message: String, medicineId: String?, time: String?) {
+    private fun logActivityToDb(db: FirebaseFirestore, userId: String, type: String, message: String, medicineId: String?, time: String?) {
         db.collection("users").document(userId).get().addOnSuccessListener { userDoc ->
             val groupIds = (userDoc.get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             val name = userDoc.getString("name") ?: "ผู้ป่วย"
-            
-            // Deduplication ID matching iOS: medicineId_time_type
             val alertId = "${medicineId ?: "manual"}_${time?.replace(":", "") ?: "now"}_${type}"
             
-            val alert = mapOf(
+            val activity = mapOf(
                 "id" to alertId,
                 "senderId" to userId,
                 "senderName" to name,
                 "type" to type,
                 "message" to message,
                 "timestamp" to System.currentTimeMillis(),
-                "groupIds" to groupIds
+                "groupIds" to groupIds,
+                "isSilent" to true // Mark as silent to avoid triggering push notifications via cloud functions
             )
             
-            db.collection("alerts").document(alertId).set(alert)
+            db.collection("alerts").document(alertId).set(activity)
         }
     }
 
