@@ -500,15 +500,47 @@
     }];
 }
 
++ (void)deleteAlertWithId:(NSString *)alertId
+               completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    [[[db collectionWithPath:@"alerts"] documentWithPath:alertId] deleteDocumentWithCompletion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)deleteAllAlertsForUserId:(NSString *)userId
+                        groupIds:(NSArray<NSString *> *)groupIds
+                      completion:(void (^)(NSString * _Nullable error))completion {
+    if (groupIds.count == 0) {
+        completion(nil);
+        return;
+    }
+    
+    FIRFirestore *db = [FIRFirestore firestore];
+    [[[db collectionWithPath:@"alerts"] queryWhereField:@"groupIds" arrayContainsAny:groupIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
+        if (error) {
+            completion(error.localizedDescription);
+            return;
+        }
+        
+        FIRWriteBatch *batch = [db batch];
+        for (FIRDocumentSnapshot *doc in snapshot.documents) {
+            [batch deleteDocument:doc.reference];
+        }
+        
+        [batch commitWithCompletion:^(NSError * _Nullable commitError) {
+            completion(commitError ? commitError.localizedDescription : nil);
+        }];
+    }];
+}
+
 + (void)syncAlertWithUserInfo:(NSDictionary *)userInfo
                       alertId:(NSString *)alertId {
     NSString *medicineId = userInfo[@"medicineId"];
     NSString *time = userInfo[@"time"];
     BOOL isCheckin = [userInfo[@"isCheckin"] boolValue];
     
-    // Only log MISSED_MED to DB for caretaker dashboard. 
-    // Initial MEDICINE notifications are for user local device only.
-    if (!isCheckin || !medicineId) return;
+    if (!medicineId) return;
 
     FIRFirestore *db = [FIRFirestore firestore];
     
@@ -528,8 +560,10 @@
             NSArray *groupIds = uSnapshot.data[@"groupIds"] ?: @[];
             NSString *name = uSnapshot.data[@"name"] ?: @"ผู้ป่วย";
             
-            NSString *type = @"MISSED_MED";
-            NSString *message = [NSString stringWithFormat:@"ยังไม่ได้บันทึกการกินยา %@ (%@)", medName, time];
+            NSString *type = isCheckin ? @"MISSED_MED" : @"MEDICINE";
+            NSString *message = isCheckin ? 
+                [NSString stringWithFormat:@"ยังไม่ได้บันทึกการกินยา %@ (%@)", medName, time] :
+                [NSString stringWithFormat:@"ได้เวลาใช้ยา %@ (%@)", medName, time];
 
             NSDictionary *alertMap = @{
                 @"id": alertId,
@@ -542,6 +576,7 @@
                 @"isSilent": @YES // Mark as silent for caretaker dashboard only
             };
             
+            // setData is idempotent if document ID is same
             [[[db collectionWithPath:@"alerts"] documentWithPath:alertId] setData:alertMap completion:nil];
         }];
     }];

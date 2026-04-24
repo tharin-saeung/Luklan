@@ -33,6 +33,32 @@ class AlertRepositoryAndroid : AlertRepository {
         }
     }
 
+    override suspend fun deleteAlert(alertId: String): Result<Unit> {
+        return try {
+            collection.document(alertId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteAllAlerts(userId: String, groupIds: List<String>): Result<Unit> {
+        return try {
+            if (groupIds.isEmpty()) return Result.success(Unit)
+            
+            val snapshot = collection.whereArrayContainsAny("groupIds", groupIds).get().await()
+            val batch = db.batch()
+            snapshot.documents.forEach { doc ->
+                // Check if user is receiver (can delete alerts for their groups)
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun Alert.toMap(): Map<String, Any> = mapOf(
         "id" to id,
         "senderId" to senderId,

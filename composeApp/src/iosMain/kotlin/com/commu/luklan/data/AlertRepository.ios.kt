@@ -11,15 +11,15 @@ import kotlin.uuid.Uuid
 class AlertRepositoryIos : AlertRepository {
 
     override suspend fun sendAlert(alert: Alert): Result<Unit> = suspendCoroutine { continuation ->
-        sendAlertNative(
-            id = alert.id.ifEmpty { Uuid.random().toString() },
+        cocoapods.FirestoreBridge.FirestoreBridge.sendAlertWithId(
+            alertId = alert.id.ifEmpty { Uuid.random().toString() },
             senderId = alert.senderId,
             senderName = alert.senderName,
             type = alert.type,
             message = alert.message,
             timestamp = alert.timestamp,
             groupIds = alert.groupIds
-        ) { error ->
+        ) { error: String? ->
             if (error != null) {
                 continuation.resume(Result.failure(Exception(error)))
             } else {
@@ -29,12 +29,36 @@ class AlertRepositoryIos : AlertRepository {
     }
 
     override suspend fun getAlertsForUser(userId: String): Result<List<Alert>> = suspendCoroutine { continuation ->
-        getAlertsNative(userId) { alerts, error ->
+        cocoapods.FirestoreBridge.FirestoreBridge.getAlertsForUserId(userId) { alerts: NSArray?, error: String? ->
             if (error != null) {
                 continuation.resume(Result.failure(Exception(error)))
             } else {
-                val list = alerts?.map { it.toAlert() } ?: emptyList()
+                val list = alerts?.let { arr ->
+                    (0 until arr.count.toInt()).mapNotNull { 
+                        (arr.objectAtIndex(it.toULong()) as? NSDictionary)?.toAlert() 
+                    }
+                } ?: emptyList()
                 continuation.resume(Result.success(list.sortedByDescending { it.timestamp }))
+            }
+        }
+    }
+
+    override suspend fun deleteAlert(alertId: String): Result<Unit> = suspendCoroutine { continuation ->
+        cocoapods.FirestoreBridge.FirestoreBridge.deleteAlertWithId(alertId) { error: String? ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
+            }
+        }
+    }
+
+    override suspend fun deleteAllAlerts(userId: String, groupIds: List<String>): Result<Unit> = suspendCoroutine { continuation ->
+        cocoapods.FirestoreBridge.FirestoreBridge.deleteAllAlertsForUserId(userId, groupIds) { error: String? ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
             }
         }
     }

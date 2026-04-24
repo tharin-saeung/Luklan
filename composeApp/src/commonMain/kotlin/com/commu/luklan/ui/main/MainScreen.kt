@@ -94,24 +94,35 @@ fun MainScreen(
                         val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 15000) // Last 15 seconds only
                         val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000) // Last 5 minutes
                         
-                        if (isNew && latest.senderId != uid) {
-                            // Only notify via polling as a fallback if FCM was likely missed
-                            // (alert is older than 20s but still within recent window)
-                            val isFcmFallback = latest.timestamp < (getCurrentTimeMillis() - 20000)
-                            
-                            if (!isFirstPoll && isFcmFallback) {
-                                if (isRecent) {
-                                    println("🆘 Fallback: Triggering local notif for SOS: ${latest.id}")
-                                    notificationScheduler.showImmediateNotification(
-                                        "🆘 SOS จาก ${latest.senderName}",
-                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                    )
+                        if (isNew) {
+                            if (latest.senderId != uid) {
+                                // Only notify via polling as a fallback if FCM was likely missed
+                                // (alert is older than 20s but still within recent window)
+                                val isFcmFallback = latest.timestamp < (getCurrentTimeMillis() - 20000)
+                                
+                                if (isFirstPoll) {
+                                    // On launch, just track latest to avoid notifying history
+                                    lastNotifiedAlertId = latest.id
+                                    isFirstPoll = false
+                                } else if (isFcmFallback) {
+                                    if (isRecent) {
+                                        println("🆘 Fallback: Triggering local notif for SOS: ${latest.id}")
+                                        notificationScheduler.showImmediateNotification(
+                                            "🆘 SOS จาก ${latest.senderName}",
+                                            "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                        )
+                                        lastNotifiedAlertId = latest.id
+                                    }
+                                } else {
+                                    // Alert is fresh (<20s), wait for FCM. 
+                                    // DO NOT update lastNotifiedAlertId yet so next poll can catch it as fallback.
+                                    println("🔔 Fresh alert detected, waiting for FCM fallback window...")
                                 }
+                            } else {
+                                // I am the sender, just track it
+                                lastNotifiedAlertId = latest.id
+                                isFirstPoll = false
                             }
-                            
-                            // Always update lastNotifiedAlertId to track state
-                            lastNotifiedAlertId = latest.id
-                            isFirstPoll = false
                         }
                     }
                     // Mark first poll done even if no alerts

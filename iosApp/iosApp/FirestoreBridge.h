@@ -105,6 +105,13 @@
 + (void)getAlertsForUserId:(NSString *)userId
                 completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion;
 
++ (void)deleteAlertWithId:(NSString *)alertId
+               completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)deleteAllAlertsForUserId:(NSString *)userId
+                        groupIds:(NSArray<NSString *> *)groupIds
+                      completion:(void (^)(NSString * _Nullable error))completion;
+
 + (void)syncAlertWithUserInfo:(NSDictionary *)userInfo
                       alertId:(NSString *)alertId;
 

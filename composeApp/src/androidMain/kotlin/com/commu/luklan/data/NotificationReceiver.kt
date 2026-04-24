@@ -34,8 +34,10 @@ class NotificationReceiver : BroadcastReceiver() {
                 }
             }
         } else {
-            // Initial alarm: Only notify user locally
+            // Initial alarm: Notify user locally
             showNotification(context, "เตือนกินยา", message, medicineId, time)
+            // Log to DB for caretaker/history
+            if (userId != null) logActivityToDb(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
         }
     }
 

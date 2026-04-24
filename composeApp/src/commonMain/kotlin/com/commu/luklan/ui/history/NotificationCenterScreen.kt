@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -25,6 +27,7 @@ import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanSpacing
 import com.commu.luklan.ui.theme.LuklanTypography
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -38,32 +41,36 @@ fun NotificationCenterScreen(
 ) {
     val alertRepository = remember { getAlertRepository() }
     val authRepository = remember { getAuthRepository() }
+    val scope = rememberCoroutineScope()
     var alerts by remember { mutableStateOf<List<Alert>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var groupIds by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    var alertToDelete by remember { mutableStateOf<Alert?>(null) }
+    var showDeleteAllConfirm by remember { mutableStateOf(false) }
+
+    fun loadAlerts() {
+        val currentUid = authRepository.getCurrentUserId()
+        if (currentUid != null) {
+            isLoading = true
+            scope.launch {
+                authRepository.getUserProfile(currentUid).onSuccess { user ->
+                    groupIds = user.groupIds
+                    alertRepository.getAlertsForUser(currentUid).onSuccess { list ->
+                        alerts = if (targetUserId != null && targetUserId != currentUid) {
+                            list.filter { it.senderId == targetUserId }
+                        } else {
+                            list.filter { it.senderId != currentUid }
+                        }
+                        isLoading = false
+                    }.onFailure { isLoading = false }
+                }.onFailure { isLoading = false }
+            }
+        }
+    }
 
     LaunchedEffect(targetUserId) {
-        val currentUid = authRepository.getCurrentUserId()
-        println("🔔 Notification Center for $currentUid, target: $targetUserId")
-        
-        if (currentUid != null) {
-            alertRepository.getAlertsForUser(currentUid).onSuccess { list ->
-                // Filter: 
-                // 1. If viewing specific patient (targetUserId), show their alerts
-                // 2. If viewing my own center, show only alerts where I am NOT the sender
-                alerts = if (targetUserId != null && targetUserId != currentUid) {
-                    list.filter { it.senderId == targetUserId }
-                } else {
-                    list.filter { it.senderId != currentUid }
-                }
-                println("🔔 Loaded ${alerts.size} alerts for display")
-                isLoading = false
-            }.onFailure { 
-                println("❌ Failed to load alerts: ${it.message}")
-                isLoading = false 
-            }
-        } else {
-            isLoading = false
-        }
+        loadAlerts()
     }
 
     Scaffold(
@@ -73,6 +80,13 @@ fun NotificationCenterScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuklanColors.Primary)
+                    }
+                },
+                actions = {
+                    if (alerts.isNotEmpty()) {
+                        IconButton(onClick = { showDeleteAllConfirm = true }) {
+                            Icon(Icons.Default.DeleteSweep, "ล้างทั้งหมด", tint = LuklanColors.Error)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = LuklanColors.Background)
@@ -95,16 +109,83 @@ fun NotificationCenterScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(alerts) { alert ->
-                    AlertItem(alert)
+                    AlertItem(
+                        alert = alert,
+                        onDelete = { alertToDelete = alert }
+                    )
                 }
             }
         }
+    }
+
+    // Individual Delete Dialog
+    alertToDelete?.let { alert ->
+        AlertDialog(
+            onDismissRequest = { alertToDelete = null },
+            title = { Text("ลบการแจ้งเตือน") },
+            text = { Text("คุณต้องการลบการแจ้งเตือนนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            alertRepository.deleteAlert(alert.id).onSuccess {
+                                alertToDelete = null
+                                loadAlerts()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = LuklanColors.Error)
+                ) {
+                    Text("ลบ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alertToDelete = null }) {
+                    Text("ยกเลิก")
+                }
+            }
+        )
+    }
+
+    // Delete All Dialog
+    if (showDeleteAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllConfirm = false },
+            title = { Text("ล้างการแจ้งเตือนทั้งหมด") },
+            text = { Text("คุณต้องการลบการแจ้งเตือนทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            val currentUid = authRepository.getCurrentUserId()
+                            if (currentUid != null) {
+                                alertRepository.deleteAllAlerts(currentUid, groupIds).onSuccess {
+                                    showDeleteAllConfirm = false
+                                    loadAlerts()
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = LuklanColors.Error)
+                ) {
+                    Text("ล้างทั้งหมด")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllConfirm = false }) {
+                    Text("ยกเลิก")
+                }
+            }
+        )
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun AlertItem(alert: Alert) {
+fun AlertItem(
+    alert: Alert,
+    onDelete: () -> Unit
+) {
     val date = remember(alert.timestamp) {
         val instant = Instant.fromEpochMilliseconds(alert.timestamp)
         val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -137,7 +218,7 @@ fun AlertItem(alert: Alert) {
             
             Spacer(Modifier.width(16.dp))
             
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (alert.type == "SOS") "🆘 แจ้งเตือนฉุกเฉิน!" else "การแจ้งเตือน",
                     style = LuklanTypography.bodyLarge,
@@ -153,6 +234,15 @@ fun AlertItem(alert: Alert) {
                     text = date,
                     style = LuklanTypography.caption,
                     color = LuklanColors.TextSecondary
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "ลบ",
+                    tint = LuklanColors.TextSecondary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
