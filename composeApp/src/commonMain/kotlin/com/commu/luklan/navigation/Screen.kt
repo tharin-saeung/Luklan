@@ -23,4 +23,5 @@ sealed class Screen(val route: String) {
     object PatientTimeline : Screen("patient_timeline")
     object CreateGroup : Screen("create_group")
     object NotificationCenter : Screen("notification_center")
+    object Contact : Screen("contact")
 }

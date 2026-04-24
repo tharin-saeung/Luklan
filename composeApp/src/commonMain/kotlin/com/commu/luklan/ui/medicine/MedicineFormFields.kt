@@ -24,10 +24,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.components.WheelTimePicker
+import com.commu.luklan.ui.components.FullDatePicker
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.datetime.*
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @Composable
 fun MedicineFormFields(
     state: MedicineFormState,
@@ -40,7 +44,7 @@ fun MedicineFormFields(
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val thaiMonths = listOf("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
+    val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Name
@@ -56,11 +60,11 @@ fun MedicineFormFields(
             Surface(
                 onClick = { showCategoryPicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(32.dp),
                 color = Color.White,
                 shadowElevation = 0.dp
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                     Text(state.category.ifEmpty { "เลือกประเภท" }, color = if (state.category.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
                 }
@@ -80,7 +84,7 @@ fun MedicineFormFields(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(32.dp),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
@@ -96,11 +100,11 @@ fun MedicineFormFields(
                 Surface(
                     onClick = { showUnitPicker = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(32.dp),
                     color = Color.White,
                     shadowElevation = 0.dp
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                         Text(state.unit.ifEmpty { "เลือกหน่วย" }, color = if (state.unit.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
                     }
@@ -120,7 +124,7 @@ fun MedicineFormFields(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(32.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -129,7 +133,7 @@ fun MedicineFormFields(
                 ),
                 textStyle = TextStyle(color = LuklanColors.Primary, fontWeight = FontWeight.Bold),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                trailingIcon = { Text(state.unit, color = Color.Gray, modifier = Modifier.padding(end = 16.dp)) }
+                trailingIcon = { Text(state.unit, color = Color.Gray, modifier = Modifier.padding(end = 20.dp)) }
             )
         }
 
@@ -139,7 +143,7 @@ fun MedicineFormFields(
             Surface(
                 onClick = { showDatePicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(32.dp),
                 color = Color.White,
                 shadowElevation = 0.dp
             ) {
@@ -150,7 +154,7 @@ fun MedicineFormFields(
                     } else state.startDate
                 } catch (e: Exception) { state.startDate }
                 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                     Text(dateDisplay.ifEmpty { "เลือกวันที่" }, color = if (state.startDate.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.CalendarToday, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
                 }
@@ -164,11 +168,11 @@ fun MedicineFormFields(
                 Surface(
                     onClick = { showMealTimingPicker = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(32.dp),
                     color = Color.White,
                     shadowElevation = 0.dp
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                         Text(state.mealTiming, color = LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
                     }
@@ -181,7 +185,7 @@ fun MedicineFormFields(
                         value = state.mealTimingMinutes.toString(),
                         onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(32.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
@@ -240,7 +244,7 @@ fun MedicineFormFields(
                             newList.removeAt(editingTimeIndex)
                             onUpdate(state.copy(times = newList))
                             showTimePicker = false
-                        }) { Text("ลบ", color = Color.Red) }
+                        }) { Text("ลบเวลา", color = Color.Red) }
                     }
                     TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก") }
                 }
@@ -309,17 +313,18 @@ fun MedicineFormFields(
     }
 
     if (showDatePicker) {
-        val dateParts = state.startDate.split("-")
-        val initialYear = if (dateParts.size == 3) dateParts[0].toIntOrNull() ?: 2024 else 2024
-        val initialMonth = if (dateParts.size == 3) dateParts[1].toIntOrNull() ?: 1 else 1
+        val nowMillis = getCurrentTimeMillis()
+        val nowInstant = Instant.fromEpochMilliseconds(nowMillis)
+        val nowDateTime = nowInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val todayIso = "${nowDateTime.year}-${nowDateTime.monthNumber.toString().padStart(2, '0')}-${nowDateTime.dayOfMonth.toString().padStart(2, '0')}"
         
-        com.commu.luklan.ui.components.MonthYearPicker(
-            initialMonth = initialMonth,
-            initialYear = initialYear,
+        val initialPickerDate = if (state.startDate.contains("-")) state.startDate else todayIso
+
+        FullDatePicker(
+            initialDate = initialPickerDate,
             onDismiss = { showDatePicker = false },
-            onConfirm = { m, y ->
-                val day = if (dateParts.size == 3) dateParts[2] else "01"
-                onUpdate(state.copy(startDate = "$y-${m.toString().padStart(2, '0')}-$day"))
+            onConfirm = { finalDate ->
+                onUpdate(state.copy(startDate = finalDate))
                 showDatePicker = false
             }
         )
@@ -334,7 +339,7 @@ fun SummaryItemEditable(label: String, value: String, onValueChange: (String) ->
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,

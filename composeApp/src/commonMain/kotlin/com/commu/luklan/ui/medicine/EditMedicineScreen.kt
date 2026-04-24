@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
     
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = LuklanColors.Primary
@@ -52,7 +54,10 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                 IconButton(onClick = { onNavigateBack(null) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
                 Spacer(Modifier.weight(1f))
                 Text("แก้ไขข้อมูลยา", style = LuklanTypography.h1, color = Color.White, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1.3f))
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
+                }
             }
             
             Spacer(Modifier.height(24.dp))
@@ -104,5 +109,32 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                 else Text("บันทึกการแก้ไข", style = LuklanTypography.buttonLarge)
             }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("ต้องการลบยานี้หรอครับ?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold) },
+            text = { Text("คุณต้องการลบยา \"${medicine.name}\" หรือไม่? เราจะหยุดส่งการแจ้งเตือนการกินยานี้ให้คุณ", style = LuklanTypography.bodyLarge) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        scope.launch {
+                            scheduler.cancel(medicine)
+                            medicineRepo.deleteMedicine(medicine.id)
+                            onNavigateBack(null)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Error),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("ลบ", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
+            }
+        )
     }
 }

@@ -24,6 +24,8 @@ import com.commu.luklan.ui.medicine.MedicineDetailScreen
 import com.commu.luklan.ui.onboarding.OnboardingScreen
 import com.commu.luklan.ui.signup.SignupScreen
 import com.commu.luklan.ui.splash.SplashScreen
+import com.commu.luklan.ui.profile.ProfileScreen
+import com.commu.luklan.ui.contact.ContactScreen
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlinx.datetime.Instant
@@ -187,7 +189,14 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             selectedPatientId = ""
                             navController.navigate(Screen.AddMedicine.route)
                         },
-                        onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                        onNavigateToProfile = {
+                            navController.navigate(Screen.Profile.route)
+                        },
+                        onLogout = {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
                         onNavigateToMedicineDetail = { med, date ->
                             medicineToEdit = med
                             navController.navigate("${Screen.MedicineDetail.route}/$date")
@@ -214,7 +223,9 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         targetUserName = selectedPatientName,
                         onBack = { navController.popBackStack() },
                         onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
-                        onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                        onNavigateToProfile = {
+                            navController.navigate(Screen.Profile.route)
+                        },
                         onNavigateToMedicineDetail = { medicine, date ->
                             medicineToEdit = medicine
                             navController.navigate("${Screen.MedicineDetail.route}/$date")
@@ -226,6 +237,30 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             navController.navigate(Screen.NotificationCenter.route) 
                         }
                     )
+                }
+
+                composable(Screen.Profile.route) {
+                    ProfileScreen(
+                        onNavigateBack = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
+                        onNavigateToGroups = { navController.navigate(Screen.CaretakerDashboard.route) },
+                        onNavigateToHistory = { navController.navigate(Screen.History.route) },
+                        onNavigateToContact = { navController.navigate(Screen.Contact.route) },
+                        onLogoutSuccess = {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                composable(Screen.Contact.route) {
+                    ContactScreen(onBack = { navController.popBackStack() })
                 }
 
                 composable(Screen.InviteCaretaker.route) {
@@ -383,32 +418,21 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         onBack = { navController.popBackStack() },
                         onMedicineClick = { medicine ->
                             medicineToEdit = medicine
-                            val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis())
-                                .toLocalDateTime(TimeZone.currentSystemDefault())
-                            val todayStr = "${now.year}-${
-                                now.monthNumber.toString().padStart(2, '0')
-                            }-${now.dayOfMonth.toString().padStart(2, '0')}"
+                            
+                            val amount = medicine.currentAmount.toDoubleOrNull() ?: 0.0
+                            val dose = medicine.dosage.toDoubleOrNull() ?: 0.0
+                            val isOutOfStock = amount < dose
 
+                            if (isOutOfStock) {
+                                navController.navigate(Screen.EditMedicine.route)
+                            } else {
+                                val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis())
+                                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                                val todayStr = "${now.year}-${
+                                    now.monthNumber.toString().padStart(2, '0')
+                                }-${now.dayOfMonth.toString().padStart(2, '0')}"
 
-                            navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
-                        }
-                    )
-                }
-
-                composable(Screen.Profile.route) {
-                    com.commu.luklan.ui.profile.ProfileScreen(
-                        onNavigateBack = { navController.popBackStack() },
-                        onGoToLogoutScreen = {
-                            navController.navigate("logout")
-                        }
-                    )
-                }
-                composable("logout") {
-                    com.commu.luklan.ui.logout.logoutScreen(
-                        onNavigateBack = { navController.popBackStack() },
-                        onLogoutSuccess = {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0) { inclusive = true }
+                                navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
                             }
                         }
                     )

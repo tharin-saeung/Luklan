@@ -127,7 +127,14 @@ fun AddMedicineScreen(
                         onUpdate = { formState = it }
                     )
                     5 -> StepTime(formState, mealTimingOptions, onAdd = { editingTimeIndex = -1; showTimePicker = true }, onEdit = { editingTimeIndex = it; showTimePicker = true }) { formState = it }
-                    6 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { StepSummary(formState) { formState = it } }
+                    6 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { 
+                        StepSummary(
+                            state = formState, 
+                            month = displayMonth,
+                            year = displayYear,
+                            onUpdate = { formState = it }
+                        ) 
+                    }
                 }
             }
             if (errorMessage != null) {
@@ -150,14 +157,18 @@ fun AddMedicineScreen(
                         val userId = targetUserId ?: authRepository.getCurrentUserId() ?: return@Button
                         isLoading = true
                         scope.launch {
-                            val fullDate = "$displayYear-${displayMonth.toString().padStart(2, '0')}-${formState.startDate.padStart(2, '0')}"
+                            // Ensure startDate is correctly formatted for saving
+                            val dateParts = formState.startDate.split("-")
+                            val finalDate = if (dateParts.size == 3) formState.startDate 
+                                          else "$displayYear-${displayMonth.toString().padStart(2, '0')}-${formState.startDate.padStart(2, '0')}"
+                            
                             val med = Medicine(
                                 id = Uuid.random().toString(), 
                                 name = formState.name, 
                                 dosage = formState.dosage,
                                 unit = formState.unit,
                                 times = formState.times, 
-                                startDate = fullDate, 
+                                startDate = finalDate, 
                                 category = formState.category, 
                                 mealTiming = formState.mealTiming,
                                 mealTimingMinutes = formState.mealTimingMinutes, 
@@ -511,11 +522,12 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
 }
 
 @Composable
-fun StepSummary(state: MedicineFormState, onUpdate: (MedicineFormState) -> Unit) {
+fun StepSummary(state: MedicineFormState, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
+    val fullDate = "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MedicineFormFields(state = state, onUpdate = onUpdate)
+        MedicineFormFields(state = state.copy(startDate = fullDate), onUpdate = { onUpdate(it) })
     }
 }

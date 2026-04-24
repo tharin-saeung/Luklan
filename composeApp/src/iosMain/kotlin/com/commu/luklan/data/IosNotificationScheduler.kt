@@ -9,6 +9,16 @@ import com.commu.luklan.utils.getCurrentTimeMillis
 class IosNotificationScheduler : NotificationScheduler {
 
     override fun schedule(medicine: Medicine) {
+        // Clear existing for medicine
+        cancel(medicine)
+
+        val amount = medicine.currentAmount.toDoubleOrNull() ?: 0.0
+        val dose = medicine.dosage.toDoubleOrNull() ?: 0.0
+        if (amount < dose) {
+            println("🚫 iOS Skipping notifications for ${medicine.name} (Out of stock)")
+            return
+        }
+
         // ขอ permission
         val center = UNUserNotificationCenter.currentNotificationCenter()
 

@@ -52,7 +52,7 @@ fun MedicineDetailScreen(
     val notificationScheduler = remember { getNotificationScheduler() }
     val scope = rememberCoroutineScope()
 
-    var currentMedicine by remember { mutableStateOf(medicine) }
+    var currentMedicine by remember(medicine) { mutableStateOf(medicine) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var slotToConfirm by remember { mutableStateOf<Pair<String, Int>?>(null) }
@@ -186,7 +186,7 @@ fun MedicineDetailScreen(
                 InfoBox(
                     modifier = Modifier.weight(1.1f),
                     icon = Icons.Filled.Inventory,
-                    label = "ยาจะหมดในอีก",
+                    label = "ยาจะหมดภายใน",
                     value = "$daysLeft วัน"
                 )
             }
@@ -380,12 +380,13 @@ fun MedicineDetailScreen(
                                 val index = slotToConfirm!!.second
                                 val historyKey = "${activeDateStr}_$time"
 
+                                val isAlreadyTaken = currentMedicine.takenHistory.containsKey(historyKey)
                                 val newHistory = currentMedicine.takenHistory.toMutableMap()
                                 newHistory[historyKey] = getCurrentTimeMillis()
 
                                 val currentAmt = currentMedicine.currentAmount.toDoubleOrNull() ?: 0.0
                                 val dose = currentMedicine.dosage.toDoubleOrNull() ?: 0.0
-                                val newAmt = (currentAmt - dose).coerceAtLeast(0.0)
+                                val newAmt = if (isAlreadyTaken) currentAmt else (currentAmt - dose).coerceAtLeast(0.0)
                                 val newAmtStr = if (newAmt % 1.0 == 0.0) newAmt.toInt().toString() else newAmt.toString()
 
                                 val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)

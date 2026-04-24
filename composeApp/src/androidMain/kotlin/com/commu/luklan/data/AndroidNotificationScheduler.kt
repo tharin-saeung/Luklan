@@ -28,6 +28,13 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         // Clear existing alarms for this medicine first
         cancel(medicine)
 
+        val amount = medicine.currentAmount.toDoubleOrNull() ?: 0.0
+        val dose = medicine.dosage.toDoubleOrNull() ?: 0.0
+        if (amount < dose) {
+            println("🚫 Skipping notifications for ${medicine.name} (Out of stock)")
+            return
+        }
+
         val timesToSchedule = medicine.times
         println("🔔 Scheduling notifications for: ${medicine.name} at $timesToSchedule")
         

@@ -53,6 +53,7 @@ fun MainScreen(
     onTabSelected: (MainTab) -> Unit,
     onNavigateToAddMedicine: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onLogout: () -> Unit,
     onNavigateToMedicineDetail: (Medicine, String) -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToMedicineGroups: () -> Unit,
@@ -73,7 +74,6 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         val userId = authRepository.getCurrentUserId()
         if (userId != null) {
-            println("🔔 Initializing user profile and FCM for $userId")
             authRepository.getUserProfile(userId).onSuccess { userProfile = it }
             authRepository.registerFcmToken(userId)
         }
@@ -84,48 +84,36 @@ fun MainScreen(
         if (pollingJob?.isActive == true) return@LaunchedEffect
 
         pollingJob = scope.launch {
-            println("🔔 Starting alert polling for $uid")
             var isFirstPoll = (lastNotifiedAlertId == null)
             while(true) {
                 alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
                     val latest = alerts.firstOrNull()
                     if (latest != null) {
                         val isNew = latest.id != lastNotifiedAlertId
-                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 15000) // Last 15 seconds only
-                        val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000) // Last 5 minutes
+                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 15000)
+                        val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000)
                         
                         if (isNew) {
                             if (latest.senderId != uid) {
-                                // Only notify via polling as a fallback if FCM was likely missed
-                                // (alert is older than 20s but still within recent window)
                                 val isFcmFallback = latest.timestamp < (getCurrentTimeMillis() - 20000)
-                                
                                 if (isFirstPoll) {
-                                    // On launch, just track latest to avoid notifying history
                                     lastNotifiedAlertId = latest.id
                                     isFirstPoll = false
                                 } else if (isFcmFallback) {
                                     if (isRecent) {
-                                        println("🆘 Fallback: Triggering local notif for SOS: ${latest.id}")
                                         notificationScheduler.showImmediateNotification(
                                             "🆘 SOS จาก ${latest.senderName}",
                                             "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
                                         )
                                         lastNotifiedAlertId = latest.id
                                     }
-                                } else {
-                                    // Alert is fresh (<20s), wait for FCM. 
-                                    // DO NOT update lastNotifiedAlertId yet so next poll can catch it as fallback.
-                                    println("🔔 Fresh alert detected, waiting for FCM fallback window...")
                                 }
                             } else {
-                                // I am the sender, just track it
                                 lastNotifiedAlertId = latest.id
                                 isFirstPoll = false
                             }
                         }
                     }
-                    // Mark first poll done even if no alerts
                     isFirstPoll = false
                 }
                 delay(15000)
@@ -158,7 +146,7 @@ fun MainScreen(
                             modifier = Modifier.weight(1f)
                         )
 
-                        Box(modifier = Modifier.weight(1.25f)) // Spacer for center button
+                        Box(modifier = Modifier.weight(1.25f))
 
                         TabItem(
                             icon = Icons.Default.Apps,
@@ -193,13 +181,9 @@ fun MainScreen(
                     onBack = { onTabSelected(MainTab.HOME) }
                 )
                 MainTab.MENU -> MenuScreen(
-                    userRole = userProfile?.role,
-                    onNavigateToProfile = onNavigateToProfile,
                     onNavigateToHistory = onNavigateToHistory,
                     onNavigateToMedicineGroups = onNavigateToMedicineGroups,
-                    onNavigateToInviteCaretaker = onNavigateToInviteCaretaker,
-                    onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard,
-                    onNavigateToNotificationCenter = onNavigateToNotificationCenter
+                    onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard
                 )
             }
         }
@@ -208,7 +192,7 @@ fun MainScreen(
 
 @Composable
 fun TabItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String, 
     isSelected: Boolean, 
     onClick: () -> Unit,
@@ -296,9 +280,7 @@ fun EmergencyScreen(userProfile: User?, onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         val userId = authRepository.getCurrentUserId()
         if (userId != null) {
-            println("🆘 SOS Triggered. Fetching fresh profile for $userId")
             authRepository.getUserProfile(userId).onSuccess { freshUser ->
-                println("🆘 Fresh profile groupIds: ${freshUser.groupIds}")
                 val alert = com.commu.luklan.data.Alert(
                     senderId = freshUser.id,
                     senderName = freshUser.name,
@@ -307,11 +289,8 @@ fun EmergencyScreen(userProfile: User?, onBack: () -> Unit) {
                     timestamp = getCurrentTimeMillis(),
                     groupIds = freshUser.groupIds
                 )
-                alertRepository.sendAlert(alert).onSuccess { 
-                    println("✅ SOS Alert saved to DB")
-                    isSent = true 
-                }.onFailure { println("❌ Failed to save SOS: ${it.message}") }
-            }.onFailure { println("❌ Failed to fetch fresh profile: ${it.message}") }
+                alertRepository.sendAlert(alert).onSuccess { isSent = true }
+            }
         }
     }
 
@@ -343,13 +322,9 @@ fun PillIcon(modifier: Modifier = Modifier) {
 
 @Composable
 fun MenuScreen(
-    userRole: String?,
-    onNavigateToProfile: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToMedicineGroups: () -> Unit,
-    onNavigateToInviteCaretaker: () -> Unit,
-    onNavigateToCaretakerDashboard: () -> Unit,
-    onNavigateToNotificationCenter: (String) -> Unit
+    onNavigateToCaretakerDashboard: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize().background(LuklanColors.Background),

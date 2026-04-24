@@ -54,7 +54,7 @@ fun MonthYearPicker(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header
@@ -79,14 +79,14 @@ fun MonthYearPicker(
                     }
                 }
                 
-                Divider(modifier = Modifier.padding(vertical = 16.dp), color = LuklanColors.Primary.copy(alpha = 0.2f))
+                Divider(modifier = Modifier.padding(vertical = 12.dp), color = LuklanColors.Primary.copy(alpha = 0.1f))
                 
-                // Month Grid
+                // Month Grid 4x3
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    modifier = Modifier.height(240.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.height(300.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     itemsIndexed(thaiMonthsShort) { index, m ->
                         val isSelected = tempMonth == index + 1
@@ -95,7 +95,7 @@ fun MonthYearPicker(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(64.dp)
+                                .height(56.dp)
                                 .clickable { 
                                     tempMonth = index + 1
                                     onConfirm(tempMonth, tempYear)
@@ -110,15 +110,13 @@ fun MonthYearPicker(
                                 color = if (isSelected) LuklanColors.Secondary else LuklanColors.Primary
                             )
                             if (isRealTodayMonth) {
-                                Spacer(Modifier.height(4.dp))
                                 Box(
                                     modifier = Modifier
-                                        .size(6.dp)
+                                        .padding(top = 2.dp)
+                                        .size(5.dp)
                                         .clip(CircleShape)
                                         .background(if (isSelected) LuklanColors.Secondary else LuklanColors.Primary)
                                 )
-                            } else {
-                                Spacer(Modifier.height(10.dp))
                             }
                         }
                     }

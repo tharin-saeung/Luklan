@@ -130,7 +130,7 @@ fun HomeScreen(
                 )
 
                 IconButton(onClick = { onNavigateToNotificationCenter(userId) }) {
-                    Icon(Icons.Default.Notifications, null, tint = Color.Black, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.Notifications, null, tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
                 }
             }
 

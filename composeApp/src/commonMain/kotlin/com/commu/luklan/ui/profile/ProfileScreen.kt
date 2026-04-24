@@ -7,34 +7,39 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
+import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
-import qrgenerator.qrkitpainter.text
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(onNavigateBack: () -> Unit, onGoToLogoutScreen: () -> Unit) {
+fun ProfileScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToGroups: () -> Unit,
+    onNavigateToHistory: () -> Unit,
+    onNavigateToContact: () -> Unit,
+    onLogoutSuccess: () -> Unit
+) {
     val authRepository = remember { getAuthRepository() }
     val scope = rememberCoroutineScope()
 
     var userProfile by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val userId = authRepository.getCurrentUserId()
@@ -51,50 +56,35 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onGoToLogoutScreen: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = Color(0xFF3F6E8C)//0xFFF5F5F5
+        containerColor = Color(0xFF3F6E8C)
     ) { padding ->
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-
-            // 🔷 HEADER
-            Box(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(340.dp)
-//                    .padding(bottom = 20.dp)
-                    .background(Color(0xFF3F6E8C))
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-
+                // HEADER
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Spacer(modifier = Modifier.height(24.dp))
-
                     // Top bar
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.Start
                     ) {
                         IconButton(onClick = onNavigateBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
-                        }
-
-                        IconButton(onClick = { }) {
-                            Icon(Icons.Default.MoreVert, null, tint = Color.White)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Profile
+                    // Profile Icon
                     Box(
                         modifier = Modifier
                             .size(96.dp)
@@ -110,7 +100,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onGoToLogoutScreen: () -> Unit) {
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     if (isLoading) {
                         CircularProgressIndicator(color = Color.White)
@@ -118,73 +108,93 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onGoToLogoutScreen: () -> Unit) {
                         Text(
                             text = userProfile?.name ?: "",
                             color = Color.White,
-                            style = LuklanTypography.h1,
-                            fontSize = 18.sp
+                            style = LuklanTypography.h2,
+                            fontWeight = FontWeight.Bold
                         )
 
-                        fun getRoleText(role: String?): String {
-                            return when (role) {
-                                "patient" -> "ผู้ป่วย"
-                                "caretaker" -> "ผู้ดูแล"
-                                else -> "ผู้ใช้งานทั่วไป"
-                            }
+                        val roleText = when (userProfile?.role) {
+                            "patient" -> "ผู้ป่วย"
+                            "caretaker" -> "ผู้ดูแล"
+                            else -> "ผู้ใช้งานทั่วไป"
                         }
                         Text(
-                            text = getRoleText(userProfile?.role),
+                            text = roleText,
                             style = LuklanTypography.bodyLarge,
-                            color = LuklanTheme.colors.OnPrimary
+                            color = Color.White.copy(alpha = 0.8f)
                         )
 
                         Text(
-                            text = userProfile?.email?: "",
+                            text = userProfile?.email ?: "",
                             style = LuklanTypography.bodySmall,
-                            color = LuklanTheme.colors.OnPrimary
+                            color = Color.White.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // CARD MENU
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MenuItem(title = "กลุ่มผู้ดูแล", icon = Icons.Default.Groups, onClick = onNavigateToGroups)
+                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                        MenuItem(title = "ประวัติการกินยา", icon = Icons.Default.History, onClick = onNavigateToHistory)
+                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                        MenuItem(title = "ติดต่อทีมงาน", icon = Icons.Default.ContactSupport, onClick = onNavigateToContact)
+                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                        MenuItem(
+                            title = "ออกจากระบบ",
+                            icon = Icons.Default.Logout,
+                            isLogout = true,
+                            onClick = { showLogoutDialog = true }
                         )
                     }
                 }
             }
-
-            // ⚪ CARD MENU
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .offset(y = 130.dp),
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-
-                    MenuItem(title = "กลุ่ม")
-                    Divider()
-
-                    MenuItem(title = "ประวัติการกินยา")
-                    Divider()
-
-                    MenuItem(title = "ติดต่อสอบถาม")
-                    Divider()
-
-                    MenuItem(
-                        title = "Logout",
-                        isLogout = true,
-                        onClick = {
-
-                                onGoToLogoutScreen()
-
-                        }
-                    )
-                }
-            }
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("ออกจากระบบ?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold, color = LuklanColors.Primary) },
+            text = { Text("คุณต้องการออกจากระบบใช่หรือไม่?", style = LuklanTypography.bodyLarge, color = LuklanColors.TextPrimary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        scope.launch {
+                            authRepository.signOut()
+                            onLogoutSuccess()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Error),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("ออกจากระบบ", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
+            }
+        )
     }
 }
 
 @Composable
 fun MenuItem(
     title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     isLogout: Boolean = false,
     onClick: () -> Unit = {}
 ) {
@@ -192,29 +202,27 @@ fun MenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 20.dp),
+            .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Icon(
-            imageVector = if (isLogout) Icons.Default.Close else Icons.Default.Person,
+            imageVector = icon,
             contentDescription = null,
-            tint = if (isLogout) Color.Red else Color.Gray
+            tint = if (isLogout) Color.Red else Color.Gray,
+            modifier = Modifier.size(24.dp)
         )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = title,
             color = if (isLogout) Color.Red else Color.Black,
             modifier = Modifier.weight(1f),
-            fontSize = 16.sp
+            style = LuklanTypography.bodyLarge
         )
-
         Icon(
-            imageVector = Icons.Default.ArrowForward,
+            imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color.Gray
+            tint = Color.Gray,
+            modifier = Modifier.size(20.dp)
         )
     }
 }
