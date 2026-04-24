@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,8 @@ fun InviteCaretakerScreen(
     val authRepository = remember { getAuthRepository() }
     val groupRepository = remember { getGroupRepository() }
     val scope = rememberCoroutineScope()
+    val clipboardManager = LocalClipboardManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
     
     var group by remember { mutableStateOf<CareGroup?>(null) }
     var userName by remember { mutableStateOf("") }
@@ -54,7 +58,6 @@ fun InviteCaretakerScreen(
                 authRepository.getUserProfile(userId).onSuccess { user ->
                     userName = user.name
                     groupRepository.getGroupsForUser(userId).onSuccess { groups ->
-                        // Just use the first group as default for now
                         group = groups.firstOrNull()
                         isLoading = false
                     }.onFailure { isLoading = false }
@@ -66,6 +69,7 @@ fun InviteCaretakerScreen(
     LaunchedEffect(Unit) { loadInfo() }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("เชิญผู้ดูแล", style = LuklanTypography.h1, fontWeight = FontWeight.Bold) },
@@ -86,7 +90,7 @@ fun InviteCaretakerScreen(
             if (isLoading) {
                 CircularProgressIndicator(color = LuklanColors.Primary)
             } else {
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.weight(1f))
                 
                 // Invite Card
                 Card(
@@ -142,28 +146,29 @@ fun InviteCaretakerScreen(
                     }
                 }
                 
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(32.dp))
                 
                 // Bottom Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     InviteButton(
                         icon = Icons.Default.ContentCopy,
                         label = "คัดลอกรหัส",
-                        modifier = Modifier.weight(1f),
-                        onClick = { /* Copy to clipboard */ }
-                    )
-                    InviteButton(
-                        icon = Icons.Default.Keyboard,
-                        label = "กรอกรหัส",
-                        modifier = Modifier.weight(1f),
-                        onClick = { /* Navigate to join if needed? prototype shows it here */ }
+                        modifier = Modifier.fillMaxWidth(0.6f),
+                        onClick = {
+                            group?.inviteCode?.let { code ->
+                                clipboardManager.setText(AnnotatedString(code))
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("คัดลอกรหัสแล้ว")
+                                }
+                            }
+                        }
                     )
                 }
                 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.weight(1f))
             }
         }
     }

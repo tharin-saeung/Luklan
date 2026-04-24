@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,7 +91,7 @@ fun CaretakerDashboardScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม")
+                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม", icon = Icons.Default.QrCodeScanner)
                         AddGroupButton(onClick = onNavigateToCreate, label = "สร้างกลุ่มใหม่")
                     }
                 }
@@ -111,7 +112,7 @@ fun CaretakerDashboardScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม")
+                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม", icon = Icons.Default.QrCodeScanner)
                         AddGroupButton(onClick = onNavigateToCreate, label = "สร้างกลุ่มใหม่")
                     }
                 }
@@ -121,13 +122,13 @@ fun CaretakerDashboardScreen(
 }
 
 @Composable
-fun AddGroupButton(onClick: () -> Unit, label: String) {
+fun AddGroupButton(onClick: () -> Unit, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.Add) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(
             onClick = onClick,
             modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White).border(1.dp, LuklanColors.Primary.copy(alpha = 0.2f), CircleShape)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add", tint = LuklanColors.Primary, modifier = Modifier.size(40.dp))
+            Icon(icon, contentDescription = label, tint = LuklanColors.Primary, modifier = Modifier.size(40.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(label, style = LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)

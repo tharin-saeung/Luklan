@@ -351,7 +351,6 @@ fun MenuScreen(
     onNavigateToCaretakerDashboard: () -> Unit,
     onNavigateToNotificationCenter: (String) -> Unit
 ) {
-    var searchText by remember { mutableStateOf("") }
     Column(
         modifier = Modifier.fillMaxSize().background(LuklanColors.Background),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -372,24 +371,13 @@ fun MenuScreen(
             )
         }
         
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
         
-        OutlinedTextField(
-            value = searchText, 
-            onValueChange = { searchText = it }, 
-            modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg), 
-            placeholder = { Text("ค้นหา") }, 
-            leadingIcon = { Icon(Icons.Default.Search, null, tint = LuklanColors.Primary) }, 
-            shape = RoundedCornerShape(50.dp), 
-            colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), 
-            singleLine = true
-        )
-        
-        Spacer(Modifier.height(LuklanSpacing.lg))
-        
+        Spacer(Modifier.weight(0.8f))
+
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             MenuCardWide(
                 icon = Icons.Default.Medication,
@@ -412,15 +400,8 @@ fun MenuScreen(
                 color = LuklanColors.Primary
             )
         }
-        
-        Spacer(Modifier.weight(1f))
-        
-        ListItem(
-            headlineContent = { Text("ข้อมูลส่วนตัว", style = LuklanTypography.bodyLarge) }, 
-            leadingContent = { Icon(Icons.Default.Person, null, tint = LuklanColors.Primary) }, 
-            trailingContent = { Icon(Icons.Default.ChevronRight, null) }, 
-            modifier = Modifier.clickable { onNavigateToProfile() }
-        )
+
+        Spacer(Modifier.weight(1.2f))
     }
 }
 
@@ -433,9 +414,9 @@ fun MenuCardWide(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().height(140.dp), 
+        modifier = modifier.fillMaxWidth().height(160.dp), 
         colors = CardDefaults.cardColors(containerColor = color), 
-        shape = RoundedCornerShape(24.dp), 
+        shape = RoundedCornerShape(32.dp), 
         onClick = onClick
     ) {
         Row(
