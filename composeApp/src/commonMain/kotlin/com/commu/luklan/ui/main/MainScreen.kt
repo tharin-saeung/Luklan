@@ -91,11 +91,11 @@ fun MainScreen(
                     val latest = alerts.firstOrNull()
                     if (latest != null) {
                         val isNew = latest.id != lastNotifiedAlertId
-                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 60000) // Last 1 minute
+                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 15000) // Last 15 seconds only
                         val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000) // Last 5 minutes
                         
                         if (isNew && latest.senderId != uid) {
-                            // Notify if it's a new ID AND (not first poll OR very fresh alert even if first poll)
+                            // Only notify if (not first poll) OR (extremely fresh alert < 15s)
                             if (!isFirstPoll || isVeryFresh) {
                                 if (isRecent) {
                                     println("🆘 Triggering local notif for SOS: ${latest.id}")

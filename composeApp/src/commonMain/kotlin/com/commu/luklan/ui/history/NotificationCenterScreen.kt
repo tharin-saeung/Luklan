@@ -43,12 +43,17 @@ fun NotificationCenterScreen(
 
     LaunchedEffect(targetUserId) {
         val currentUid = authRepository.getCurrentUserId()
-        val uidToFetch = targetUserId ?: currentUid
         
-        if (currentUid != null && uidToFetch != null) {
+        if (currentUid != null) {
             alertRepository.getAlertsForUser(currentUid).onSuccess { list ->
-                // Filter to show only alerts from the target user
-                alerts = list.filter { it.senderId == uidToFetch }
+                // Filter:
+                // 1. If targetUserId provided (viewing patient), show that patient's alerts
+                // 2. If no targetUserId, show alerts RECEIVED from others (senderId != currentUid)
+                alerts = if (targetUserId != null) {
+                    list.filter { it.senderId == targetUserId }
+                } else {
+                    list.filter { it.senderId != currentUid }
+                }
                 isLoading = false
             }.onFailure { isLoading = false }
         } else {
