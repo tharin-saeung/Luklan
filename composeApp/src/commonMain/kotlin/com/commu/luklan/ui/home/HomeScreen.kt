@@ -270,11 +270,14 @@ fun HomeScreen(
                 }
             }
 
+            val dateStr = "${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
+            val filteredMedicines = medicines.filter { it.startDate <= dateStr }
+
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = LuklanColors.Primary)
                 }
-            } else if (medicines.isEmpty()) {
+            } else if (filteredMedicines.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("ไม่มีรายการยา", color = LuklanColors.TextSecondary)
                 }
@@ -284,8 +287,7 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(medicines) { med ->
-                        val dateStr = "${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
+                    items(filteredMedicines) { med ->
                         val isFullyTaken = med.times.all { time ->
                             med.takenHistory.containsKey("${dateStr}_$time")
                         }
