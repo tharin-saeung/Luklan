@@ -57,7 +57,7 @@ fun MainScreen(
     onNavigateToInviteCaretaker: () -> Unit,
     onNavigateToCaretakerDashboard: () -> Unit,
     onNavigateToPatientTimeline: (String, String) -> Unit,
-    onNavigateToNotificationCenter: () -> Unit
+    onNavigateToNotificationCenter: (String) -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
     val alertRepository = remember { getAlertRepository() }
@@ -310,7 +310,7 @@ fun MenuScreen(
     onNavigateToMedicineGroups: () -> Unit,
     onNavigateToInviteCaretaker: () -> Unit,
     onNavigateToCaretakerDashboard: () -> Unit,
-    onNavigateToNotificationCenter: () -> Unit
+    onNavigateToNotificationCenter: (String) -> Unit
 ) {
     var searchText by remember { mutableStateOf("") }
     Column(

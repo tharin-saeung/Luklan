@@ -122,6 +122,9 @@ actual class AuthRepository actual constructor() {
             email = (objectForKey("email") as? String) ?: "",
             role = (objectForKey("role") as? String) ?: "user",
             inviteCode = (objectForKey("inviteCode") as? String) ?: "",
+            groupIds = (objectForKey("groupIds") as? NSArray)?.let { arr ->
+                (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
+            } ?: emptyList(),
             caretakers = (objectForKey("caretakers") as? NSArray)?.let { arr ->
                 (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
             } ?: emptyList(),

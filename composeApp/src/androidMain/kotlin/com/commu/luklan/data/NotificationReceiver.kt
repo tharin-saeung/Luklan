@@ -31,22 +31,25 @@ class NotificationReceiver : BroadcastReceiver() {
                 
                 if (!isTaken) {
                     showNotification(context, "เตือนกินยา (ยังไม่ได้ทาน)", message, medicineId, time)
-                    if (userId != null) syncAlertToFirebase(db, userId, "CHECKIN", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)")
+                    if (userId != null) syncAlertToFirebase(db, userId, "CHECKIN", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
                 }
             }
         } else {
             showNotification(context, "เตือนกินยา", message, medicineId, time)
-            if (userId != null) syncAlertToFirebase(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)")
+            if (userId != null) syncAlertToFirebase(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
         }
     }
 
-    private fun syncAlertToFirebase(db: FirebaseFirestore, userId: String, type: String, message: String) {
+    private fun syncAlertToFirebase(db: FirebaseFirestore, userId: String, type: String, message: String, medicineId: String?, time: String?) {
         db.collection("users").document(userId).get().addOnSuccessListener { userDoc ->
             val groupIds = (userDoc.get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             val name = userDoc.getString("name") ?: "ผู้ป่วย"
             
+            // Deduplication ID matching iOS: medicineId_time_type
+            val alertId = "${medicineId ?: "manual"}_${time?.replace(":", "") ?: "now"}_${type}"
+            
             val alert = mapOf(
-                "id" to java.util.UUID.randomUUID().toString(),
+                "id" to alertId,
                 "senderId" to userId,
                 "senderName" to name,
                 "type" to type,
@@ -55,7 +58,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 "groupIds" to groupIds
             )
             
-            db.collection("alerts").document(alert["id"] as String).set(alert)
+            db.collection("alerts").document(alertId).set(alert)
         }
     }
 

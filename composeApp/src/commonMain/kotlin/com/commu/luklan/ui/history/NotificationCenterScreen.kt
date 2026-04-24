@@ -32,18 +32,27 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationCenterScreen(onBack: () -> Unit) {
+fun NotificationCenterScreen(
+    targetUserId: String? = null,
+    onBack: () -> Unit
+) {
     val alertRepository = remember { getAlertRepository() }
     val authRepository = remember { getAuthRepository() }
     var alerts by remember { mutableStateOf<List<Alert>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        authRepository.getCurrentUserId()?.let { uid ->
-            alertRepository.getAlertsForUser(uid).onSuccess {
-                alerts = it
+    LaunchedEffect(targetUserId) {
+        val currentUid = authRepository.getCurrentUserId()
+        val uidToFetch = targetUserId ?: currentUid
+        
+        if (currentUid != null && uidToFetch != null) {
+            alertRepository.getAlertsForUser(currentUid).onSuccess { list ->
+                // Filter to show only alerts from the target user
+                alerts = list.filter { it.senderId == uidToFetch }
                 isLoading = false
             }.onFailure { isLoading = false }
+        } else {
+            isLoading = false
         }
     }
 

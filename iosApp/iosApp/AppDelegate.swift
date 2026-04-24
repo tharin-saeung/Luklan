@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import composeApp
 import FirebaseCore
+import FirebaseMessaging
 import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -15,6 +16,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Call your kmp initializer kotlin code!
         KMPInitializerKt.onDidFinishLaunchingWithOptions()
         return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        print("AppDelegate: didRegisterForRemoteNotificationsWithDeviceToken")
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("AppDelegate: didFailToRegisterForRemoteNotificationsWithError: \(error.localizedDescription)")
     }
 
     // Called when a notification is delivered to a foreground app.

@@ -45,7 +45,7 @@ fun HomeScreen(
     onNavigateToMedicineDetail: (Medicine, String) -> Unit,
     onNavigateToHistory: () -> Unit = {},
     onNavigateToMedicineGroups: () -> Unit = {},
-    onNavigateToNotificationCenter: () -> Unit = {}
+    onNavigateToNotificationCenter: (String) -> Unit = {}
 ) {
     val authRepository = remember { getAuthRepository() }
     val medicineRepository = remember { getMedicineRepository() }
@@ -128,7 +128,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                IconButton(onClick = onNavigateToNotificationCenter) {
+                IconButton(onClick = { onNavigateToNotificationCenter(userId) }) {
                     Icon(Icons.Default.Notifications, null, tint = Color.Black, modifier = Modifier.size(32.dp))
                 }
             }

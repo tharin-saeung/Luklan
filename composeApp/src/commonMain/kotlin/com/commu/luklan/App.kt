@@ -63,6 +63,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
         var selectedGroupId by remember { mutableStateOf("") }
         var selectedGroupName by remember { mutableStateOf("") }
         var selectedMainTab by remember { mutableStateOf(com.commu.luklan.ui.main.MainTab.HOME) }
+        var selectedTargetUserIdForNotif by remember { mutableStateOf<String?>(null) }
 
         val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
         val medicineRepository = remember { com.commu.luklan.data.getMedicineRepository() }
@@ -201,7 +202,10 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             selectedPatientName = name
                             navController.navigate(Screen.PatientTimeline.route)
                         },
-                        onNavigateToNotificationCenter = { navController.navigate(Screen.NotificationCenter.route) }
+                        onNavigateToNotificationCenter = { targetUid: String -> 
+                            selectedTargetUserIdForNotif = targetUid
+                            navController.navigate(Screen.NotificationCenter.route) 
+                        }
                     )
                 }
 
@@ -218,7 +222,10 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         },
                         onNavigateToHistory = { navController.navigate(Screen.History.route) },
                         onNavigateToMedicineGroups = { navController.navigate(Screen.MedicineGroups.route) },
-                        onNavigateToNotificationCenter = { navController.navigate(Screen.NotificationCenter.route) }
+                        onNavigateToNotificationCenter = { targetUid: String -> 
+                            selectedTargetUserIdForNotif = targetUid
+                            navController.navigate(Screen.NotificationCenter.route) 
+                        }
                     )
                 }
 
@@ -359,7 +366,11 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
 
                 composable(Screen.NotificationCenter.route) {
                     com.commu.luklan.ui.history.NotificationCenterScreen(
-                        onBack = { navController.popBackStack() }
+                        targetUserId = selectedTargetUserIdForNotif,
+                        onBack = { 
+                            navController.popBackStack()
+                            selectedTargetUserIdForNotif = null
+                        }
                     )
                 }
 
