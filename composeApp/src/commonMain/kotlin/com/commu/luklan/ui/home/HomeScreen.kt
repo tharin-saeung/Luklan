@@ -272,7 +272,11 @@ fun HomeScreen(
             }
 
             val dateStr = "${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
-            val filteredMedicines = medicines.filter { it.startDate <= dateStr }
+            
+            val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
+            val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+            
+            val filteredMedicines = medicines.filter { it.isAvailableOnDate(dateStr, todayStr) }
 
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

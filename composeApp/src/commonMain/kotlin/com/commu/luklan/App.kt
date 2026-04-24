@@ -137,7 +137,6 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             scope.launch {
                                 val userId = authRepository.getCurrentUserId()
                                 if (userId != null) {
-                                    // Sync notifications on login
                                     medicineRepository.getMedicines(userId).onSuccess { meds ->
                                         meds.forEach { getNotificationScheduler().schedule(it) }
                                     }
@@ -353,7 +352,12 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                     medicineToEdit?.let { medicine ->
                         EditMedicineScreen(
                             medicine = medicine,
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { updated ->
+                                if (updated != null) {
+                                    medicineToEdit = updated
+                                }
+                                navController.popBackStack()
+                            }
                         )
                     }
                 }

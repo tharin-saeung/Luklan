@@ -161,13 +161,13 @@ fun MedicineDetailScreen(
             // Info Boxes Row
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val hasMinutes = currentMedicine.mealTimingMinutes > 0 &&
                         (currentMedicine.mealTiming == "ก่อนอาหาร" || currentMedicine.mealTiming == "หลังอาหาร")
 
                 InfoBox(
-                    modifier = Modifier.weight(if (hasMinutes) 0.85f else 1f),
+                    modifier = Modifier.weight(0.9f),
                     imageType = when (currentMedicine.category) {
                         "แคปซูล" -> Res.drawable.capsule
                         "เม็ด" -> Res.drawable.pill
@@ -182,6 +182,23 @@ fun MedicineDetailScreen(
                     value = currentMedicine.category.ifEmpty { "เม็ด" }
                 )
 
+                val daysLeft = currentMedicine.calculateDaysRemaining()
+                InfoBox(
+                    modifier = Modifier.weight(1.1f),
+                    icon = Icons.Filled.Inventory,
+                    label = "ยาจะหมดในอีก",
+                    value = "$daysLeft วัน"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Second Row for Timing
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            ) {
+                val hasMinutes = currentMedicine.mealTimingMinutes > 0 &&
+                        (currentMedicine.mealTiming == "ก่อนอาหาร" || currentMedicine.mealTiming == "หลังอาหาร")
                 val mealTimingDisplay = buildString {
                     append(currentMedicine.mealTiming.ifEmpty { "หลังอาหาร" })
                     if (hasMinutes) {
@@ -190,7 +207,7 @@ fun MedicineDetailScreen(
                 }
 
                 InfoBox(
-                    modifier = Modifier.weight(if (hasMinutes) 1.2f else 1f),
+                    modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Filled.AccessTimeFilled,
                     label = "ช่วงเวลาที่ใช้ยา",
                     value = mealTimingDisplay
@@ -366,7 +383,12 @@ fun MedicineDetailScreen(
                                 val newHistory = currentMedicine.takenHistory.toMutableMap()
                                 newHistory[historyKey] = getCurrentTimeMillis()
 
-                                val updatedMed = currentMedicine.copy(takenHistory = newHistory)
+                                val currentAmt = currentMedicine.currentAmount.toDoubleOrNull() ?: 0.0
+                                val dose = currentMedicine.dosage.toDoubleOrNull() ?: 0.0
+                                val newAmt = (currentAmt - dose).coerceAtLeast(0.0)
+                                val newAmtStr = if (newAmt % 1.0 == 0.0) newAmt.toInt().toString() else newAmt.toString()
+
+                                val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)
                                 currentMedicine = updatedMed
                                 scope.launch {
                                     notificationScheduler.cancelSlot(updatedMed, index)
@@ -397,10 +419,16 @@ fun MedicineDetailScreen(
                                 val time = slotToConfirm!!.first
                                 val historyKey = "${activeDateStr}_$time"
 
+                                val isUndo = currentMedicine.takenHistory.containsKey(historyKey)
                                 val newHistory = currentMedicine.takenHistory.toMutableMap()
                                 newHistory.remove(historyKey)
 
-                                val updatedMed = currentMedicine.copy(takenHistory = newHistory)
+                                val currentAmt = currentMedicine.currentAmount.toDoubleOrNull() ?: 0.0
+                                val dose = currentMedicine.dosage.toDoubleOrNull() ?: 0.0
+                                val newAmt = if (isUndo) currentAmt + dose else currentAmt
+                                val newAmtStr = if (newAmt % 1.0 == 0.0) newAmt.toInt().toString() else newAmt.toString()
+
+                                val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)
                                 currentMedicine = updatedMed
                                 scope.launch {
                                     notificationScheduler.schedule(updatedMed)

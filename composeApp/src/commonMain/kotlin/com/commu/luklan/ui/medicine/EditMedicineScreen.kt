@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,13 +21,10 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
-import luklan.composeapp.generated.resources.Res
-import luklan.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
+fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) {
     val medicineRepo = remember { getMedicineRepository() }
     val scheduler = remember { getNotificationScheduler() }
     val scope = rememberCoroutineScope()
@@ -53,7 +49,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
+                IconButton(onClick = { onNavigateBack(null) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
                 Spacer(Modifier.weight(1f))
                 Text("แก้ไขข้อมูลยา", style = LuklanTypography.h1, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1.3f))
@@ -63,7 +59,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
             
             Box(modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MedicineFormFields(state = state, onUpdate = { state = it },)
+                    MedicineFormFields(state = state, onUpdate = { state = it })
                 }
             }
 
@@ -92,7 +88,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                                 scheduler.cancel(medicine)
                                 scheduler.schedule(up)
                                 isLoading = false
-                                onNavigateBack()
+                                onNavigateBack(up)
                             }.onFailure { 
                                 isLoading = false
                                 error = it.message 
@@ -102,9 +98,9 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp).height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary)
+                colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Secondary, contentColor = Color.White)
             ) {
-                if (isLoading) CircularProgressIndicator(color = LuklanColors.Primary, modifier = Modifier.size(24.dp))
+                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 else Text("บันทึกการแก้ไข", style = LuklanTypography.buttonLarge)
             }
         }
