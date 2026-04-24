@@ -81,26 +81,32 @@ fun MainScreen(
                 alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
                     val latest = alerts.firstOrNull()
                     if (latest != null) {
-                        if (isFirstPoll) {
-                            // On first run or reset, just remember the latest ID
-                            lastNotifiedAlertId = latest.id
-                            isFirstPoll = false
-                            println("🔔 Initial poll done. Latest alert: ${latest.id}")
-                        } else if (latest.id != lastNotifiedAlertId && latest.timestamp > (getCurrentTimeMillis() - 120000)) {
-                            // Only notify if alert is new and within last 2 minutes
-                            if (latest.senderId != uid) {
-                                println("🆘 Triggering local notif for SOS: ${latest.id}")
-                                notificationScheduler.showImmediateNotification(
-                                    "🆘 SOS จาก ${latest.senderName}",
-                                    "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                )
+                        val isNew = latest.id != lastNotifiedAlertId
+                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 60000) // Last 1 minute
+                        val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000) // Last 5 minutes
+                        
+                        if (isNew && latest.senderId != uid) {
+                            // Notify if it's a new ID AND (not first poll OR very fresh alert even if first poll)
+                            if (!isFirstPoll || isVeryFresh) {
+                                if (isRecent) {
+                                    println("🆘 Triggering local notif for SOS: ${latest.id}")
+                                    notificationScheduler.showImmediateNotification(
+                                        "🆘 SOS จาก ${latest.senderName}",
+                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                    )
+                                    lastNotifiedAlertId = latest.id
+                                }
+                            }
+                            
+                            // Always update lastNotifiedAlertId on first poll to prevent repeat
+                            if (isFirstPoll) {
                                 lastNotifiedAlertId = latest.id
+                                isFirstPoll = false
                             }
                         }
-                    } else {
-                        // If no alerts found, we can safely say first poll (for nothing) is done
-                        isFirstPoll = false
                     }
+                    // Mark first poll done even if no alerts
+                    isFirstPoll = false
                 }
                 delay(15000)
             }
