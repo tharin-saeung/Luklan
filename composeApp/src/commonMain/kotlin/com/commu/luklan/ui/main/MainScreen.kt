@@ -95,23 +95,23 @@ fun MainScreen(
                         val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000) // Last 5 minutes
                         
                         if (isNew && latest.senderId != uid) {
-                            // Only notify if (not first poll) OR (extremely fresh alert < 15s)
-                            if (!isFirstPoll || isVeryFresh) {
+                            // Only notify via polling as a fallback if FCM was likely missed
+                            // (alert is older than 20s but still within recent window)
+                            val isFcmFallback = latest.timestamp < (getCurrentTimeMillis() - 20000)
+                            
+                            if (!isFirstPoll && isFcmFallback) {
                                 if (isRecent) {
-                                    println("🆘 Triggering local notif for SOS: ${latest.id}")
+                                    println("🆘 Fallback: Triggering local notif for SOS: ${latest.id}")
                                     notificationScheduler.showImmediateNotification(
                                         "🆘 SOS จาก ${latest.senderName}",
                                         "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
                                     )
-                                    lastNotifiedAlertId = latest.id
                                 }
                             }
                             
-                            // Always update lastNotifiedAlertId on first poll to prevent repeat
-                            if (isFirstPoll) {
-                                lastNotifiedAlertId = latest.id
-                                isFirstPoll = false
-                            }
+                            // Always update lastNotifiedAlertId to track state
+                            lastNotifiedAlertId = latest.id
+                            isFirstPoll = false
                         }
                     }
                     // Mark first poll done even if no alerts
