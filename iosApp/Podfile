@@ -8,4 +8,5 @@ target 'iosApp' do
   pod 'FirebaseAuth'
   pod 'FirebaseFirestore'
   pod 'FirebaseFunctions'
+  pod 'FirebaseMessaging'
 end
