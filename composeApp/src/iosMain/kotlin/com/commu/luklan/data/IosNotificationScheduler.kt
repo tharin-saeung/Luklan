@@ -95,7 +95,7 @@ class IosNotificationScheduler : NotificationScheduler {
                     repeats = true
                 )
 
-                val identifier = "${medicine.id}_$index"
+                val identifier = "${medicine.id}_${timeStr.replace(":", "")}"
                 val request = UNNotificationRequest.requestWithIdentifier(identifier, content, trigger)
                 center.addNotificationRequest(request) { _ -> }
                 
@@ -118,7 +118,7 @@ class IosNotificationScheduler : NotificationScheduler {
                         dateComponents = checkinComponents,
                         repeats = true
                     )
-                    val checkinIdentifier = "${medicine.id}_${index}_checkin"
+                    val checkinIdentifier = "${medicine.id}_${timeStr.replace(":", "")}_checkin"
                     center.addNotificationRequest(UNNotificationRequest.requestWithIdentifier(checkinIdentifier, checkinContent, checkinTrigger)) { _ -> }
                 }
             }

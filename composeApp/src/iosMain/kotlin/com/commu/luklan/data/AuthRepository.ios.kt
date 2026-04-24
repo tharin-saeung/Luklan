@@ -12,6 +12,7 @@ import kotlin.coroutines.suspendCoroutine
 @OptIn(ExperimentalForeignApi::class)
 actual class AuthRepository actual constructor() {
     private val auth = FIRAuth.auth()
+    private val scope = kotlinx.coroutines.MainScope()
 
     actual suspend fun signUpWithEmail(email: String, password: String, name: String, role: String): Result<Unit> {
         return suspendCancellableCoroutine { continuation ->
@@ -89,11 +90,26 @@ actual class AuthRepository actual constructor() {
     }
 
     actual suspend fun updateFcmToken(userId: String, token: String): Result<Unit> = suspendCoroutine { continuation ->
+        println("🔔 iOS Updating FCM Token for $userId: $token")
         updateFcmTokenNative(userId, token) { error ->
             if (error != null) {
+                println("❌ iOS Failed to update FCM Token: $error")
                 continuation.resume(Result.failure(Exception(error)))
             } else {
                 continuation.resume(Result.success(Unit))
+            }
+        }
+    }
+
+    actual suspend fun registerFcmToken(userId: String): Result<Unit> = suspendCoroutine { continuation ->
+        cocoapods.FirebaseMessaging.FIRMessaging.messaging().tokenWithCompletion { token, error ->
+            if (token != null && error == null) {
+                scope.launch {
+                    val res = updateFcmToken(userId, token)
+                    continuation.resume(res)
+                }
+            } else {
+                continuation.resume(Result.failure(Exception(error?.localizedDescription ?: "Token null")))
             }
         }
     }

@@ -8,6 +8,6 @@ expect class AuthRepository() {
     suspend fun getUserProfile(userId: String): Result<User>
     suspend fun signOut()
     suspend fun updateFcmToken(userId: String, token: String): Result<Unit>
+    suspend fun registerFcmToken(userId: String): Result<Unit>
     }
-
 expect fun getAuthRepository(): AuthRepository

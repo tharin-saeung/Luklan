@@ -140,6 +140,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                                     medicineRepository.getMedicines(userId).onSuccess { meds ->
                                         meds.forEach { getNotificationScheduler().schedule(it) }
                                     }
+                                    authRepository.registerFcmToken(userId)
                                 }
                                 navController.navigate(Screen.Home.route) {
                                     popUpTo(0) { inclusive = true }

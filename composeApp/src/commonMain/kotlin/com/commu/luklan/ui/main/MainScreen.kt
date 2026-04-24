@@ -65,24 +65,29 @@ fun MainScreen(
     var userProfile by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
 
+    var lastNotifiedAlertId by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         authRepository.getCurrentUserId()?.let { uid ->
             authRepository.getUserProfile(uid).onSuccess { 
                 userProfile = it
                 scope.launch {
+                    println("🔔 Starting alert polling for $uid")
                     while(true) {
-                        delay(30000)
                         alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
                             val latest = alerts.firstOrNull()
-                            if (latest != null && latest.timestamp > (getCurrentTimeMillis() - 60000)) {
+                            if (latest != null && latest.id != lastNotifiedAlertId && latest.timestamp > (getCurrentTimeMillis() - 120000)) {
                                 if (latest.senderId != uid) {
+                                    println("🆘 Triggering local notif for SOS: ${latest.id}")
                                     notificationScheduler.showImmediateNotification(
                                         "🆘 SOS จาก ${latest.senderName}",
                                         "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
                                     )
+                                    lastNotifiedAlertId = latest.id
                                 }
                             }
                         }
+                        delay(15000) // Poll every 15s
                     }
                 }
             }

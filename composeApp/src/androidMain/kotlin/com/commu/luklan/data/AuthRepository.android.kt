@@ -129,9 +129,20 @@ actual class AuthRepository {
 
     actual suspend fun updateFcmToken(userId: String, token: String): Result<Unit> {
         return try {
+            println("🔔 Updating FCM Token for $userId: $token")
             firestore.collection("users").document(userId)
                 .update("fcmToken", token).await()
             Result.success(Unit)
+        } catch (e: Exception) {
+            println("❌ Failed to update FCM Token: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    actual suspend fun registerFcmToken(userId: String): Result<Unit> {
+        return try {
+            val token = com.google.firebase.messaging.FirebaseMessaging.getInstance().token.await()
+            updateFcmToken(userId, token)
         } catch (e: Exception) {
             Result.failure(e)
         }

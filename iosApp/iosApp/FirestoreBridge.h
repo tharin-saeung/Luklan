@@ -105,6 +105,7 @@
 + (void)getAlertsForUserId:(NSString *)userId
                 completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion;
 
-+ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo;
++ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo
+                      alertId:(NSString *)alertId;
 
 @end

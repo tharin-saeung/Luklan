@@ -500,7 +500,8 @@
     }];
 }
 
-+ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo {
++ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo
+                      alertId:(NSString *)alertId {
     NSString *medicineId = userInfo[@"medicineId"];
     NSString *time = userInfo[@"time"];
     BOOL isCheckin = [userInfo[@"isCheckin"] boolValue];
@@ -531,7 +532,7 @@
                 [NSString stringWithFormat:@"ได้เวลาใช้ยา %@ (%@)", medName, time];
 
             NSDictionary *alertMap = @{
-                @"id": [[NSUUID UUID] UUIDString],
+                @"id": alertId,
                 @"senderId": userId,
                 @"senderName": name,
                 @"type": type,
@@ -540,7 +541,8 @@
                 @"groupIds": groupIds
             };
             
-            [[[db collectionWithPath:@"alerts"] documentWithPath:alertMap[@"id"]] setData:alertMap completion:nil];
+            // setData is idempotent if document ID is same
+            [[[db collectionWithPath:@"alerts"] documentWithPath:alertId] setData:alertMap completion:nil];
         }];
     }];
 }
