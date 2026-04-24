@@ -70,6 +70,15 @@ fun MainScreen(
     var lastNotifiedAlertId by rememberSaveable { mutableStateOf<String?>(null) }
     var pollingJob by remember { mutableStateOf<Job?>(null) }
 
+    LaunchedEffect(Unit) {
+        val userId = authRepository.getCurrentUserId()
+        if (userId != null) {
+            println("🔔 Initializing user profile and FCM for $userId")
+            authRepository.getUserProfile(userId).onSuccess { userProfile = it }
+            authRepository.registerFcmToken(userId)
+        }
+    }
+
     LaunchedEffect(userProfile) {
         val uid = userProfile?.id ?: return@LaunchedEffect
         if (pollingJob?.isActive == true) return@LaunchedEffect
