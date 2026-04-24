@@ -41,6 +41,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
             implementation(libs.android.firebase.auth)
             implementation(libs.android.firebase.firestore)
+            implementation(libs.android.firebase.messaging)
             implementation(libs.google.firebase.functions)
             implementation(libs.gson)
         }
@@ -90,6 +91,11 @@ kotlin {
         }
         
         pod("FirebaseFunctions") {
+            version = "~> 11.0"
+            extraOpts += listOf("-compiler-option", "-fmodules")
+        }
+
+        pod("FirebaseMessaging") {
             version = "~> 11.0"
             extraOpts += listOf("-compiler-option", "-fmodules")
         }

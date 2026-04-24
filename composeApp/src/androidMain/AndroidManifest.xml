@@ -32,6 +32,13 @@
             android:name=".platform.ImagePickerActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <receiver android:name=".data.NotificationReceiver" />
+        <service
+            android:name=".data.LuklanMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

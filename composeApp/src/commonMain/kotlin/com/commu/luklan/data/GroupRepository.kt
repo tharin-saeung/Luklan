@@ -2,6 +2,7 @@ package com.commu.luklan.data
 
 interface GroupRepository {
     suspend fun createDefaultGroup(user: User): Result<CareGroup>
+    suspend fun createGroup(name: String, owner: User): Result<CareGroup>
     suspend fun joinGroup(userId: String, inviteCode: String): Result<CareGroup>
     suspend fun getGroupsForUser(userId: String): Result<List<CareGroup>>
     suspend fun getGroupMembers(groupId: String): Result<List<User>>

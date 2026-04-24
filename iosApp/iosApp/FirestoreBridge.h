@@ -55,8 +55,9 @@
              completion:(void (^)(NSArray * _Nullable users, NSString * _Nullable error))completion;
 
 // CareGroup Methods
-+ (void)createDefaultGroupWithUser:(NSDictionary *)user
-                        completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion;
++ (void)createGroupWithName:(NSString *)name
+                       owner:(NSDictionary *)owner
+                  completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion;
 
 + (void)joinGroupWithUserId:(NSString *)userId
                  inviteCode:(NSString *)inviteCode
@@ -87,5 +88,23 @@
                         email:(NSString *)email
                          role:(NSString *)role
                    completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)updateFcmTokenWithUserId:(NSString *)userId
+                           token:(NSString *)token
+                      completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)sendAlertWithId:(NSString *)alertId
+                senderId:(NSString *)senderId
+              senderName:(NSString *)senderName
+                    type:(NSString *)type
+                 message:(NSString *)message
+               timestamp:(long long)timestamp
+                groupIds:(NSArray<NSString *> *)groupIds
+              completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)getAlertsForUserId:(NSString *)userId
+                completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion;
+
++ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo;
 
 @end

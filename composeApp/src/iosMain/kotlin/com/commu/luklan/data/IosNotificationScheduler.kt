@@ -3,6 +3,7 @@ package com.commu.luklan.data
 import kotlinx.cinterop.*
 import platform.Foundation.*
 import platform.UserNotifications.*
+import com.commu.luklan.utils.getCurrentTimeMillis
 
 @OptIn(ExperimentalForeignApi::class)
 class IosNotificationScheduler : NotificationScheduler {
@@ -80,6 +81,7 @@ class IosNotificationScheduler : NotificationScheduler {
                             baseDate, 
                             0.toULong()
                         )
+                        "พร้อมอาหาร" -> { /* 0 mins shift */ }
                     }
                 }
                 
@@ -97,7 +99,7 @@ class IosNotificationScheduler : NotificationScheduler {
                 val request = UNNotificationRequest.requestWithIdentifier(identifier, content, trigger)
                 center.addNotificationRequest(request) { _ -> }
                 
-                // Check-in Reminder (Adjusted + 10 mins)
+                // Check-in Reminder (+ 10 mins from adjusted)
                 val checkinDate = adjustedDate?.let {
                     calendar.dateByAddingUnit(NSCalendarUnitMinute, 10, it, 0.toULong())
                 }
@@ -146,6 +148,19 @@ class IosNotificationScheduler : NotificationScheduler {
         val center = UNUserNotificationCenter.currentNotificationCenter()
         center.removeAllPendingNotificationRequests()
         println("✅ Cancelled all pending notifications")
+    }
+
+    override fun showImmediateNotification(title: String, body: String) {
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        val content = UNMutableNotificationContent().apply {
+            setTitle(title)
+            setBody(body)
+            setSound(UNNotificationSound.defaultSound())
+            setBadge(NSNumber(1))
+        }
+        val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(1.0, false)
+        val request = UNNotificationRequest.requestWithIdentifier("immediate_${getCurrentTimeMillis()}", content, trigger)
+        center.addNotificationRequest(request) { _ -> }
     }
 }
 

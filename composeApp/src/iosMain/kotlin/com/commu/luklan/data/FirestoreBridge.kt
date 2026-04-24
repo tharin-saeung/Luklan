@@ -131,11 +131,12 @@ fun getUsersWithIdsNative(userIds: List<String>, completion: (Any?, String?) -> 
 
 // CareGroup Native Bridge
 @OptIn(ExperimentalForeignApi::class)
-fun createDefaultGroupNative(user: Map<String, Any>, completion: (Any?, String?) -> Unit) {
-    FirestoreBridge.createDefaultGroupWithUser(user as Map<Any?, *>) { group, error ->
+fun createGroupNative(name: String, owner: Map<String, Any>, completion: (NSDictionary?, String?) -> Unit) {
+    FirestoreBridge.createGroupWithName(name, owner) { group, error ->
         completion(group, error)
     }
 }
+
 
 @OptIn(ExperimentalForeignApi::class)
 fun joinGroupNative(userId: String, inviteCode: String, completion: (Any?, String?) -> Unit) {
@@ -187,9 +188,22 @@ fun transferOwnershipNative(groupId: String, newOwnerId: String, completion: (St
 }
 
 @OptIn(ExperimentalForeignApi::class)
-fun saveUserProfileNative(userId: String, name: String, email: String, role: String, completion: (String?) -> Unit) {
-    FirestoreBridge.saveUserProfileWithId(userId, name, email, role) { error ->
+fun updateFcmTokenNative(userId: String, token: String, completion: (String?) -> Unit) {
+    FirestoreBridge.updateFcmTokenWithUserId(userId, token) { error ->
         completion(error)
     }
 }
+
+@OptIn(ExperimentalForeignApi::class)
+fun sendAlertNative(id: String, senderId: String, senderName: String, type: String, message: String, timestamp: Long, groupIds: List<String>, completion: (String?) -> Unit) {
+    FirestoreBridge.sendAlertWithId(id, senderId, senderName, type, message, timestamp, groupIds, completion)
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun getAlertsNative(userId: String, completion: (List<NSDictionary>?, String?) -> Unit) {
+    FirestoreBridge.getAlertsForUserId(userId) { alerts, error ->
+        completion(alerts as? List<NSDictionary>, error)
+    }
+}
+
 

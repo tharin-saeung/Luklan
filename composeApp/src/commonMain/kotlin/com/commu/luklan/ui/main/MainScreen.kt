@@ -25,8 +25,16 @@ import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
+import com.commu.luklan.data.getAlertRepository
+import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.home.HomeScreen
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.utils.getCurrentTimeMillis
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.capsule2
 import org.jetbrains.compose.resources.painterResource
@@ -48,14 +56,36 @@ fun MainScreen(
     onNavigateToMedicineGroups: () -> Unit,
     onNavigateToInviteCaretaker: () -> Unit,
     onNavigateToCaretakerDashboard: () -> Unit,
-    onNavigateToPatientTimeline: (String, String) -> Unit
+    onNavigateToPatientTimeline: (String, String) -> Unit,
+    onNavigateToNotificationCenter: () -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
+    val alertRepository = remember { getAlertRepository() }
+    val notificationScheduler = remember { getNotificationScheduler() }
     var userProfile by remember { mutableStateOf<User?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         authRepository.getCurrentUserId()?.let { uid ->
-            authRepository.getUserProfile(uid).onSuccess { userProfile = it }
+            authRepository.getUserProfile(uid).onSuccess { 
+                userProfile = it
+                scope.launch {
+                    while(true) {
+                        delay(30000)
+                        alertRepository.getAlertsForUser(uid).onSuccess { alerts ->
+                            val latest = alerts.firstOrNull()
+                            if (latest != null && latest.timestamp > (getCurrentTimeMillis() - 60000)) {
+                                if (latest.senderId != uid) {
+                                    notificationScheduler.showImmediateNotification(
+                                        "🆘 SOS จาก ${latest.senderName}",
+                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -110,17 +140,22 @@ fun MainScreen(
                     HomeScreen(
                         onNavigateToAddMedicine = onNavigateToAddMedicine,
                         onNavigateToProfile = onNavigateToProfile,
-                        onNavigateToMedicineDetail = onNavigateToMedicineDetail
+                        onNavigateToMedicineDetail = onNavigateToMedicineDetail,
+                        onNavigateToNotificationCenter = onNavigateToNotificationCenter
                     )
                 }
-                MainTab.EMERGENCY -> EmergencyScreen(onBack = { onTabSelected(MainTab.HOME) })
+                MainTab.EMERGENCY -> EmergencyScreen(
+                    userProfile = userProfile,
+                    onBack = { onTabSelected(MainTab.HOME) }
+                )
                 MainTab.MENU -> MenuScreen(
                     userRole = userProfile?.role,
                     onNavigateToProfile = onNavigateToProfile,
                     onNavigateToHistory = onNavigateToHistory,
                     onNavigateToMedicineGroups = onNavigateToMedicineGroups,
                     onNavigateToInviteCaretaker = onNavigateToInviteCaretaker,
-                    onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard
+                    onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard,
+                    onNavigateToNotificationCenter = onNavigateToNotificationCenter
                 )
             }
         }
@@ -208,16 +243,37 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun EmergencyScreen(onBack: () -> Unit) {
+fun EmergencyScreen(userProfile: User?, onBack: () -> Unit) {
+    val alertRepository = remember { getAlertRepository() }
+    val scope = rememberCoroutineScope()
+    var isSent by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (userProfile != null) {
+            val alert = com.commu.luklan.data.Alert(
+                senderId = userProfile.id,
+                senderName = userProfile.name,
+                type = "SOS",
+                message = "${userProfile.name} ต้องการความช่วยเหลือด่วน!",
+                timestamp = getCurrentTimeMillis(),
+                groupIds = userProfile.groupIds
+            )
+            alertRepository.sendAlert(alert).onSuccess { isSent = true }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Primary).padding(LuklanSpacing.lg), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
             Box(Modifier.size(120.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.LocalHospital, null, tint = LuklanColors.Error, modifier = Modifier.size(80.dp))
             }
-            Text("กำลังส่งสัญญาณฉุกเฉิน...", style = LuklanTypography.h1, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+            Text(
+                if (isSent) "ส่งสัญญาณฉุกเฉินแล้ว!" else "กำลังส่งสัญญาณฉุกเฉิน...", 
+                style = LuklanTypography.h1, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center
+            )
             Text("ผู้ดูแลของคุณได้รับแจ้งเตือนแล้ว", style = LuklanTypography.bodyLarge, color = Color.White.copy(alpha = 0.8f))
             Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text("ยกเลิก", style = LuklanTypography.h3)
+                Text("ย้อนกลับ", style = LuklanTypography.h3)
             }
         }
     }
@@ -239,7 +295,8 @@ fun MenuScreen(
     onNavigateToHistory: () -> Unit,
     onNavigateToMedicineGroups: () -> Unit,
     onNavigateToInviteCaretaker: () -> Unit,
-    onNavigateToCaretakerDashboard: () -> Unit
+    onNavigateToCaretakerDashboard: () -> Unit,
+    onNavigateToNotificationCenter: () -> Unit
 ) {
     var searchText by remember { mutableStateOf("") }
     Column(
@@ -248,13 +305,19 @@ fun MenuScreen(
     ) {
         Spacer(Modifier.height(48.dp))
         
-        Text(
-            "เมนู", 
-            style = LuklanTypography.h1, 
-            fontWeight = FontWeight.Bold, 
-            color = LuklanColors.Primary,
-            fontSize = 32.sp
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "เมนู", 
+                style = LuklanTypography.h1, 
+                fontWeight = FontWeight.Bold, 
+                color = LuklanColors.Primary,
+                fontSize = 32.sp
+            )
+        }
         
         Spacer(Modifier.height(24.dp))
         

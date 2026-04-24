@@ -21,4 +21,6 @@ sealed class Screen(val route: String) {
     object CaretakerDashboard : Screen("caretaker_dashboard") // Renaming internally to GroupList
     object GroupMembers : Screen("group_members")
     object PatientTimeline : Screen("patient_timeline")
+    object CreateGroup : Screen("create_group")
+    object NotificationCenter : Screen("notification_center")
 }

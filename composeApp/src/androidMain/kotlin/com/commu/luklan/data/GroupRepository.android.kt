@@ -12,24 +12,27 @@ class GroupRepositoryAndroid : GroupRepository {
     private val usersCollection = db.collection("users")
 
     override suspend fun createDefaultGroup(user: User): Result<CareGroup> {
+        return createGroup("กลุ่มของ ${user.name}", user)
+    }
+
+    override suspend fun createGroup(name: String, owner: User): Result<CareGroup> {
         return try {
             val inviteCode = generateUnique5DigitCode()
-            val groupId = db.collection("care_groups").document().id
-            val groupName = "กลุ่มของ ${user.name}"
+            val groupId = groupsCollection.document().id
             
             val group = CareGroup(
                 id = groupId,
-                name = groupName,
-                patientId = user.id,
-                ownerId = user.id,
+                name = name,
+                patientId = if (owner.role == "patient") owner.id else "",
+                ownerId = owner.id,
                 inviteCode = inviteCode,
-                memberIds = listOf(user.id),
+                memberIds = listOf(owner.id),
                 createdAt = System.currentTimeMillis()
             )
 
             db.runBatch { batch ->
                 batch.set(groupsCollection.document(groupId), group.toMap())
-                batch.update(usersCollection.document(user.id), "groupIds", FieldValue.arrayUnion(groupId))
+                batch.update(usersCollection.document(owner.id), "groupIds", FieldValue.arrayUnion(groupId))
             }.await()
 
             Result.success(group)

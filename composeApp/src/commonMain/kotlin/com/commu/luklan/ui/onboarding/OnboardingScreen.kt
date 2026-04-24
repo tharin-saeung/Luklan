@@ -93,16 +93,23 @@ fun OnboardingScreen(
                             Text("ฉันเป็นผู้ดูแล", style = LuklanTypography.h3, color = Color.White)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text(
                                 text = "มีบัญชีอยู่แล้ว?",
-                                style = LuklanTypography.bodyLarge,
+                                style = LuklanTypography.bodyMedium,
                                 color = LuklanTheme.colors.TextSecondary
                             )
-                            TextButton(onClick = onNavigateToLogin) {
+                            TextButton(
+                                onClick = onNavigateToLogin,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                            ) {
                                 Text(
                                     text = "เข้าสู่ระบบ",
-                                    style = LuklanTypography.bodyLarge,
+                                    style = LuklanTypography.bodyMedium,
                                     color = LuklanTheme.colors.Primary,
                                     fontWeight = FontWeight.Bold
                                 )

@@ -147,7 +147,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             }
                         },
                         onNavigateToSignup = {
-                            onboardingInitialPage = 3 // Last page
+                            onboardingInitialPage = 3
                             navController.navigate(Screen.Onboarding.route) {
                                 popUpTo(Screen.Onboarding.route) { inclusive = true }
                             }
@@ -199,7 +199,8 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             selectedPatientId = id
                             selectedPatientName = name
                             navController.navigate(Screen.PatientTimeline.route)
-                        }
+                        },
+                        onNavigateToNotificationCenter = { navController.navigate(Screen.NotificationCenter.route) }
                     )
                 }
 
@@ -213,7 +214,10 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         onNavigateToMedicineDetail = { medicine, date ->
                             medicineToEdit = medicine
                             navController.navigate("${Screen.MedicineDetail.route}/$date")
-                        }
+                        },
+                        onNavigateToHistory = { navController.navigate(Screen.History.route) },
+                        onNavigateToMedicineGroups = { navController.navigate(Screen.MedicineGroups.route) },
+                        onNavigateToNotificationCenter = { navController.navigate(Screen.NotificationCenter.route) }
                     )
                 }
 
@@ -239,6 +243,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                             }
                         },
                         onNavigateToJoin = { navController.navigate(Screen.JoinGroup.route) },
+                        onNavigateToCreate = { navController.navigate(Screen.CreateGroup.route) },
                         onNavigateToMembers = { id, name ->
                             selectedGroupId = id
                             selectedGroupName = name
@@ -278,7 +283,18 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         },
                         onSuccess = {
                             navController.navigate(Screen.CaretakerDashboard.route) {
-                                popUpTo(Screen.JoinGroup.route) { inclusive = true }
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                composable(Screen.CreateGroup.route) {
+                    com.commu.luklan.ui.caretaker.CreateGroupScreen(
+                        onBack = { navController.popBackStack() },
+                        onSuccess = {
+                            navController.navigate(Screen.CaretakerDashboard.route) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             }
                         }
                     )
@@ -289,7 +305,7 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
                         onBack = { navController.popBackStack() },
                         onSuccess = {
                             navController.navigate(Screen.CaretakerDashboard.route) {
-                                popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             }
                         }
                     )
@@ -336,6 +352,12 @@ fun App(initialMedicineId: String? = null, initialTime: String? = null) {
 
                 composable(Screen.History.route) {
                     com.commu.luklan.ui.history.HistoryScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(Screen.NotificationCenter.route) {
+                    com.commu.luklan.ui.history.NotificationCenterScreen(
                         onBack = { navController.popBackStack() }
                     )
                 }

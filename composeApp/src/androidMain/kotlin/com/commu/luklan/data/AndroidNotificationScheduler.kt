@@ -53,7 +53,9 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                 val intent = Intent(context, NotificationReceiver::class.java).apply {
                     putExtra("EXTRA_MESSAGE", message)
                     putExtra("EXTRA_MEDICINE_ID", medicine.id)
+                    putExtra("EXTRA_MEDICINE_NAME", medicine.name)
                     putExtra("EXTRA_TIME", timeStr)
+                    putExtra("EXTRA_USER_ID", medicine.userId)
                 }
 
                 // Unique request code for each dose time
@@ -72,10 +74,12 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                     
-                    // Adjust time based on mealTimingMinutes
+                    // Adjust time based on mealTiming
                     when (medicine.mealTiming) {
                         "ก่อนอาหาร" -> add(Calendar.MINUTE, -medicine.mealTimingMinutes)
                         "หลังอาหาร" -> add(Calendar.MINUTE, medicine.mealTimingMinutes)
+                        "พร้อมอาหาร" -> { /* 0 minutes shift */ }
+                        "ก่อนนอน" -> { /* No shift unless specified */ }
                     }
                 }
 
@@ -96,7 +100,9 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
                         putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการกินยา ${medicine.name} เลยนะครับ")
                         putExtra("EXTRA_MEDICINE_ID", medicine.id)
+                        putExtra("EXTRA_MEDICINE_NAME", medicine.name)
                         putExtra("EXTRA_TIME", timeStr)
+                        putExtra("EXTRA_USER_ID", medicine.userId)
                         putExtra("EXTRA_IS_CHECKIN", true)
                     }
                     val checkinReq = requestCode + 1000
@@ -201,6 +207,25 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         
         prefs.edit().remove("scheduled_codes").apply()
         println("✅ Cancelled all tracked Android notifications")
+    }
+
+    override fun showImmediateNotification(title: String, body: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        val intent = Intent(context, com.commu.luklan.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, "medicine_channel")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }
 

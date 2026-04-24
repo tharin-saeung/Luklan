@@ -17,6 +17,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
 
+    // Called when a notification is delivered to a foreground app.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        print("AppDelegate: willPresentNotification - syncing to Firebase")
+        FirestoreBridge.syncAlert(withUserInfo: userInfo)
+        
+        completionHandler([.banner, .list, .sound])
+    }
+
+    // Called to report a response to an actioned notification.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -25,7 +37,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let medicineId = userInfo["medicineId"] as? String
         let time = userInfo["time"] as? String
         
-        print("AppDelegate: Received deep link - medicineId: \(medicineId ?? "nil"), time: \(time ?? "nil")")
+        print("AppDelegate: Received deep link/interaction - medicineId: \(medicineId ?? "nil"), time: \(time ?? "nil")")
+        
+        // Also sync on interaction just in case willPresent missed it or was background
+        FirestoreBridge.syncAlert(withUserInfo: userInfo)
         
         if let medId = medicineId {
             KMPInitializerKt.onDeepLinkReceived(medicineId: medId, time: time)

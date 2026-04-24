@@ -6,7 +6,8 @@ expect class AuthRepository() {
     fun isUserLoggedIn(): Boolean
     fun getCurrentUserId(): String?
     suspend fun getUserProfile(userId: String): Result<User>
-    fun signOut()
-}
+    suspend fun signOut()
+    suspend fun updateFcmToken(userId: String, token: String): Result<Unit>
+    }
 
 expect fun getAuthRepository(): AuthRepository

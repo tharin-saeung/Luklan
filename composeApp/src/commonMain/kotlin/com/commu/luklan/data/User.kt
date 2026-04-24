@@ -8,5 +8,6 @@ data class User(
     val groupIds: List<String> = emptyList(), // Groups this user belongs to
     val inviteCode: String = "", // Legacy
     val caretakers: List<String> = emptyList(), // Legacy
-    val patients: List<String> = emptyList() // Legacy
+    val patients: List<String> = emptyList(), // Legacy
+    val fcmToken: String = ""
 )

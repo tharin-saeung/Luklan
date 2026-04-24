@@ -1,22 +1,15 @@
 package com.commu.luklan.ui.medicine
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -26,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -33,8 +27,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
@@ -83,7 +75,6 @@ fun AddMedicineScreen(
     val maxStep = 6
     
     var showTimePicker by remember { mutableStateOf(false) }
-    var showMonthYearPicker by remember { mutableStateOf(false) }
     var editingTimeIndex by remember { mutableStateOf(-1) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -102,7 +93,7 @@ fun AddMedicineScreen(
     Scaffold(containerColor = LuklanColors.Primary) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { if (step > 1) step -= 1 else onNavigateBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
+                IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
                 Spacer(Modifier.weight(1f))
                 Text("เพิ่มยา", style = LuklanTypography.h1, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1.3f))
@@ -113,7 +104,16 @@ fun AddMedicineScreen(
                     1 -> StepName(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
                     2 -> StepCategory(formState) { formState = it }
                     3 -> StepAmount(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
-                    4 -> StepStartDate(formState, thaiDays, thaiMonths, displayMonth, displayYear, now, onShowPicker = { showMonthYearPicker = true }) { formState = it }
+                    4 -> StepStartDate(
+                        state = formState, 
+                        days = thaiDays, 
+                        months = thaiMonths, 
+                        dm = displayMonth, 
+                        dy = displayYear, 
+                        now = now, 
+                        onMonthYearChange = { m, y -> displayMonth = m; displayYear = y },
+                        onUpdate = { formState = it }
+                    )
                     5 -> StepTime(formState, mealTimingOptions, onAdd = { editingTimeIndex = -1; showTimePicker = true }, onEdit = { editingTimeIndex = it; showTimePicker = true }) { formState = it }
                     6 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { StepSummary(formState) { formState = it } }
                 }
@@ -176,22 +176,6 @@ fun AddMedicineScreen(
             text = { WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) }
         )
     }
-
-    if (showMonthYearPicker) {
-        var tm by remember { mutableStateOf(displayMonth) }
-        var ty by remember { mutableStateOf(displayYear) }
-        AlertDialog(
-            onDismissRequest = { showMonthYearPicker = false },
-            title = { Text("เลือกเดือนและปี") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    DropdownSelector(label = "เดือน", selectedValue = thaiMonths[tm - 1], options = thaiMonths, onValueChange = { tm = thaiMonths.indexOf(it) + 1 })
-                    DropdownSelector(label = "ปี", selectedValue = (ty + 543).toString(), options = (now.year..now.year+5).map { (it+543).toString() }, onValueChange = { ty = it.toInt() - 543 })
-                }
-            },
-            confirmButton = { TextButton(onClick = { displayMonth = tm; displayYear = ty; showMonthYearPicker = false }) { Text("ตกลง") } }
-        )
-    }
 }
 
 @Composable
@@ -244,7 +228,6 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
             TextField(
                 value = state.dosage,
                 onValueChange = { 
-                    // Allow digits and at most one decimal point
                     val filtered = it.filter { c -> c.isDigit() || c == '.' }
                     if (filtered.count { c -> c == '.' } <= 1) {
                         onUpdate(state.copy(dosage = filtered))
@@ -267,7 +250,6 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
                 singleLine = true
             )
             
-            // Unit Dropdown inside StepAmount
             var expanded by remember { mutableStateOf(false) }
             val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
             
@@ -282,9 +264,9 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
                         Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
                     }
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
                     unitOptions.forEach { opt ->
-                        DropdownMenuItem(text = { Text(opt) }, onClick = { onUpdate(state.copy(unit = opt)); expanded = false })
+                        DropdownMenuItem(text = { Text(opt, color = LuklanColors.Primary) }, onClick = { onUpdate(state.copy(unit = opt)); expanded = false })
                     }
                 }
             }
@@ -292,32 +274,29 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
     }
 }
 
-@OptIn(ExperimentalTime::class)
 @Composable
-fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<String>, dm: Int, dy: Int, now: LocalDateTime, onShowPicker: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<String>, dm: Int, dy: Int, now: LocalDateTime, onMonthYearChange: (Int, Int) -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Text("เลือกวันเริ่มกินยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
-        val ls = rememberLazyListState()
-        LaunchedEffect(state.startDate) { val d = state.startDate.toIntOrNull() ?: 1; if (d > 3) ls.scrollToItem(d - 3) }
         
+        val listState = rememberLazyListState()
         val daysInMonth = try {
-            val firstDayOfNextMonth = if (dm == 12) {
-                LocalDate(dy + 1, 1, 1)
-            } else {
-                LocalDate(dy, dm + 1, 1)
-            }
+            val firstDayOfNextMonth = if (dm == 12) LocalDate(dy + 1, 1, 1) else LocalDate(dy, dm + 1, 1)
             firstDayOfNextMonth.minus(DatePeriod(days = 1)).dayOfMonth
-        } catch (e: Exception) {
-            31
+        } catch (e: Exception) { 31 }
+
+        LaunchedEffect(dm, dy) {
+            val d = state.startDate.toIntOrNull() ?: 1
+            if (d > daysInMonth) onUpdate(state.copy(startDate = daysInMonth.toString()))
+            if (d > 3) listState.scrollToItem(d - 3) else listState.scrollToItem(0)
         }
 
-        LazyRow(state = ls, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 24.dp)) {
             items(daysInMonth) { i ->
                 val dayNum = i + 1
                 val isSelected = state.startDate == dayNum.toString()
                 val dayName = try { val date = LocalDate(dy, dm, dayNum); days[(date.dayOfWeek.ordinal + 1) % 7] } catch (e: Exception) { "" }
-                
                 val isToday = dayNum == now.dayOfMonth && dm == now.monthNumber && dy == now.year
 
                 Column(
@@ -329,118 +308,59 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                     verticalArrangement = Arrangement.Center, 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        dayName, 
-                        color = Color.White, 
-                        fontSize = 16.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
-                    Text(
-                        dayNum.toString(), 
-                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, 
-                        fontSize = 24.sp, 
-                        color = Color.White
-                    )
-                    
+                    Text(dayName, color = Color.White, fontSize = 16.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                    Text(dayNum.toString(), fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, fontSize = 24.sp, color = Color.White)
                     if (isToday) {
                         Spacer(Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                        )
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color.White))
                     }
                 }
             }
         }
+        
         Spacer(Modifier.height(32.dp))
-        Surface(modifier = Modifier.clickable { onShowPicker() }, color = Color.Transparent) { Row(verticalAlignment = Alignment.CenterVertically) { Text("${months[dm-1]} ${dy+543}", color = Color.White, style = LuklanTypography.h3); Spacer(Modifier.width(8.dp)); Icon(Icons.Default.CalendarMonth, null, tint = Color.White) } }
+        
+        var showPicker by remember { mutableStateOf(false) }
+        Row(
+            verticalAlignment = Alignment.CenterVertically, 
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.clickable { showPicker = true }
+        ) {
+            Text("${months[dm-1]} ${dy + 543}", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold, fontSize = 28.sp)
+            Spacer(Modifier.width(12.dp))
+            Icon(Icons.Default.CalendarMonth, null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.White, modifier = Modifier.size(28.dp))
+        }
+
+        if (showPicker) {
+            com.commu.luklan.ui.components.MonthYearPicker(
+                initialMonth = dm,
+                initialYear = dy,
+                onDismiss = { showPicker = false },
+                onConfirm = { m, y ->
+                    onMonthYearChange(m, y)
+                    showPicker = false 
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun CategoryCard(label: String, icon: org.jetbrains.compose.resources.DrawableResource, isSelected: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
-    
-    // Animation for popping out effect
-    val circleScale by animateFloatAsState(
-        targetValue = if (isSelected) 1f else 0.5f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        )
-    )
-    val circleAlpha by animateFloatAsState(
-        targetValue = if (isSelected) 0.4f else 0f,
-        animationSpec = tween(durationMillis = 200)
-    )
+    val circleScale by animateFloatAsState(targetValue = if (isSelected) 1f else 0.5f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+    val circleAlpha by animateFloatAsState(targetValue = if (isSelected) 0.4f else 0f, animationSpec = tween(durationMillis = 200))
 
-    Box(
-        modifier = Modifier
-            .size(width = 150.dp, height = 150.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        // Main Card
-        Card(
-            onClick = onClick, // Using onClick for better ripple clipping
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(115.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected) LuklanColors.Secondary else Color.White
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                Text(
-                    text = label,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = if (isSelected) Color.White else LuklanColors.Primary,
-                    modifier = Modifier.padding(bottom = 35.dp) // Pushed up slightly more
-                )
+    Box(modifier = Modifier.size(width = 150.dp, height = 150.dp), contentAlignment = Alignment.BottomCenter) {
+        Card(onClick = onClick, modifier = Modifier.fillMaxWidth().height(115.dp), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = if (isSelected) LuklanColors.Secondary else Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Text(text = label, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = if (isSelected) Color.White else LuklanColors.Primary, modifier = Modifier.padding(bottom = 35.dp))
             }
         }
-
-        // Popping out Icon Background
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .size(80.dp)
-                .graphicsLayer {
-                    scaleX = circleScale
-                    scaleY = circleScale
-                    alpha = circleAlpha
-                }
-                .clip(CircleShape)
-                .background(Color.White),
-            contentAlignment = Alignment.Center
-        ) {
-            // Animated highlight circle
-        }
-
-        // Icon Image
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .size(80.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(icon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(60.dp)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) { onClick() }
-            )
+        Box(modifier = Modifier.align(Alignment.TopCenter).size(80.dp).graphicsLayer { scaleX = circleScale; scaleY = circleScale; alpha = circleAlpha }.clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {}
+        Box(modifier = Modifier.align(Alignment.TopCenter).size(80.dp), contentAlignment = Alignment.Center) {
+            Image(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(60.dp).clickable(interactionSource = interactionSource, indication = null) { onClick() })
         }
     }
 }
@@ -450,92 +370,38 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.verticalScroll(rememberScrollState())) {
         Text("เวลาการกินยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
-        
         var expanded by remember { mutableStateOf(false) }
-        
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Box {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically, 
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White.copy(0.15f))
-                        .clickable { expanded = true }
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White.copy(0.15f)).clickable { expanded = true }.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(state.mealTiming, color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(4.dp))
-                    Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(4.dp)); Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
-                
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color.White)
-                ) {
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
                     mealOptions.forEach { opt ->
-                        DropdownMenuItem(
-                            text = { Text(opt, color = LuklanColors.Primary) },
-                            onClick = {
-                                val nextMinutes = if (opt == "ก่อนอาหาร" || opt == "หลังอาหาร") state.mealTimingMinutes else 0
-                                onUpdate(state.copy(mealTiming = opt, mealTimingMinutes = nextMinutes))
-                                expanded = false
-                            }
-                        )
+                        DropdownMenuItem(text = { Text(opt, color = LuklanColors.Primary) }, onClick = {
+                            val nextMinutes = if (opt == "ก่อนอาหาร" || opt == "หลังอาหาร") state.mealTimingMinutes else 0
+                            onUpdate(state.copy(mealTiming = opt, mealTimingMinutes = nextMinutes)); expanded = false
+                        })
                     }
                 }
             }
-            
             if (state.mealTiming.contains("อาหาร") && !state.mealTiming.contains("พร้อม")) {
                 Spacer(Modifier.width(12.dp))
-                
-                TextField(
-                    value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(),
-                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) },
-                    modifier = Modifier.width(85.dp).height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = LuklanColors.Primary,
-                        unfocusedTextColor = LuklanColors.Primary
-                    ),
-                    textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("0", color = Color.LightGray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                )
-                
-                Spacer(Modifier.width(8.dp))
-                Text("นาที", color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
+                TextField(value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(), onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) }, modifier = Modifier.width(85.dp).height(52.dp), shape = RoundedCornerShape(26.dp), colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary), textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), placeholder = { Text("0", color = Color.LightGray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
+                Spacer(Modifier.width(8.dp)); Text("นาที", color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
             }
         }
-        
         Spacer(Modifier.height(48.dp))
-        
         state.times.forEachIndexed { i, t ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(i) }, 
-                shape = RoundedCornerShape(32.dp), 
-                colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(i) }, shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)) {
                 Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) { 
                     Text(text = "$t น.", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f))
-                    Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp)) 
+                    Spacer(Modifier.weight(1f)); Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp)) 
                 }
             }
         }
-        
-        IconButton(
-            onClick = onAdd, 
-            modifier = Modifier.padding(top = 16.dp).size(64.dp).clip(CircleShape).background(Color.White)
-        ) { 
+        IconButton(onClick = onAdd, modifier = Modifier.padding(top = 16.dp).size(64.dp).clip(CircleShape).background(Color.White)) { 
             Icon(Icons.Default.Add, null, tint = LuklanColors.Secondary, modifier = Modifier.size(36.dp)) 
         }
     }

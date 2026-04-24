@@ -80,11 +80,21 @@ actual class AuthRepository actual constructor() {
         }
     }
 
-    actual fun signOut() {
+    actual suspend fun signOut() {
         try {
             auth.signOut(null)
         } catch (e: Exception) {
             println("Sign out error: ${e.message}")
+        }
+    }
+
+    actual suspend fun updateFcmToken(userId: String, token: String): Result<Unit> = suspendCoroutine { continuation ->
+        updateFcmTokenNative(userId, token) { error ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
+            }
         }
     }
 
@@ -100,7 +110,8 @@ actual class AuthRepository actual constructor() {
             } ?: emptyList(),
             patients = (objectForKey("patients") as? NSArray)?.let { arr ->
                 (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
-            } ?: emptyList()
+            } ?: emptyList(),
+            fcmToken = (objectForKey("fcmToken") as? String) ?: ""
         )
     }
 }

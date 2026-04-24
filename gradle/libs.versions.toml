@@ -38,6 +38,7 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 android-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 android-firebase-auth = { module = "com.google.firebase:firebase-auth" }
 android-firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+android-firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 [plugins]

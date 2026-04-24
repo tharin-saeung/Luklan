@@ -218,15 +218,14 @@
 }
 
 // CareGroup Implementation
-+ (void)createDefaultGroupWithUser:(NSDictionary *)user
-                        completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion {
++ (void)createGroupWithName:(NSString *)name
+                       owner:(NSDictionary *)owner
+                  completion:(void (^)(NSDictionary * _Nullable group, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
     NSString *uuid = [[NSUUID UUID] UUIDString];
     FIRDocumentReference *newGroupRef = [[db collectionWithPath:@"care_groups"] documentWithPath:uuid];
     NSString *groupId = newGroupRef.documentID;
-    NSString *userId = user[@"id"] ?: @"";
-    NSString *userName = user[@"name"] ?: @"User";
-    NSString *name = [NSString stringWithFormat:@"กลุ่มของ %@", userName];
+    NSString *userId = owner[@"id"] ?: @"";
     
     // Generate code
     NSString *letters = @"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -238,7 +237,7 @@
     NSDictionary *groupMap = @{
         @"id": groupId,
         @"name": name,
-        @"patientId": userId,
+        @"patientId": [owner[@"role"] isEqualToString:@"patient"] ? userId : @"",
         @"ownerId": userId,
         @"inviteCode": code,
         @"memberIds": @[userId],
@@ -432,6 +431,117 @@
         } else {
             completion(nil);
         }
+    }];
+}
+
++ (void)updateFcmTokenWithUserId:(NSString *)userId
+                           token:(NSString *)token
+                      completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSString *path = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:path] updateData:@{@"fcmToken": token} completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)sendAlertWithId:(NSString *)alertId
+                senderId:(NSString *)senderId
+              senderName:(NSString *)senderName
+                    type:(NSString *)type
+                 message:(NSString *)message
+               timestamp:(long long)timestamp
+                groupIds:(NSArray<NSString *> *)groupIds
+              completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSDictionary *alertMap = @{
+        @"id": alertId,
+        @"senderId": senderId,
+        @"senderName": senderName,
+        @"type": type,
+        @"message": message,
+        @"timestamp": @(timestamp),
+        @"groupIds": groupIds
+    };
+    
+    [[[db collectionWithPath:@"alerts"] documentWithPath:alertId] setData:alertMap completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)getAlertsForUserId:(NSString *)userId
+                completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    [[[db collectionWithPath:@"users"] documentWithPath:userId] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+        if (error) {
+            completion(nil, error.localizedDescription);
+            return;
+        }
+        
+        NSArray *groupIds = snapshot.data[@"groupIds"] ?: @[];
+        if (groupIds.count == 0) {
+            completion(@[], nil);
+            return;
+        }
+        
+        [[[db collectionWithPath:@"alerts"] queryWhereField:@"groupIds" arrayContainsAny:groupIds] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable qSnapshot, NSError * _Nullable qError) {
+            if (qError) {
+                completion(nil, qError.localizedDescription);
+                return;
+            }
+            
+            NSMutableArray *results = [NSMutableArray array];
+            for (FIRQueryDocumentSnapshot *doc in qSnapshot.documents) {
+                NSMutableDictionary *data = [doc.data mutableCopy];
+                [data setObject:doc.documentID forKey:@"id"];
+                [results addObject:data];
+            }
+            completion(results, nil);
+        }];
+    }];
+}
+
++ (void)syncAlertWithUserInfo:(NSDictionary *)userInfo {
+    NSString *medicineId = userInfo[@"medicineId"];
+    NSString *time = userInfo[@"time"];
+    BOOL isCheckin = [userInfo[@"isCheckin"] boolValue];
+    
+    if (!medicineId) return;
+
+    FIRFirestore *db = [FIRFirestore firestore];
+    
+    // Fetch medicine to get userId
+    [[db documentWithPath:[NSString stringWithFormat:@"medicines/%@", medicineId]] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable snapshot, NSError * _Nullable error) {
+        if (error || !snapshot.exists) return;
+        
+        NSString *userId = snapshot.data[@"userId"];
+        NSString *medName = snapshot.data[@"name"] ?: @"ยา";
+        
+        if (!userId) return;
+        
+        // Fetch user to get name and groups
+        [[db documentWithPath:[NSString stringWithFormat:@"users/%@", userId]] getDocumentWithCompletion:^(FIRDocumentSnapshot * _Nullable uSnapshot, NSError * _Nullable uError) {
+            if (uError || !uSnapshot.exists) return;
+            
+            NSArray *groupIds = uSnapshot.data[@"groupIds"] ?: @[];
+            NSString *name = uSnapshot.data[@"name"] ?: @"ผู้ป่วย";
+            
+            NSString *type = isCheckin ? @"CHECKIN" : @"MEDICINE";
+            NSString *message = isCheckin ? 
+                [NSString stringWithFormat:@"ยังไม่ได้บันทึกการกินยา %@ (%@)", medName, time] :
+                [NSString stringWithFormat:@"ได้เวลาใช้ยา %@ (%@)", medName, time];
+
+            NSDictionary *alertMap = @{
+                @"id": [[NSUUID UUID] UUIDString],
+                @"senderId": userId,
+                @"senderName": name,
+                @"type": type,
+                @"message": message,
+                @"timestamp": @((long long)([[NSDate date] timeIntervalSince1970] * 1000)),
+                @"groupIds": groupIds
+            };
+            
+            [[[db collectionWithPath:@"alerts"] documentWithPath:alertMap[@"id"]] setData:alertMap completion:nil];
+        }];
     }];
 }
 

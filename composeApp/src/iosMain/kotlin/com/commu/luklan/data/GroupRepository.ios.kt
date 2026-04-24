@@ -8,8 +8,12 @@ import kotlin.coroutines.suspendCoroutine
 @OptIn(ExperimentalForeignApi::class)
 class GroupRepositoryIos : GroupRepository {
 
-    override suspend fun createDefaultGroup(user: User): Result<CareGroup> = suspendCoroutine { continuation ->
-        createDefaultGroupNative(user = user.toMap()) { group: Any?, error: String? ->
+    override suspend fun createDefaultGroup(user: User): Result<CareGroup> {
+        return createGroup("กลุ่มของ ${user.name}", user)
+    }
+
+    override suspend fun createGroup(name: String, owner: User): Result<CareGroup> = suspendCoroutine { continuation ->
+        createGroupNative(name, owner.toMap()) { group: Any?, error: String? ->
             if (error != null) {
                 continuation.resume(Result.failure(Exception(error)))
             } else {

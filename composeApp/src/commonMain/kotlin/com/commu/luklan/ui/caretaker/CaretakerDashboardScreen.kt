@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 fun CaretakerDashboardScreen(
     onBack: () -> Unit,
     onNavigateToJoin: () -> Unit,
+    onNavigateToCreate: () -> Unit,
     onNavigateToMembers: (String, String) -> Unit
 ) {
     val groupRepository = remember { getGroupRepository() }
@@ -87,8 +88,11 @@ fun CaretakerDashboardScreen(
                         style = LuklanTypography.h3,
                         color = LuklanColors.TextSecondary
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    AddGroupButton(onClick = onNavigateToJoin)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม")
+                        AddGroupButton(onClick = onNavigateToCreate, label = "สร้างกลุ่มใหม่")
+                    }
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -102,8 +106,13 @@ fun CaretakerDashboardScreen(
                         }
                     }
                     
-                    Box(modifier = Modifier.fillMaxWidth().padding(LuklanSpacing.lg), contentAlignment = Alignment.Center) {
-                        AddGroupButton(onClick = onNavigateToJoin)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(LuklanSpacing.lg), 
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม")
+                        AddGroupButton(onClick = onNavigateToCreate, label = "สร้างกลุ่มใหม่")
                     }
                 }
             }
@@ -112,7 +121,7 @@ fun CaretakerDashboardScreen(
 }
 
 @Composable
-fun AddGroupButton(onClick: () -> Unit) {
+fun AddGroupButton(onClick: () -> Unit, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(
             onClick = onClick,
@@ -121,7 +130,7 @@ fun AddGroupButton(onClick: () -> Unit) {
             Icon(Icons.Default.Add, contentDescription = "Add", tint = LuklanColors.Primary, modifier = Modifier.size(40.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("เพิ่มกลุ่ม", style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
+        Text(label, style = LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
     }
 }
 

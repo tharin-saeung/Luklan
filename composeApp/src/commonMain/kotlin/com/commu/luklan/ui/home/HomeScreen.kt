@@ -42,18 +42,22 @@ fun HomeScreen(
     onBack: (() -> Unit)? = null,
     onNavigateToAddMedicine: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToMedicineDetail: (Medicine, String) -> Unit
+    onNavigateToMedicineDetail: (Medicine, String) -> Unit,
+    onNavigateToHistory: () -> Unit = {},
+    onNavigateToMedicineGroups: () -> Unit = {},
+    onNavigateToNotificationCenter: () -> Unit = {}
 ) {
     val authRepository = remember { getAuthRepository() }
     val medicineRepository = remember { getMedicineRepository() }
     val scope = rememberCoroutineScope()
     
     val userId = targetUserId ?: authRepository.getCurrentUserId() ?: ""
-    val isCaretakerView = targetUserId != null
+    val isCaretakerView = targetUserId != null && targetUserId.isNotEmpty()
 
     var medicines = remember { mutableStateListOf<Medicine>() }
     var isLoading by remember { mutableStateOf(true) }
     var isEditMode by remember { mutableStateOf(false) }
+    var showCaretakerMenu by remember { mutableStateOf(false) }
 
     // Date Logic
     val now = remember {
@@ -61,7 +65,11 @@ fun HomeScreen(
         val instant = Instant.fromEpochMilliseconds(nowMillis)
         instant.toLocalDateTime(TimeZone.currentSystemDefault())
     }
+    
+    var selectedMonth by remember { mutableStateOf(now.monthNumber) }
+    var selectedYear by remember { mutableStateOf(now.year) }
     var selectedDay by remember { mutableStateOf(now.dayOfMonth) }
+    
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
     val dayInitials = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
 
@@ -120,38 +128,75 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                IconButton(onClick = { /* Notifications */ }) {
+                IconButton(onClick = onNavigateToNotificationCenter) {
                     Icon(Icons.Default.Notifications, null, tint = Color.Black, modifier = Modifier.size(32.dp))
                 }
             }
 
-            // Month Selector
+            // Month Selector (Prototype Style)
+            var showMonthYearPicker by remember { mutableStateOf(false) }
+            
             Row(
-                modifier = Modifier.padding(horizontal = LuklanSpacing.lg),
+                modifier = Modifier
+                    .padding(horizontal = LuklanSpacing.lg)
+                    .clickable { showMonthYearPicker = true },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${thaiMonths[now.monthNumber - 1]} ${now.year + 543}",
-                    style = LuklanTypography.h2,
+                    text = thaiMonths[selectedMonth - 1],
+                    style = LuklanTypography.h1,
                     color = LuklanColors.Primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                    modifier = Modifier.padding(bottom = 4.dp) // Optical center fix for Thai baseline
                 )
-                Icon(Icons.Default.KeyboardArrowDown, null, tint = LuklanColors.Primary)
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = "${selectedYear + 543}",
+                    style = LuklanTypography.h1,
+                    color = LuklanColors.Primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    Icons.Default.KeyboardArrowDown, 
+                    null, 
+                    tint = LuklanColors.Primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            if (showMonthYearPicker) {
+                com.commu.luklan.ui.components.MonthYearPicker(
+                    initialMonth = selectedMonth,
+                    initialYear = selectedYear,
+                    onDismiss = { showMonthYearPicker = false },
+                    onConfirm = { m, y ->
+                        selectedMonth = m
+                        selectedYear = y
+                        showMonthYearPicker = false
+                    }
+                )
             }
 
             // Date Row
             val listState = rememberLazyListState()
-            LaunchedEffect(Unit) { if (selectedDay > 3) listState.scrollToItem(selectedDay - 3) }
-
+            
             val daysInMonth = try {
-                val firstDayOfNextMonth = if (now.monthNumber == 12) {
-                    LocalDate(now.year + 1, 1, 1)
+                val firstDayOfNextMonth = if (selectedMonth == 12) {
+                    LocalDate(selectedYear + 1, 1, 1)
                 } else {
-                    LocalDate(now.year, now.monthNumber + 1, 1)
+                    LocalDate(selectedYear, selectedMonth + 1, 1)
                 }
                 firstDayOfNextMonth.minus(DatePeriod(days = 1)).dayOfMonth
             } catch (e: Exception) {
                 31
+            }
+
+            LaunchedEffect(selectedMonth, selectedYear) {
+                if (selectedDay > daysInMonth) selectedDay = daysInMonth
+                if (selectedDay > 3) listState.scrollToItem(selectedDay - 3) else listState.scrollToItem(0)
             }
 
             LazyRow(
@@ -164,11 +209,11 @@ fun HomeScreen(
                     val dayNum = index + 1
                     val isSelected = selectedDay == dayNum
                     val dayName = try {
-                        val date = LocalDate(now.year, now.monthNumber, dayNum)
+                        val date = LocalDate(selectedYear, selectedMonth, dayNum)
                         dayInitials[(date.dayOfWeek.ordinal + 1) % 7]
                     } catch (e: Exception) { "" }
                     
-                    val isToday = dayNum == now.dayOfMonth
+                    val isToday = dayNum == now.dayOfMonth && selectedMonth == now.monthNumber && selectedYear == now.year
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -240,9 +285,9 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(medicines) { med ->
-                        val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
+                        val dateStr = "${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
                         val isFullyTaken = med.times.all { time ->
-                            med.takenHistory.containsKey("${todayStr}_$time")
+                            med.takenHistory.containsKey("${dateStr}_$time")
                         }
 
                         MedicineCardGrouped(
@@ -254,7 +299,7 @@ fun HomeScreen(
                                 scope.launch { medicineRepository.deleteMedicine(med.id) }
                             },
                             onClick = { 
-                                onNavigateToMedicineDetail(med, todayStr) 
+                                onNavigateToMedicineDetail(med, dateStr) 
                             }
                         )
                     }
@@ -263,8 +308,39 @@ fun HomeScreen(
             }
         }
 
-        // FAB - Restored for all roles
-        if (!isEditMode) {
+        // FAB Section
+        if (isCaretakerView) {
+            Column(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(32.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (showCaretakerMenu) {
+                    SmallFloatingActionButton(
+                        onClick = onNavigateToMedicineGroups,
+                        containerColor = Color.White,
+                        contentColor = LuklanColors.Primary,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.Medication, "Groups") }
+                    
+                    SmallFloatingActionButton(
+                        onClick = onNavigateToHistory,
+                        containerColor = Color.White,
+                        contentColor = LuklanColors.Primary,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.History, "History") }
+                }
+                
+                FloatingActionButton(
+                    onClick = { showCaretakerMenu = !showCaretakerMenu },
+                    containerColor = LuklanColors.Primary,
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(if (showCaretakerMenu) Icons.Default.Close else Icons.Default.Menu, null)
+                }
+            }
+        } else if (!isEditMode) {
             Surface(
                 onClick = onNavigateToAddMedicine,
                 modifier = Modifier
@@ -324,16 +400,7 @@ fun MedicineCardGrouped(
                     "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(45.dp))
                     "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(45.dp))
                     else -> {
-                        // Fallback for old categories
-                        Text(
-                            text = when(medicine.category) {
-                                "ยาน้ำ" -> "🧴"
-                                "ยาทา" -> "🧪"
-                                "ยาเหน็บ" -> "💊"
-                                else -> "💊"
-                            }, 
-                            fontSize = 38.sp
-                        )
+                        Text(text = "💊", fontSize = 38.sp)
                     }
                 }
             }
@@ -341,22 +408,19 @@ fun MedicineCardGrouped(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                // Quantity and Unit
                 Text(
                     text = "${medicine.dosage} ${medicine.unit}", 
                     style = LuklanTypography.bodySmall, 
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
-                // Medicine Name
                 Text(
                     text = medicine.name, 
                     style = LuklanTypography.h3, 
-                    color = if (isTakenToday) LuklanColors.Secondary.copy(alpha = 0.7f) else LuklanColors.Secondary, // Orange Name
+                    color = if (isTakenToday) LuklanColors.Secondary.copy(alpha = 0.7f) else LuklanColors.Secondary,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
-                // Time / Meal Timing
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Schedule, 
@@ -366,9 +430,10 @@ fun MedicineCardGrouped(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (medicine.times.isNotEmpty()) "${medicine.times.first()} น." else "", 
+                        text = if (medicine.times.isNotEmpty()) medicine.times.joinToString(" น., ") + " น." else "",
                         style = LuklanTypography.bodySmall, 
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1
                     )
                 }
             }

@@ -123,8 +123,18 @@ actual class AuthRepository {
         }
     }
 
-    actual fun signOut() {
+    actual suspend fun signOut() {
         auth.signOut()
+    }
+
+    actual suspend fun updateFcmToken(userId: String, token: String): Result<Unit> {
+        return try {
+            firestore.collection("users").document(userId)
+                .update("fcmToken", token).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toUser(): User {
@@ -136,7 +146,8 @@ actual class AuthRepository {
             groupIds = (get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             inviteCode = getString("inviteCode") ?: "",
             caretakers = (get("caretakers") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-            patients = (get("patients") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+            patients = (get("patients") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            fcmToken = getString("fcmToken") ?: ""
         )
     }
 }
