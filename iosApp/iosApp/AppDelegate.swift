@@ -23,7 +23,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
         print("AppDelegate: willPresentNotification - syncing to Firebase")
-        FirestoreBridge.syncAlertWithUserInfo(userInfo)
+        FirestoreBridge.syncAlert(userInfo: userInfo)
         
         completionHandler([.banner, .list, .sound])
     }
@@ -40,7 +40,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("AppDelegate: Received deep link/interaction - medicineId: \(medicineId ?? "nil"), time: \(time ?? "nil")")
         
         // Also sync on interaction just in case willPresent missed it or was background
-        FirestoreBridge.syncAlertWithUserInfo(userInfo)
+        FirestoreBridge.syncAlert(userInfo: userInfo)
         
         if let medId = medicineId {
             KMPInitializerKt.onDeepLinkReceived(medicineId: medId, time: time)
