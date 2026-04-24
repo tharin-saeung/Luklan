@@ -2,6 +2,7 @@ package com.commu.luklan.ui.groups
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -56,12 +57,13 @@ fun MedicineGroupsScreen(
                             .groupBy { it.category }
                             .map { (category, meds) ->
                                 MedicineGroup(
-                                    category = category.ifEmpty { "ไม่ระบุหมวดหมู่" },
+                                    category = category.ifEmpty { "อื่นๆ" },
                                     count = meds.size,
                                     medicines = meds.sortedBy { it.name }
                                 )
                             }
-                            .sortedByDescending { it.count }
+                            .sortedWith(compareBy<MedicineGroup> { it.category == "อื่นๆ" || it.category == "ไม่ระบุหมวดหมู่" }
+                                .thenByDescending { it.count })
                         
                         groups = grouped
                         isLoading = false
@@ -180,7 +182,9 @@ fun GroupCard(
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -212,6 +216,9 @@ fun GroupCard(
                         when (group.category) {
                             "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
                             "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
+                            "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(32.dp))
+                            "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(32.dp))
+                            "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(32.dp))
                             "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
                             "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
                             else -> Icon(Icons.Default.Category, null, tint = LuklanColors.Primary, modifier = Modifier.size(28.dp))
@@ -235,13 +242,11 @@ fun GroupCard(
                     }
                 }
                 
-                IconButton(onClick = { isExpanded = !isExpanded }) {
-                    Icon(
-                        if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = LuklanColors.Primary
-                    )
-                }
+                Icon(
+                    if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = LuklanColors.Primary
+                )
             }
             
             // Medicine List (when expanded)
@@ -286,6 +291,9 @@ fun MedicineItemInGroup(
                 when (medicine.category) {
                     "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.fillMaxSize())
                     "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.fillMaxSize())
+                    "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.fillMaxSize())
+                    "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.fillMaxSize())
+                    "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.fillMaxSize())
                     "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.fillMaxSize())
                     "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.fillMaxSize())
                     else -> Text("💊", fontSize = 24.sp)

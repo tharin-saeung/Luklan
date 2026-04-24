@@ -11,6 +11,7 @@ data class Medicine(
     val category: String = "เม็ด",
     val mealTiming: String = "ก่อนอาหาร",
     val mealTimingMinutes: Int = 30,
+    val currentAmount: String = "",
     val userId: String = "",
     val takenHistory: Map<String, Long> = emptyMap(), // "yyyy-MM-dd_HH:mm" -> actualTakenTimestamp
     val createdAt: Long = 0L,

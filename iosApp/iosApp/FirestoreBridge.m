@@ -13,6 +13,7 @@
                 category:(NSString *)category
               mealTiming:(NSString *)mealTiming
        mealTimingMinutes:(int)mealTimingMinutes
+           currentAmount:(NSString *)currentAmount
                   userId:(NSString *)userId
             takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                createdAt:(long long)createdAt
@@ -31,6 +32,7 @@
         @"category": category,
         @"mealTiming": mealTiming,
         @"mealTimingMinutes": @(mealTimingMinutes),
+        @"currentAmount": currentAmount,
         @"userId": userId,
         @"takenHistory": takenHistory,
         @"createdAt": @(createdAt),
@@ -57,6 +59,7 @@
                    category:(NSString *)category
                  mealTiming:(NSString *)mealTiming
           mealTimingMinutes:(int)mealTimingMinutes
+              currentAmount:(NSString *)currentAmount
                takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                   createdAt:(long long)createdAt
                       order:(int)order
@@ -73,6 +76,7 @@
         @"category": category,
         @"mealTiming": mealTiming,
         @"mealTimingMinutes": @(mealTimingMinutes),
+        @"currentAmount": currentAmount,
         @"takenHistory": takenHistory,
         @"createdAt": @(createdAt),
         @"order": @(order)

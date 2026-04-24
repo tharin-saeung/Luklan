@@ -122,6 +122,9 @@ fun MedicineDetailScreen(
                 when (currentMedicine.category) {
                     "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(100.dp))
                     "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(100.dp))
+                    "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(100.dp))
+                    "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(100.dp))
+                    "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(100.dp))
                     "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(100.dp))
                     "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(100.dp))
                     else -> Text("💊", fontSize = 80.sp)
@@ -168,6 +171,9 @@ fun MedicineDetailScreen(
                     imageType = when (currentMedicine.category) {
                         "แคปซูล" -> Res.drawable.capsule
                         "เม็ด" -> Res.drawable.pill
+                        "น้ำ" -> Res.drawable.liquid
+                        "ครีม" -> Res.drawable.cream
+                        "เหน็บ" -> Res.drawable.suppository
                         "ฉีด" -> Res.drawable.inject
                         "อื่นๆ" -> Res.drawable.other
                         else -> null
@@ -186,7 +192,7 @@ fun MedicineDetailScreen(
                 InfoBox(
                     modifier = Modifier.weight(if (hasMinutes) 1.2f else 1f),
                     icon = Icons.Filled.AccessTimeFilled,
-                    label = "เวลาที่กิน",
+                    label = "ช่วงเวลาที่ใช้ยา",
                     value = mealTimingDisplay
                 )
             }
@@ -195,7 +201,7 @@ fun MedicineDetailScreen(
 
             // Section Header
             Text(
-                text = "เวลาการกินยา",
+                text = "เวลาใช้ยา",
                 style = LuklanTypography.h2,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -307,6 +313,9 @@ fun MedicineDetailScreen(
                         when (currentMedicine.category) {
                             "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(70.dp))
                             "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(70.dp))
+                            "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(70.dp))
+                            "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(70.dp))
+                            "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(70.dp))
                             "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(70.dp))
                             "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(70.dp))
                             else -> Text("💊", fontSize = 48.sp)

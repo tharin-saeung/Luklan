@@ -1,6 +1,7 @@
 package com.commu.luklan.ui.home
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -311,55 +312,138 @@ fun HomeScreen(
         }
 
         // FAB Section
-        if (isCaretakerView) {
-            Column(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(32.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        if (!isEditMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(32.dp)
             ) {
-                if (showCaretakerMenu) {
-                    SmallFloatingActionButton(
-                        onClick = onNavigateToMedicineGroups,
-                        containerColor = Color.White,
-                        contentColor = LuklanColors.Primary,
-                        shape = CircleShape
-                    ) { Icon(Icons.Default.Medication, "Groups") }
-                    
-                    SmallFloatingActionButton(
-                        onClick = onNavigateToHistory,
-                        containerColor = Color.White,
-                        contentColor = LuklanColors.Primary,
-                        shape = CircleShape
-                    ) { Icon(Icons.Default.History, "History") }
+                // Menu Button (Bottom Left) - Only for Caretaker View
+                if (isCaretakerView) {
+                    Surface(
+                        onClick = { showCaretakerMenu = !showCaretakerMenu },
+                        modifier = Modifier.size(64.dp).align(Alignment.BottomStart),
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 6.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (showCaretakerMenu) Icons.Default.Close else Icons.Default.Menu,
+                                contentDescription = null,
+                                modifier = Modifier.size(36.dp),
+                                tint = LuklanColors.Primary
+                            )
+                        }
+                    }
                 }
-                
-                FloatingActionButton(
-                    onClick = { showCaretakerMenu = !showCaretakerMenu },
-                    containerColor = LuklanColors.Primary,
-                    contentColor = Color.White,
-                    shape = CircleShape
+
+                // Add Medicine Button (Bottom Right)
+                Surface(
+                    onClick = onNavigateToAddMedicine,
+                    modifier = Modifier.size(64.dp).align(Alignment.BottomEnd),
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 6.dp
                 ) {
-                    Icon(if (showCaretakerMenu) Icons.Default.Close else Icons.Default.Menu, null)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = LuklanColors.Primary
+                        )
+                    }
                 }
             }
-        } else if (!isEditMode) {
-            Surface(
-                onClick = onNavigateToAddMedicine,
+
+            // Expandable Caretaker Menu
+            Column(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(32.dp)
-                    .size(64.dp),
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 6.dp
+                    .align(Alignment.BottomStart)
+                    .padding(start = 32.dp, bottom = 104.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = LuklanColors.Primary
-                    )
+                // Item 1: Medication Groups
+                AnimatedVisibility(
+                    visible = isCaretakerView && showCaretakerMenu,
+                    enter = fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it / 2 },
+                    exit = fadeOut(animationSpec = tween(200)) + slideOutVertically(animationSpec = tween(200)) { it / 2 }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { 
+                            showCaretakerMenu = false
+                            onNavigateToMedicineGroups() 
+                        }
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Medication, "Groups", tint = LuklanColors.Primary)
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = 4.dp
+                        ) {
+                            Text(
+                                "กลุ่มยา",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = LuklanTypography.bodyMedium,
+                                color = LuklanColors.Primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Item 2: History
+                AnimatedVisibility(
+                    visible = isCaretakerView && showCaretakerMenu,
+                    enter = fadeIn(animationSpec = tween(300, 100)) + slideInVertically(animationSpec = tween(300, 100)) { it / 2 },
+                    exit = fadeOut(animationSpec = tween(200)) + slideOutVertically(animationSpec = tween(200)) { it / 2 }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { 
+                            showCaretakerMenu = false
+                            onNavigateToHistory() 
+                        }
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.History, "History", tint = LuklanColors.Primary)
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = 4.dp
+                        ) {
+                            Text(
+                                "ประวัติการกินยา",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = LuklanTypography.bodyMedium,
+                                color = LuklanColors.Primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -399,6 +483,9 @@ fun MedicineCardGrouped(
                 when (medicine.category) {
                     "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(45.dp))
                     "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(45.dp))
+                    "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(45.dp))
+                    "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(45.dp))
+                    "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(45.dp))
                     "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(45.dp))
                     "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(45.dp))
                     else -> {

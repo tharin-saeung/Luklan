@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,29 +26,21 @@ import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTypography
-
-data class MedicineFormState(
-    val name: String = "",
-    val dosage: String = "",
-    val unit: String = "",
-    val times: List<String> = emptyList(),
-    val startDate: String = "",
-    val category: String = "",
-    val mealTiming: String = "ก่อนอาหาร",
-    val mealTimingMinutes: Int = 15,
-    val expiryDate: String = ""
-)
+import kotlinx.datetime.*
 
 @Composable
 fun MedicineFormFields(
     state: MedicineFormState,
-    onUpdate: (MedicineFormState) -> Unit
+    onUpdate: (MedicineFormState) -> Unit,
 ) {
     var showTimePicker by remember { mutableStateOf(false) }
     var editingTimeIndex by remember { mutableStateOf(-1) }
     var showUnitPicker by remember { mutableStateOf(false) }
     var showMealTimingPicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val thaiMonths = listOf("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Name
@@ -55,10 +50,27 @@ fun MedicineFormFields(
             onValueChange = { onUpdate(state.copy(name = it)) }
         )
 
+        // Category
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("ลักษณะ", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            Surface(
+                onClick = { showCategoryPicker = true },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 0.dp
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Text(state.category.ifEmpty { "เลือกประเภท" }, color = if (state.category.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                }
+            }
+        }
+
         // Dosage and Unit
-        Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("ปริมาณ", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+                Text("ปริมาณที่กิน", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
                 TextField(
                     value = state.dosage,
                     onValueChange = { 
@@ -81,39 +93,87 @@ fun MedicineFormFields(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text("หน่วย", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White)
-                        .clickable { showUnitPicker = true }
-                        .padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.CenterStart
+                Surface(
+                    onClick = { showUnitPicker = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 0.dp
                 ) {
-                    Text(state.unit, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text(state.unit.ifEmpty { "เลือกหน่วย" }, color = if (state.unit.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                    }
+                }
+            }
+        }
+
+        // Current Amount
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("ปริมาณยาที่มี", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            TextField(
+                value = state.currentAmount,
+                onValueChange = { 
+                    val filtered = it.filter { c -> c.isDigit() || c == '.' }
+                    if (filtered.count { c -> c == '.' } <= 1) {
+                        onUpdate(state.copy(currentAmount = filtered))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                textStyle = TextStyle(color = LuklanColors.Primary, fontWeight = FontWeight.Bold),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                trailingIcon = { Text(state.unit, color = Color.Gray, modifier = Modifier.padding(end = 16.dp)) }
+            )
+        }
+
+        // Start Date
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("วันเริ่มกินยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            Surface(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 0.dp
+            ) {
+                val dateDisplay = try {
+                    val parts = state.startDate.split("-")
+                    if (parts.size == 3) {
+                        "${parts[2]} ${thaiMonths[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+                    } else state.startDate
+                } catch (e: Exception) { state.startDate }
+                
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Text(dateDisplay.ifEmpty { "เลือกวันที่" }, color = if (state.startDate.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.CalendarToday, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
                 }
             }
         }
 
         // Meal Timing
-        Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(modifier = Modifier.weight(1.5f)) {
-                Text("เวลากิน", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White)
-                        .clickable { showMealTimingPicker = true }
-                        .padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.CenterStart
+                Text("ช่วงเวลาที่ใช้ยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+                Surface(
+                    onClick = { showMealTimingPicker = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 0.dp
                 ) {
-                    Text(state.mealTiming, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text(state.mealTiming, color = LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                    }
                 }
             }
-            
             if (state.mealTiming.contains("อาหาร") && !state.mealTiming.contains("พร้อม")) {
                 Column(modifier = Modifier.weight(0.8f)) {
                     Text("นาที", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
@@ -135,37 +195,23 @@ fun MedicineFormFields(
             }
         }
 
-        // Category
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            Text("ลักษณะ", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
-                    .clickable { showCategoryPicker = true }
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(state.category, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
-            }
-        }
-
         // Times to take
-        Text("เวลาที่ต้องกิน", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, start = 12.dp))
-        FlowRow(modifier = Modifier.padding(8.dp)) { 
-            state.times.forEachIndexed { index, t -> 
-                Box(
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
-                        .clickable { editingTimeIndex = index; showTimePicker = true }
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) { 
-                    Text("$t น.", color = LuklanColors.Primary, fontWeight = FontWeight.Bold) 
-                } 
+        Text("เวลาใช้ยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, start = 12.dp))
+        FlowRow(modifier = Modifier.padding(top = 4.dp)) {
+            state.times.forEachIndexed { index, t ->
+                Surface(
+                    onClick = { editingTimeIndex = index; showTimePicker = true },
+                    modifier = Modifier.padding(4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 1.dp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Text("$t น.", color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Default.Edit, null, tint = LuklanColors.Primary.copy(alpha = 0.5f), modifier = Modifier.size(14.dp))
+                    }
+                }
             }
             IconButton(
                 onClick = { editingTimeIndex = -1; showTimePicker = true },
@@ -187,14 +233,17 @@ fun MedicineFormFields(
                 onUpdate(state.copy(times = newList.sorted())); showTimePicker = false
             }) { Text("ตกลง", color = LuklanColors.Primary, fontWeight = FontWeight.Bold) } },
             dismissButton = { 
-                if (editingTimeIndex >= 0) {
-                    TextButton(onClick = {
-                        val newList = state.times.toMutableList()
-                        newList.removeAt(editingTimeIndex)
-                        onUpdate(state.copy(times = newList)); showTimePicker = false
-                    }) { Text("ลบ", color = Color.Red) }
+                Row {
+                    if (editingTimeIndex >= 0) {
+                        TextButton(onClick = {
+                            val newList = state.times.toMutableList()
+                            newList.removeAt(editingTimeIndex)
+                            onUpdate(state.copy(times = newList))
+                            showTimePicker = false
+                        }) { Text("ลบ", color = Color.Red) }
+                    }
+                    TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก") }
                 }
-                TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก") } 
             },
             title = { Text("เลือกเวลา") },
             text = { WheelTimePicker(startTime = tempTime, onTimeSelected = { tempTime = it }) }
@@ -242,7 +291,7 @@ fun MedicineFormFields(
     }
 
     if (showCategoryPicker) {
-        val options = listOf("แคปซูล", "เม็ด", "ฉีด", "อื่นๆ")
+        val options = listOf("แคปซูล", "เม็ด", "น้ำ", "ครีม", "เหน็บ", "ฉีด", "อื่นๆ")
         AlertDialog(
             onDismissRequest = { showCategoryPicker = false },
             title = { Text("เลือกลักษณะ") },
@@ -258,11 +307,28 @@ fun MedicineFormFields(
             confirmButton = {}
         )
     }
+
+    if (showDatePicker) {
+        val dateParts = state.startDate.split("-")
+        val initialYear = if (dateParts.size == 3) dateParts[0].toIntOrNull() ?: 2024 else 2024
+        val initialMonth = if (dateParts.size == 3) dateParts[1].toIntOrNull() ?: 1 else 1
+        
+        com.commu.luklan.ui.components.MonthYearPicker(
+            initialMonth = initialMonth,
+            initialYear = initialYear,
+            onDismiss = { showDatePicker = false },
+            onConfirm = { m, y ->
+                val day = if (dateParts.size == 3) dateParts[2] else "01"
+                onUpdate(state.copy(startDate = "$y-${m.toString().padStart(2, '0')}-$day"))
+                showDatePicker = false
+            }
+        )
+    }
 }
 
 @Composable
 fun SummaryItemEditable(label: String, value: String, onValueChange: (String) -> Unit) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+    Column(modifier = Modifier.padding(vertical = 2.dp)) {
         Text(label, color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
         TextField(
             value = value,

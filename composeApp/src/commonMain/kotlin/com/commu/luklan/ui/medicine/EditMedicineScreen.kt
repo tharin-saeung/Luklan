@@ -22,6 +22,9 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTypography
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
+import luklan.composeapp.generated.resources.Res
+import luklan.composeapp.generated.resources.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,20 +32,19 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
     val medicineRepo = remember { getMedicineRepository() }
     val scheduler = remember { getNotificationScheduler() }
     val scope = rememberCoroutineScope()
-
-    var state by remember {
-        mutableStateOf(MedicineFormState(
-            name = medicine.name, 
-            dosage = medicine.dosage,
-            unit = medicine.unit,
-            startDate = medicine.startDate, 
-            category = medicine.category,
-            mealTiming = medicine.mealTiming, 
-            mealTimingMinutes = medicine.mealTimingMinutes,
-            expiryDate = medicine.expiryDate, 
-            times = medicine.times
-        ))
-    }
+    
+    var state by remember { mutableStateOf(MedicineFormState(
+        name = medicine.name,
+        dosage = medicine.dosage,
+        unit = medicine.unit,
+        startDate = medicine.startDate,
+        category = medicine.category,
+        mealTiming = medicine.mealTiming,
+        mealTimingMinutes = medicine.mealTimingMinutes,
+        currentAmount = medicine.currentAmount,
+        times = medicine.times
+    )) }
+    
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -61,7 +63,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
             
             Box(modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MedicineFormFields(state = state, onUpdate = { state = it })
+                    MedicineFormFields(state = state, onUpdate = { state = it },)
                 }
             }
 
@@ -76,31 +78,33 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: () -> Unit) {
                         isLoading = true
                         scope.launch {
                             val up = medicine.copy(
-                                name = state.name, 
-                                dosage = state.dosage, 
-                                times = state.times, 
-                                unit = state.unit, 
-                                category = state.category, 
-                                mealTiming = state.mealTiming, 
-                                mealTimingMinutes = state.mealTimingMinutes
+                                name = state.name,
+                                dosage = state.dosage,
+                                times = state.times,
+                                unit = state.unit,
+                                category = state.category,
+                                mealTiming = state.mealTiming,
+                                mealTimingMinutes = state.mealTimingMinutes,
+                                currentAmount = state.currentAmount,
+                                startDate = state.startDate
                             )
-                            medicineRepo.updateMedicine(up).onSuccess { 
+                            medicineRepo.updateMedicine(up).onSuccess {
                                 scheduler.cancel(medicine)
                                 scheduler.schedule(up)
                                 isLoading = false
-                                onNavigateBack() 
+                                onNavigateBack()
                             }.onFailure { 
                                 isLoading = false
                                 error = it.message 
                             }
                         }
                     }
-                }, 
-                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp).height(56.dp), 
-                shape = RoundedCornerShape(28.dp), 
+                },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp).height(56.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary)
             ) {
-                if (isLoading) CircularProgressIndicator(color = LuklanColors.Primary, modifier = Modifier.size(24.dp)) 
+                if (isLoading) CircularProgressIndicator(color = LuklanColors.Primary, modifier = Modifier.size(24.dp))
                 else Text("บันทึกการแก้ไข", style = LuklanTypography.buttonLarge)
             }
         }
