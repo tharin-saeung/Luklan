@@ -250,20 +250,29 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun EmergencyScreen(userProfile: User?, onBack: () -> Unit) {
     val alertRepository = remember { getAlertRepository() }
+    val authRepository = remember { getAuthRepository() }
     val scope = rememberCoroutineScope()
     var isSent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        if (userProfile != null) {
-            val alert = com.commu.luklan.data.Alert(
-                senderId = userProfile.id,
-                senderName = userProfile.name,
-                type = "SOS",
-                message = "${userProfile.name} ต้องการความช่วยเหลือด่วน!",
-                timestamp = getCurrentTimeMillis(),
-                groupIds = userProfile.groupIds
-            )
-            alertRepository.sendAlert(alert).onSuccess { isSent = true }
+        val userId = authRepository.getCurrentUserId()
+        if (userId != null) {
+            println("🆘 SOS Triggered. Fetching fresh profile for $userId")
+            authRepository.getUserProfile(userId).onSuccess { freshUser ->
+                println("🆘 Fresh profile groupIds: ${freshUser.groupIds}")
+                val alert = com.commu.luklan.data.Alert(
+                    senderId = freshUser.id,
+                    senderName = freshUser.name,
+                    type = "SOS",
+                    message = "${freshUser.name} ต้องการความช่วยเหลือด่วน!",
+                    timestamp = getCurrentTimeMillis(),
+                    groupIds = freshUser.groupIds
+                )
+                alertRepository.sendAlert(alert).onSuccess { 
+                    println("✅ SOS Alert saved to DB")
+                    isSent = true 
+                }.onFailure { println("❌ Failed to save SOS: ${it.message}") }
+            }.onFailure { println("❌ Failed to fetch fresh profile: ${it.message}") }
         }
     }
 
