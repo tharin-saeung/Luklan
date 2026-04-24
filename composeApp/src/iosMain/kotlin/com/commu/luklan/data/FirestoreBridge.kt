@@ -132,8 +132,15 @@ fun getUsersWithIdsNative(userIds: List<String>, completion: (Any?, String?) -> 
 // CareGroup Native Bridge
 @OptIn(ExperimentalForeignApi::class)
 fun createGroupNative(name: String, owner: Map<String, Any>, completion: (NSDictionary?, String?) -> Unit) {
-    FirestoreBridge.createGroupWithName(name, owner) { group, error ->
-        completion(group, error)
+    FirestoreBridge.createGroupWithName(name, owner as Map<Any?, *>) { group, error ->
+        completion(group as? NSDictionary, error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun saveUserProfileNative(userId: String, name: String, email: String, role: String, completion: (String?) -> Unit) {
+    FirestoreBridge.saveUserProfileWithId(userId, name, email, role) { error ->
+        completion(error)
     }
 }
 

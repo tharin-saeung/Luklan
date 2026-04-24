@@ -4,6 +4,8 @@ import cocoapods.FirebaseCore.*
 import cocoapods.FirebaseMessaging.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import androidx.compose.runtime.*
+import platform.UIKit.UIApplication
+import platform.UIKit.registerForRemoteNotifications
 import com.commu.luklan.data.getAuthRepository
 import kotlinx.coroutines.*
 
