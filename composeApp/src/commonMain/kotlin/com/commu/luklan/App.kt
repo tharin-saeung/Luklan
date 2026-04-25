@@ -231,7 +231,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     route = "${Screen.InviteCaretaker.route}?groupId={groupId}",
                     arguments = listOf(navArgument("groupId") { type = NavType.StringType; nullable = true; defaultValue = null })
                 ) { backStackEntry ->
-                    val gid = backStackEntry.arguments?.getString("groupId")
+                    val gid = backStackEntry.arguments?.get("groupId") as? String
                     InviteCaretakerScreen(
                         groupId = gid,
                         onBack = { 
@@ -311,7 +311,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     route = "${Screen.MedicineDetail.route}/{date}",
                     arguments = listOf(navArgument("date") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val date = backStackEntry.arguments?.getString("date") ?: ""
+                    val date = backStackEntry.arguments?.get("date") as? String ?: ""
                     medicineToEdit?.let { medicine ->
                         MedicineDetailScreen(
                             medicine = medicine,
