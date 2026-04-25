@@ -303,7 +303,7 @@ fun HomeScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(LuklanSpacing.sm),
+                    contentPadding = PaddingValues(LuklanSpacing.md),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
