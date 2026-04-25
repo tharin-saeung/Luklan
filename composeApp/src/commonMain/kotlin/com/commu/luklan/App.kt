@@ -1,18 +1,10 @@
 package com.commu.luklan
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -231,7 +223,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     route = "${Screen.InviteCaretaker.route}?groupId={groupId}",
                     arguments = listOf(navArgument("groupId") { type = NavType.StringType; nullable = true; defaultValue = null })
                 ) { backStackEntry ->
-                    val gid = backStackEntry.arguments?.get("groupId") as? String
+                    val gid = backStackEntry.arguments?.getString("groupId")
                     InviteCaretakerScreen(
                         groupId = gid,
                         onBack = { 
@@ -311,7 +303,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     route = "${Screen.MedicineDetail.route}/{date}",
                     arguments = listOf(navArgument("date") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val date = backStackEntry.arguments?.get("date") as? String ?: ""
+                    val date = backStackEntry.arguments?.getString("date") ?: ""
                     medicineToEdit?.let { medicine ->
                         MedicineDetailScreen(
                             medicine = medicine,
@@ -394,3 +386,4 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         }
     }
 }
+
