@@ -177,6 +177,8 @@ fun HistoryMedicineCard(medicine: Medicine, timestamp: Long) {
                     "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
                     "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
                     "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
+                    "ยาเหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(32.dp))
+                    "ยาน้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(32.dp))
                     "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
                     else -> Text("💊", fontSize = 28.sp)
                 }

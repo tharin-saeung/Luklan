@@ -4,7 +4,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 
 fun MainViewController() = ComposeUIViewController { 
     App(
-        initialMedicineId = DeepLinkManager.medicineId,
-        initialTime = DeepLinkManager.time
+        deepLinkMedicineId = DeepLinkManager.medicineId,
+        deepLinkTime = DeepLinkManager.time
     ) 
 }
