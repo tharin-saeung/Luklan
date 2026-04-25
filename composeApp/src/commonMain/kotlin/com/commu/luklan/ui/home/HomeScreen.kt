@@ -27,6 +27,7 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -36,7 +37,6 @@ import org.jetbrains.compose.resources.painterResource
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
-import com.commu.luklan.ui.components.MedicineIcon
 
 @OptIn(ExperimentalTime::class)
 @Composable
@@ -63,6 +63,7 @@ fun HomeScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isEditMode by remember { mutableStateOf(false) }
     var showCaretakerMenu by remember { mutableStateOf(false) }
+    var medicineToDelete by remember { mutableStateOf<Medicine?>(null) }
 
     // Date Logic
     val now = remember {
@@ -82,20 +83,14 @@ fun HomeScreen(
         if (userId.isEmpty()) return
         isLoading = true
         scope.launch {
-            // Fetch User Profile
             authRepository.getUserProfile(userId).onSuccess { userProfile = it }
-            
-            // Fetch Medicines
             medicineRepository.getMedicines(userId).onSuccess { list ->
                 medicines.clear()
                 medicines.addAll(list.sortedBy { it.order })
-                
-                // Sync notifications for self only
                 if (!isCaretakerView) {
                     val scheduler = com.commu.luklan.data.getNotificationScheduler()
                     list.forEach { scheduler.schedule(it) }
                 }
-                
                 isLoading = false
             }.onFailure { isLoading = false }
         }
@@ -290,8 +285,8 @@ fun HomeScreen(
 
             val dateStr = "${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}"
             
-            val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
-            val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+            val nowDateTime = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
+            val todayStr = "${nowDateTime.year}-${nowDateTime.monthNumber.toString().padStart(2, '0')}-${nowDateTime.dayOfMonth.toString().padStart(2, '0')}"
             
             val filteredMedicines = medicines.filter { 
                 it.isAvailableOnDate(dateStr, todayStr) && 
@@ -308,7 +303,7 @@ fun HomeScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(LuklanSpacing.lg),
+                    contentPadding = PaddingValues(LuklanSpacing.sm),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -321,10 +316,7 @@ fun HomeScreen(
                             medicine = med,
                             isEditMode = isEditMode,
                             isTakenToday = isFullyTaken,
-                            onDelete = {
-                                medicines.remove(med)
-                                scope.launch { medicineRepository.deleteMedicine(med.id) }
-                            },
+                            onDelete = { medicineToDelete = med },
                             onClick = { 
                                 onNavigateToMedicineDetail(med, dateStr) 
                             }
@@ -472,6 +464,32 @@ fun HomeScreen(
             }
         }
     }
+
+    // Delete Confirmation Dialog
+    if (medicineToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { medicineToDelete = null },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("ลบรายการยานี้?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold, color = LuklanColors.Primary) },
+            text = { Text("คุณต้องการลบยา \"${medicineToDelete?.name}\" ใช่หรือไม่?", style = LuklanTypography.bodyLarge, color = LuklanColors.TextPrimary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val med = medicineToDelete!!
+                        medicines.remove(med)
+                        scope.launch { medicineRepository.deleteMedicine(med.id) }
+                        medicineToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Error),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("ลบ", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { medicineToDelete = null }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
+            }
+        )
+    }
 }
 
 @Composable
@@ -532,7 +550,7 @@ fun MedicineCardGrouped(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (medicine.times.isNotEmpty()) medicine.times.joinToString(" น., ") + " น." else "",
+                        text = if (medicine.times.isNotEmpty()) medicine.times.joinToString(", ") else "",
                         style = LuklanTypography.bodySmall, 
                         color = Color.White.copy(alpha = 0.8f),
                         maxLines = 1
@@ -541,8 +559,20 @@ fun MedicineCardGrouped(
             }
 
             if (isEditMode) {
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Cancel, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(32.dp))
+                Surface(
+                    onClick = onDelete,
+                    modifier = Modifier.padding(end = 16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = LuklanColors.Error
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Delete, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("ลบ", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
                 }
             } else if (isTakenToday) {
                 Box(
