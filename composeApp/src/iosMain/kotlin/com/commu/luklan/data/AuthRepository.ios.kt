@@ -115,6 +115,16 @@ actual class AuthRepository actual constructor() {
         }
     }
 
+    actual suspend fun updateUserPhoto(userId: String, photoUrl: String): Result<Unit> = suspendCoroutine { continuation ->
+        platform.FirestoreBridge.FirestoreBridge.updateUserPhotoWithUserId(userId, photoUrl) { error ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
+            }
+        }
+    }
+
     private fun NSDictionary.toUser(): User {
         return User(
             id = (objectForKey("id") as? String) ?: "",
@@ -131,7 +141,8 @@ actual class AuthRepository actual constructor() {
             patients = (objectForKey("patients") as? NSArray)?.let { arr ->
                 (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
             } ?: emptyList(),
-            fcmToken = (objectForKey("fcmToken") as? String) ?: ""
+            fcmToken = (objectForKey("fcmToken") as? String) ?: "",
+            photoUrl = (objectForKey("photoUrl") as? String) ?: ""
         )
     }
 }

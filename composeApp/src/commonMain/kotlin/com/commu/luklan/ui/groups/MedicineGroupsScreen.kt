@@ -38,6 +38,7 @@ data class MedicineGroup(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineGroupsScreen(
+    targetUserId: String? = null,
     onBack: () -> Unit,
     onMedicineClick: (Medicine) -> Unit
 ) {
@@ -50,12 +51,11 @@ fun MedicineGroupsScreen(
     fun loadGroups() {
         isLoading = true
         scope.launch {
-            val userId = authRepository.getCurrentUserId()
+            val userId = targetUserId ?: authRepository.getCurrentUserId()
             if (userId != null) {
                 medicineRepository
                     .getMedicines(userId)
                     .onSuccess { medicines ->
-                        // Group medicines by category
                         val grouped = medicines
                             .groupBy { it.category }
                             .map { (category, meds) ->
@@ -105,6 +105,11 @@ fun MedicineGroupsScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = { /* Add logic if needed */ }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = LuklanColors.Primary)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = LuklanColors.Background
                 )
@@ -122,54 +127,23 @@ fun MedicineGroupsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            color = LuklanColors.Primary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "กำลังโหลดข้อมูล...",
-                            style = LuklanTypography.bodyLarge,
-                            color = LuklanColors.TextSecondary
-                        )
-                    }
+                    CircularProgressIndicator(color = LuklanColors.Primary)
                 }
             } else if (groups.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 32.dp),
-                    contentAlignment = Alignment.TopCenter
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Category,
-                            contentDescription = "No groups",
-                            tint = LuklanColors.TextSecondary,
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Text(
-                            text = "ยังไม่มียาในระบบ",
-                            style = LuklanTypography.bodyLarge,
-                            color = LuklanColors.TextSecondary
-                        )
-                    }
+                    Text(
+                        text = "ยังไม่มียาในระบบ",
+                        style = LuklanTypography.bodyLarge,
+                        color = LuklanColors.TextSecondary
+                    )
                 }
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(
-                        start = LuklanSpacing.lg,
-                        top = LuklanSpacing.md,
-                        end = LuklanSpacing.lg,
-                        bottom = LuklanSpacing.lg
-                    )
+                    contentPadding = PaddingValues(LuklanSpacing.lg)
                 ) {
                     items(groups) { group ->
                         GroupCard(
@@ -203,7 +177,6 @@ fun GroupCard(
                 .fillMaxWidth()
                 .padding(LuklanSpacing.md)
         ) {
-            // Group Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -277,7 +250,6 @@ fun GroupCard(
                 )
             }
             
-            // Medicine List (when expanded)
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(LuklanSpacing.md))
                 Divider(color = LuklanColors.Primary.copy(alpha = 0.1f))

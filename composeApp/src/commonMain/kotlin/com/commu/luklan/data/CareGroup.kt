@@ -7,5 +7,6 @@ data class CareGroup(
     val ownerId: String = "", // The UID of the group owner (usually the creator/patient)
     val inviteCode: String = "", // unique 5-digit code
     val memberIds: List<String> = emptyList(), // List of all member UIDs (patient + caretakers)
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val photoUrl: String = ""
 )

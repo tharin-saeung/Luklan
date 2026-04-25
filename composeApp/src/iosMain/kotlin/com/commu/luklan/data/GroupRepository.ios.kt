@@ -123,12 +123,23 @@ class GroupRepositoryIos : GroupRepository {
         }
     }
 
+    override suspend fun updateGroupPhoto(groupId: String, photoUrl: String): Result<Unit> = suspendCoroutine { continuation ->
+        platform.FirestoreBridge.FirestoreBridge.updateGroupPhotoWithGroupId(groupId, photoUrl) { error ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
+            }
+        }
+    }
+
     private fun User.toMap(): Map<String, Any> = mapOf(
         "id" to id,
         "name" to name,
         "email" to email,
         "role" to role,
-        "groupIds" to groupIds
+        "groupIds" to groupIds,
+        "photoUrl" to photoUrl
     )
 
     private fun NSDictionary.toCareGroup(): CareGroup {
@@ -141,7 +152,8 @@ class GroupRepositoryIos : GroupRepository {
             memberIds = (objectForKey("memberIds") as? NSArray)?.let { arr ->
                 (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
             } ?: emptyList(),
-            createdAt = (objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L
+            createdAt = (objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L,
+            photoUrl = (objectForKey("photoUrl") as? String) ?: ""
         )
     }
 
@@ -154,7 +166,8 @@ class GroupRepositoryIos : GroupRepository {
             role = (objectForKey("role") as? String) ?: "user",
             groupIds = (objectForKey("groupIds") as? NSArray)?.let { arr ->
                 (0 until arr.count.toInt()).mapNotNull { arr.objectAtIndex(it.toULong()) as? String }
-            } ?: emptyList()
+            } ?: emptyList(),
+            photoUrl = (objectForKey("photoUrl") as? String) ?: ""
         )
     }
 }

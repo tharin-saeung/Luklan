@@ -85,6 +85,10 @@
                           newOwnerId:(NSString *)newOwnerId
                           completion:(void (^)(NSString * _Nullable error))completion;
 
++ (void)updateGroupPhotoWithGroupId:(NSString *)groupId
+                           photoUrl:(NSString *)photoUrl
+                         completion:(void (^)(NSString * _Nullable error))completion;
+
 + (void)saveUserProfileWithId:(NSString *)userId
                          name:(NSString *)name
                         email:(NSString *)email
@@ -94,6 +98,10 @@
 + (void)updateFcmTokenWithUserId:(NSString *)userId
                            token:(NSString *)token
                       completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)updateUserPhotoWithUserId:(NSString *)userId
+                         photoUrl:(NSString *)photoUrl
+                       completion:(void (^)(NSString * _Nullable error))completion;
 
 + (void)sendAlertWithId:(NSString *)alertId
                 senderId:(NSString *)senderId
@@ -107,6 +115,9 @@
 + (void)getAlertsForUserId:(NSString *)userId
                 completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion;
 
++ (void)getAlertsBySenderId:(NSString *)senderId
+                 completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion;
+
 + (void)deleteAlertWithId:(NSString *)alertId
                completion:(void (^)(NSString * _Nullable error))completion;
 
@@ -116,5 +127,9 @@
 
 + (void)syncAlertWithUserInfo:(NSDictionary *)userInfo
                       alertId:(NSString *)alertId;
+
++ (void)uploadImageWithData:(NSData *)data
+                       path:(NSString *)path
+                 completion:(void (^)(NSString * _Nullable url, NSString * _Nullable error))completion;
 
 @end

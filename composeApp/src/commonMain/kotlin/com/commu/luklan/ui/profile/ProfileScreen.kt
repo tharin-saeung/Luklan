@@ -20,9 +20,12 @@ import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
+import com.commu.luklan.data.getStorageRepository
+import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTypography
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,11 +38,32 @@ fun ProfileScreen(
     onLogoutSuccess: () -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
+    val storageRepository = remember { getStorageRepository() }
     val scope = rememberCoroutineScope()
 
     var userProfile by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isUploading by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberImagePickerLauncher(
+        onImageSelected = { bytes: ByteArray? ->
+            val imgBytes = bytes
+            if (imgBytes != null) {
+                userProfile?.id?.let { uid ->
+                    scope.launch {
+                        isUploading = true
+                        storageRepository.uploadImage("profiles/$uid.jpg", imgBytes).onSuccess { url ->
+                            authRepository.updateUserPhoto(uid, url).onSuccess {
+                                userProfile = userProfile?.copy(photoUrl = url)
+                            }
+                        }
+                        isUploading = false
+                    }
+                }
+            }
+        }
+    )
 
     LaunchedEffect(Unit) {
         val userId = authRepository.getCurrentUserId()
@@ -89,15 +113,42 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(96.dp)
                             .clip(CircleShape)
-                            .background(Color.White),
+                            .background(Color.White)
+                            .clickable { imagePickerLauncher.launch() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(56.dp)
-                        )
+                        if (isUploading) {
+                            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = LuklanColors.Primary)
+                        } else if (!userProfile?.photoUrl.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = userProfile?.photoUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                        
+                        // Edit overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Icon(
+                                Icons.Default.CameraAlt, 
+                                null, 
+                                tint = Color.White, 
+                                modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

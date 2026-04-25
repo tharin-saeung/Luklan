@@ -23,11 +23,16 @@ class AlertRepositoryAndroid : AlertRepository {
             val userDoc = db.collection("users").document(userId).get().await()
             val groupIds = (userDoc.get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             
-            if (groupIds.isEmpty()) return Result.success(emptyList())
+            val queryByGroups = if (groupIds.isNotEmpty()) {
+                collection.whereArrayContainsAny("groupIds", groupIds).get().await()
+                    .documents.mapNotNull { it.toAlert() }
+            } else emptyList()
 
-            val snapshot = collection.whereArrayContainsAny("groupIds", groupIds).get().await()
-            val list = snapshot.documents.mapNotNull { it.toAlert() }
-            Result.success(list.sortedByDescending { it.timestamp })
+            val queryBySender = collection.whereEqualTo("senderId", userId).get().await()
+                .documents.mapNotNull { it.toAlert() }
+
+            val combined = (queryByGroups + queryBySender).distinctBy { it.id }
+            Result.success(combined.sortedByDescending { it.timestamp })
         } catch (e: Exception) {
             Result.failure(e)
         }

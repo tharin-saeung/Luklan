@@ -9,5 +9,6 @@ data class User(
     val inviteCode: String = "", // Legacy
     val caretakers: List<String> = emptyList(), // Legacy
     val patients: List<String> = emptyList(), // Legacy
-    val fcmToken: String = ""
+    val fcmToken: String = "",
+    val photoUrl: String = ""
 )

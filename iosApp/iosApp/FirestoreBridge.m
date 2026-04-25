@@ -1,5 +1,6 @@
 #import "FirestoreBridge.h"
 #import <FirebaseFirestore/FirebaseFirestore.h>
+#import <FirebaseStorage/FirebaseStorage.h>
 
 @implementation FirestoreBridge
 
@@ -245,7 +246,8 @@
         @"ownerId": userId,
         @"inviteCode": code,
         @"memberIds": @[userId],
-        @"createdAt": @((long long)([[NSDate date] timeIntervalSince1970] * 1000))
+        @"createdAt": @((long long)([[NSDate date] timeIntervalSince1970] * 1000)),
+        @"photoUrl": @""
     };
 
     FIRWriteBatch *batch = [db batch];
@@ -412,6 +414,16 @@
     }];
 }
 
++ (void)updateGroupPhotoWithGroupId:(NSString *)groupId
+                           photoUrl:(NSString *)photoUrl
+                         completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] updateData:@{@"photoUrl": photoUrl} completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
 + (void)saveUserProfileWithId:(NSString *)userId
                          name:(NSString *)name
                         email:(NSString *)email
@@ -444,6 +456,16 @@
     FIRFirestore *db = [FIRFirestore firestore];
     NSString *path = [NSString stringWithFormat:@"users/%@", userId];
     [[db documentWithPath:path] updateData:@{@"fcmToken": token} completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)updateUserPhotoWithUserId:(NSString *)userId
+                         photoUrl:(NSString *)photoUrl
+                       completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSString *path = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:path] updateData:@{@"photoUrl": photoUrl} completion:^(NSError * _Nullable error) {
         completion(error ? error.localizedDescription : nil);
     }];
 }
@@ -501,6 +523,24 @@
             }
             completion(results, nil);
         }];
+    }];
+}
+
++ (void)getAlertsBySenderId:(NSString *)senderId
+                 completion:(void (^)(NSArray * _Nullable alerts, NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    [[[db collectionWithPath:@"alerts"] queryWhereField:@"senderId" isEqualTo:senderId] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
+        if (error) {
+            completion(nil, error.localizedDescription);
+        } else {
+            NSMutableArray *results = [NSMutableArray array];
+            for (FIRQueryDocumentSnapshot *doc in snapshot.documents) {
+                NSMutableDictionary *data = [doc.data mutableCopy];
+                [data setObject:doc.documentID forKey:@"id"];
+                [results addObject:data];
+            }
+            completion(results, nil);
+        }
     }];
 }
 
@@ -569,8 +609,16 @@
                 [NSString stringWithFormat:@"ยังไม่ได้บันทึกการกินยา %@ (%@)", medName, time] :
                 [NSString stringWithFormat:@"ได้เวลาใช้ยา %@ (%@)", medName, time];
 
+            NSDateFormatter *df = [[NSDateFormatter alloc] init];
+            [df setDateFormat:@"yyyyMMdd"];
+            NSString *dateStr = [df stringFromDate:[NSDate date]];
+
+            // Format ID similar to Android to prevent daily overwrites
+            // iOS alertId coming in is usually "medicineId_time" or "medicineId_time_checkin"
+            NSString *finalAlertId = [NSString stringWithFormat:@"%@_%@_%@", alertId, dateStr, type];
+
             NSDictionary *alertMap = @{
-                @"id": alertId,
+                @"id": finalAlertId,
                 @"senderId": userId,
                 @"senderName": name,
                 @"type": type,
@@ -579,10 +627,28 @@
                 @"groupIds": groupIds,
                 @"isSilent": @YES // Mark as silent for caretaker dashboard only
             };
-            
+
             // setData is idempotent if document ID is same
-            [[[db collectionWithPath:@"alerts"] documentWithPath:alertId] setData:alertMap completion:nil];
-        }];
+            [[[db collectionWithPath:@"alerts"] documentWithPath:finalAlertId] setData:alertMap completion:nil];        }];
+    }];
+}
+
++ (void)uploadImageWithData:(NSData *)data
+                       path:(NSString *)path
+                 completion:(void (^)(NSString * _Nullable url, NSString * _Nullable error))completion {
+    FIRStorageReference *ref = [[FIRStorage storage] referenceWithPath:path];
+    [ref putData:data metadata:nil completion:^(FIRStorageMetadata * _Nullable metadata, NSError * _Nullable error) {
+        if (error) {
+            completion(nil, error.localizedDescription);
+        } else {
+            [ref downloadURLWithCompletion:^(NSURL * _Nullable URL, NSError * _Nullable error) {
+                if (error) {
+                    completion(nil, error.localizedDescription);
+                } else {
+                    completion(URL.absoluteString, nil);
+                }
+            }];
+        }
     }];
 }
 

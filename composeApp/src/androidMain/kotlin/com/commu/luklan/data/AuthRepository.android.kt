@@ -148,6 +148,16 @@ actual class AuthRepository {
         }
     }
 
+    actual suspend fun updateUserPhoto(userId: String, photoUrl: String): Result<Unit> {
+        return try {
+            firestore.collection("users").document(userId)
+                .update("photoUrl", photoUrl).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun com.google.firebase.firestore.DocumentSnapshot.toUser(): User {
         return User(
             id = id,
@@ -158,7 +168,8 @@ actual class AuthRepository {
             inviteCode = getString("inviteCode") ?: "",
             caretakers = (get("caretakers") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             patients = (get("patients") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-            fcmToken = getString("fcmToken") ?: ""
+            fcmToken = getString("fcmToken") ?: "",
+            photoUrl = getString("photoUrl") ?: ""
         )
     }
 }

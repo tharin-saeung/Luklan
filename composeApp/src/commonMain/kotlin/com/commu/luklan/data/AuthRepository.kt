@@ -9,5 +9,6 @@ expect class AuthRepository() {
     suspend fun signOut()
     suspend fun updateFcmToken(userId: String, token: String): Result<Unit>
     suspend fun registerFcmToken(userId: String): Result<Unit>
+    suspend fun updateUserPhoto(userId: String, photoUrl: String): Result<Unit>
     }
 expect fun getAuthRepository(): AuthRepository

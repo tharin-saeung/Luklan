@@ -37,7 +37,9 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun NotificationCenterScreen(
     targetUserId: String? = null,
-    onBack: () -> Unit
+    targetUserName: String? = null,
+    onBack: () -> Unit,
+    onMedicineClick: (com.commu.luklan.data.Medicine) -> Unit
 ) {
     val alertRepository = remember { getAlertRepository() }
     val authRepository = remember { getAuthRepository() }
@@ -45,6 +47,7 @@ fun NotificationCenterScreen(
     var alerts by remember { mutableStateOf<List<Alert>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var groupIds by remember { mutableStateOf<List<String>>(emptyList()) }
+    var viewedUserName by remember { mutableStateOf(targetUserName) }
 
     var alertToDelete by remember { mutableStateOf<Alert?>(null) }
     var showDeleteAllConfirm by remember { mutableStateOf(false) }
@@ -54,13 +57,28 @@ fun NotificationCenterScreen(
         if (currentUid != null) {
             isLoading = true
             scope.launch {
-                authRepository.getUserProfile(currentUid).onSuccess { user ->
-                    groupIds = user.groupIds
+                authRepository.getUserProfile(currentUid).onSuccess { currentUser ->
+                    groupIds = currentUser.groupIds
+                    
+                    // Fetch viewed user's name if needed
+                    if (targetUserId != null && targetUserId != currentUid && viewedUserName == null) {
+                        authRepository.getUserProfile(targetUserId).onSuccess { viewedUserName = it.name }
+                    }
+
+                    // Always fetch alerts using current user's ID (to get access to shared groups)
                     alertRepository.getAlertsForUser(currentUid).onSuccess { list ->
                         alerts = if (targetUserId != null && targetUserId != currentUid) {
-                            list.filter { it.senderId == targetUserId }
+                            // VIEWING SPECIFIC PATIENT: Show their med log + SOS from caretakers
+                            list.filter { 
+                                (it.senderId == targetUserId && it.type != "SOS") || 
+                                (it.senderId != targetUserId && it.type == "SOS") 
+                            }
                         } else {
-                            list.filter { it.senderId != currentUid }
+                            // HOME VIEW: Show own meds + SOS/Missed from others
+                            list.filter { 
+                                (it.senderId == currentUid && it.type != "SOS") || 
+                                (it.senderId != currentUid && (it.type == "SOS" || it.type == "MISSED_MED")) 
+                            }
                         }
                         isLoading = false
                     }.onFailure { isLoading = false }
@@ -76,7 +94,15 @@ fun NotificationCenterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("การแจ้งเตือน", style = LuklanTypography.h2, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        text = if (viewedUserName != null && targetUserId != authRepository.getCurrentUserId()) 
+                            "การแจ้งเตือนของ $viewedUserName" 
+                            else "การแจ้งเตือน", 
+                        style = LuklanTypography.h2, 
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuklanColors.Primary)

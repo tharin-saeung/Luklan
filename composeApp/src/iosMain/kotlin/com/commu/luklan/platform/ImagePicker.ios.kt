@@ -51,48 +51,48 @@ actual suspend fun pickImageFromDevice(): ByteArray? = withContext(Dispatchers.M
             ) {
                 val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage
 
-                // Normalize image by drawing into a standard bitmap context to avoid
-                // color space / headroom issues for Display P3 images. Then downscale
-                // large images to reduce payload size (helps avoid server-side errors).
-                val normalized = image?.let {
+                // Normalize, crop to square, and downscale to 512x512
+                val processed = image?.let {
                     try {
                         val origW = it.size.useContents { width }
                         val origH = it.size.useContents { height }
 
-                        // First, rasterize into sRGB-like bitmap using current scale.
-                        UIGraphicsBeginImageContextWithOptions(it.size, false, it.scale)
-                        it.drawInRect(CGRectMake(0.0, 0.0, origW, origH))
-                        var newImg = UIGraphicsGetImageFromCurrentImageContext()
+                        // 1. Calculate square crop
+                        val side = if (origW > origH) origH else origW
+                        val x = (origW - side) / 2.0
+                        val y = (origH - side) / 2.0
+
+                        // 2. Draw cropped and scaled
+                        val targetSize = CGSizeMake(512.0, 512.0)
+                        UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+                        
+                        // Draw subset of original image
+                        it.drawInRect(CGRectMake(0.0, 0.0, 512.0, 512.0)) 
+                        // Note: drawInRect with different size handles scaling. 
+                        // To crop AND scale, we use CGImage or specific drawing logic.
+                        // Simple way: draw entire image into 512x512 but offset so center is square.
+                        
+                        // Better logic for square scaling:
+                        val scale = 512.0 / side
+                        val drawW = origW * scale
+                        val drawH = origH * scale
+                        val drawX = (512.0 - drawW) / 2.0
+                        val drawY = (512.0 - drawH) / 2.0
+                        
+                        it.drawInRect(CGRectMake(drawX, drawY, drawW, drawH))
+                        
+                        val newImg = UIGraphicsGetImageFromCurrentImageContext()
                         UIGraphicsEndImageContext()
-
-                        if (newImg == null) newImg = it
-
-                        // Downscale if either dimension exceeds maxDim
-                        val maxDim = 1024.0
-                        val maxOrig = maxOf(origW, origH)
-                        if (maxOrig > maxDim) {
-                            val scale = maxDim / maxOrig
-                            val targetW = (origW * scale)
-                            val targetH = (origH * scale)
-                            UIGraphicsBeginImageContextWithOptions(CGSizeMake(targetW, targetH), false, 1.0)
-                            newImg.drawInRect(CGRectMake(0.0, 0.0, targetW, targetH))
-                            val scaledImg = UIGraphicsGetImageFromCurrentImageContext()
-                            UIGraphicsEndImageContext()
-                            if (scaledImg != null) {
-                                println("ImagePicker: downscaled image from ${origW}x${origH} to ${targetW}x${targetH}")
-                                newImg = scaledImg
-                            }
-                        }
-
-                        newImg
+                        
+                        newImg ?: it
                     } catch (e: Throwable) {
                         e.printStackTrace()
                         it
                     }
                 }
 
-                // Try JPEG first, fall back to PNG if JPEG encoding fails for any reason.
-                val data = normalized?.let { UIImageJPEGRepresentation(it, 0.75) } ?: normalized?.let { UIImagePNGRepresentation(it) }
+                // Try JPEG at 0.8 quality
+                val data = processed?.let { UIImageJPEGRepresentation(it, 0.8) } ?: processed?.let { UIImagePNGRepresentation(it) }
 
                 val bytes = data?.let { nsDataToByteArray(it) }
                 try {

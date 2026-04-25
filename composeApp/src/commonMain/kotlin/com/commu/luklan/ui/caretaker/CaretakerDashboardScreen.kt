@@ -28,6 +28,7 @@ import com.commu.luklan.data.CareGroup
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getGroupRepository
 import com.commu.luklan.ui.theme.*
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,14 +157,23 @@ fun GroupItem(group: CareGroup, onClick: () -> Unit) {
                     .background(LuklanColors.Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Group, contentDescription = null, tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
+                if (!group.photoUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = group.photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Default.Group, contentDescription = null, tint = LuklanColors.Primary, modifier = Modifier.size(36.dp))
+                }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = group.name, style = LuklanTypography.h2, color = LuklanColors.TextPrimary, fontWeight = FontWeight.Bold)
-                Text(text = "สมาชิก ${group.memberIds.size} คน", style = LuklanTypography.bodySmall, color = LuklanColors.TextSecondary)
+                Text(text = "รหัสเชิญ: ${group.inviteCode}", style = LuklanTypography.bodySmall, color = LuklanColors.TextSecondary)
             }
             
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = LuklanColors.TextSecondary)

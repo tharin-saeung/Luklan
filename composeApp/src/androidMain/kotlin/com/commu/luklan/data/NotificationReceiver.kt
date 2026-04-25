@@ -8,6 +8,10 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.commu.luklan.MainActivity
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -18,34 +22,47 @@ class NotificationReceiver : BroadcastReceiver() {
         val time = intent.getStringExtra("EXTRA_TIME")
         val isCheckin = intent.getBooleanExtra("EXTRA_IS_CHECKIN", false)
 
-        val db = FirebaseFirestore.getInstance()
+        val pendingResult = goAsync()
 
-        if (isCheckin && medicineId != null && time != null) {
-            // Check if taken before notifying user
-            db.collection("medicines").document(medicineId).get().addOnSuccessListener { doc ->
-                val takenHistory = doc.get("takenHistory") as? Map<String, Long> ?: emptyMap()
-                val isTaken = takenHistory.keys.any { it.endsWith("_$time") }
-                
-                if (!isTaken) {
-                    // Alert user locally
-                    showNotification(context, "เตือนกินยา (ยังไม่ได้ทาน)", message, medicineId, time)
-                    // Log to DB for caretaker to see in history/dashboard
-                    if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val db = FirebaseFirestore.getInstance()
+
+                if (isCheckin && medicineId != null && time != null) {
+                    // Check if taken before notifying user
+                    val doc = db.collection("medicines").document(medicineId).get().await()
+                    val takenHistory = doc.get("takenHistory") as? Map<*, *> ?: emptyMap<Any, Any>()
+                    val isTaken = takenHistory.keys.any { (it as? String)?.endsWith("_$time") == true }
+                    
+                    if (!isTaken) {
+                        // Alert user locally
+                        showNotification(context, "เตือนกินยา (ยังไม่ได้ทาน)", message, medicineId, time)
+                        // Log to DB for caretaker to see in history/dashboard
+                        if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
+                    }
+                } else {
+                    // Initial alarm: Notify user locally
+                    showNotification(context, "เตือนกินยา", message, medicineId, time)
+                    // Log to DB for caretaker/history
+                    if (userId != null) logActivityToDb(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                pendingResult.finish()
             }
-        } else {
-            // Initial alarm: Notify user locally
-            showNotification(context, "เตือนกินยา", message, medicineId, time)
-            // Log to DB for caretaker/history
-            if (userId != null) logActivityToDb(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
         }
     }
 
-    private fun logActivityToDb(db: FirebaseFirestore, userId: String, type: String, message: String, medicineId: String?, time: String?) {
-        db.collection("users").document(userId).get().addOnSuccessListener { userDoc ->
+    private suspend fun logActivityToDb(db: FirebaseFirestore, userId: String, type: String, message: String, medicineId: String?, time: String?) {
+        try {
+            val userDoc = db.collection("users").document(userId).get().await()
             val groupIds = (userDoc.get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             val name = userDoc.getString("name") ?: "ผู้ป่วย"
-            val alertId = "${medicineId ?: "manual"}_${time?.replace(":", "") ?: "now"}_${type}"
+            
+            // Include date in alert ID to prevent daily overwrites
+            val dateStr = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+            val alertId = "${medicineId ?: "manual"}_${dateStr}_${time?.replace(":", "") ?: "now"}_${type}"
             
             val activity = mapOf(
                 "id" to alertId,
@@ -58,7 +75,9 @@ class NotificationReceiver : BroadcastReceiver() {
                 "isSilent" to true // Mark as silent to avoid triggering push notifications via cloud functions
             )
             
-            db.collection("alerts").document(alertId).set(activity)
+            db.collection("alerts").document(alertId).set(activity).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

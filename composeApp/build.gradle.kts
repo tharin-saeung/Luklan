@@ -41,6 +41,8 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
             implementation(libs.android.firebase.auth)
             implementation(libs.android.firebase.firestore)
+            implementation(libs.android.firebase.storage)
+            implementation(libs.android.firebase.appcheck.debug)
             implementation(libs.android.firebase.messaging)
             implementation(libs.google.firebase.functions)
             implementation(libs.gson)
@@ -59,6 +61,8 @@ kotlin {
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
             implementation(libs.kotlinx.datetime)
             implementation(libs.qr.kit)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -86,6 +90,11 @@ kotlin {
         }
 
         pod("FirebaseFirestore") {
+            version = "~> 11.0"
+            extraOpts += listOf("-compiler-option", "-fmodules")
+        }
+
+        pod("FirebaseStorage") {
             version = "~> 11.0"
             extraOpts += listOf("-compiler-option", "-fmodules")
         }

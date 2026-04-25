@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
@@ -44,8 +46,8 @@ fun HomeScreen(
     onNavigateToAddMedicine: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToMedicineDetail: (Medicine, String) -> Unit,
-    onNavigateToHistory: () -> Unit = {},
-    onNavigateToMedicineGroups: () -> Unit = {},
+    onNavigateToHistory: (String?) -> Unit = {},
+    onNavigateToMedicineGroups: (String?) -> Unit = {},
     onNavigateToNotificationCenter: (String) -> Unit = {}
 ) {
     val authRepository = remember { getAuthRepository() }
@@ -56,6 +58,7 @@ fun HomeScreen(
     val isCaretakerView = targetUserId != null && targetUserId.isNotEmpty()
 
     var medicines = remember { mutableStateListOf<Medicine>() }
+    var userProfile by remember { mutableStateOf<com.commu.luklan.data.User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isEditMode by remember { mutableStateOf(false) }
     var showCaretakerMenu by remember { mutableStateOf(false) }
@@ -74,10 +77,14 @@ fun HomeScreen(
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
     val dayInitials = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
 
-    fun loadMedicines() {
+    fun loadData() {
         if (userId.isEmpty()) return
         isLoading = true
         scope.launch {
+            // Fetch User Profile
+            authRepository.getUserProfile(userId).onSuccess { userProfile = it }
+            
+            // Fetch Medicines
             medicineRepository.getMedicines(userId).onSuccess { list ->
                 medicines.clear()
                 medicines.addAll(list.sortedBy { it.order })
@@ -93,7 +100,7 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(userId) { loadMedicines() }
+    LaunchedEffect(userId) { loadData() }
 
     Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Background)) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
@@ -113,17 +120,26 @@ fun HomeScreen(
                             .clickable { onNavigateToProfile() },
                         contentAlignment = Alignment.Center
                     ) { 
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = LuklanColors.Primary,
-                            modifier = Modifier.size(36.dp)
-                        )
+                        if (!userProfile?.photoUrl.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = userProfile?.photoUrl,
+                                contentDescription = "Profile",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile",
+                                tint = LuklanColors.Primary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
                     }
                 }
 
                 Text(
-                    text = targetUserName ?: "ลูกหลาน",
+                    text = userProfile?.name ?: targetUserName ?: "ลูกหลาน",
                     style = LuklanTypography.h3,
                     color = LuklanColors.Primary,
                     fontWeight = FontWeight.Bold
@@ -380,7 +396,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable { 
                             showCaretakerMenu = false
-                            onNavigateToMedicineGroups() 
+                            onNavigateToMedicineGroups(userId) 
                         }
                     ) {
                         Surface(
@@ -420,7 +436,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable { 
                             showCaretakerMenu = false
-                            onNavigateToHistory() 
+                            onNavigateToHistory(userId) 
                         }
                     ) {
                         Surface(

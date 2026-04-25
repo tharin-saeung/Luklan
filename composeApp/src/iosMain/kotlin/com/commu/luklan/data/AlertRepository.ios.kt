@@ -28,16 +28,36 @@ class AlertRepositoryIos : AlertRepository {
         }
     }
 
-    override suspend fun getAlertsForUser(userId: String): Result<List<Alert>> = suspendCoroutine { continuation ->
-        platform.FirestoreBridge.FirestoreBridge.getAlertsForUserId(userId) { alerts: List<*>?, error: String? ->
-            if (error != null) {
-                continuation.resume(Result.failure(Exception(error)))
-            } else {
-                val list = alerts?.mapNotNull { 
-                    (it as? NSDictionary)?.toAlert() 
-                } ?: emptyList()
-                continuation.resume(Result.success(list.sortedByDescending { it.timestamp }))
+    override suspend fun getAlertsForUser(userId: String): Result<List<Alert>> {
+        val groupsResult = suspendCoroutine<Result<List<Alert>>> { continuation ->
+            platform.FirestoreBridge.FirestoreBridge.getAlertsForUserId(userId) { alerts: List<*>?, error: String? ->
+                if (error != null) {
+                    continuation.resume(Result.failure(Exception(error)))
+                } else {
+                    val list = alerts?.mapNotNull { (it as? NSDictionary)?.toAlert() } ?: emptyList()
+                    continuation.resume(Result.success(list))
+                }
             }
+        }
+
+        val senderResult = suspendCoroutine<Result<List<Alert>>> { continuation ->
+            platform.FirestoreBridge.FirestoreBridge.getAlertsBySenderId(userId) { alerts: List<*>?, error: String? ->
+                if (error != null) {
+                    continuation.resume(Result.failure(Exception(error)))
+                } else {
+                    val list = alerts?.mapNotNull { (it as? NSDictionary)?.toAlert() } ?: emptyList()
+                    continuation.resume(Result.success(list))
+                }
+            }
+        }
+
+        return if (groupsResult.isSuccess && senderResult.isSuccess) {
+            val combined = (groupsResult.getOrNull()!! + senderResult.getOrNull()!!).distinctBy { it.id }
+            Result.success(combined.sortedByDescending { it.timestamp })
+        } else if (groupsResult.isSuccess) {
+            groupsResult
+        } else {
+            senderResult
         }
     }
 

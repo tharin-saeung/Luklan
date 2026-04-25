@@ -10,6 +10,7 @@ interface GroupRepository {
     suspend fun getGroupById(groupId: String): Result<CareGroup>
     suspend fun kickMember(groupId: String, userId: String): Result<Unit>
     suspend fun transferOwnership(groupId: String, newOwnerId: String): Result<Unit>
+    suspend fun updateGroupPhoto(groupId: String, photoUrl: String): Result<Unit>
 }
 
 expect fun getGroupRepository(): GroupRepository

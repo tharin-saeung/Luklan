@@ -144,6 +144,15 @@ class GroupRepositoryAndroid : GroupRepository {
         }
     }
 
+    override suspend fun updateGroupPhoto(groupId: String, photoUrl: String): Result<Unit> {
+        return try {
+            groupsCollection.document(groupId).update("photoUrl", photoUrl).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private suspend fun generateUnique5DigitCode(): String {
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         var code: String
@@ -161,7 +170,8 @@ class GroupRepositoryAndroid : GroupRepository {
         "ownerId" to ownerId,
         "inviteCode" to inviteCode,
         "memberIds" to memberIds,
-        "createdAt" to createdAt
+        "createdAt" to createdAt,
+        "photoUrl" to photoUrl
     )
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toCareGroup() = try {
@@ -172,7 +182,8 @@ class GroupRepositoryAndroid : GroupRepository {
             ownerId = getString("ownerId") ?: getString("patientId") ?: "", // fallback to patientId for legacy
             inviteCode = getString("inviteCode") ?: "",
             memberIds = (get("memberIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-            createdAt = getLong("createdAt") ?: 0L
+            createdAt = getLong("createdAt") ?: 0L,
+            photoUrl = getString("photoUrl") ?: ""
         )
     } catch (e: Exception) { null }
 
@@ -181,7 +192,8 @@ class GroupRepositoryAndroid : GroupRepository {
         name = getString("name") ?: "",
         email = getString("email") ?: "",
         role = getString("role") ?: "user",
-        groupIds = (get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        groupIds = (get("groupIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+        photoUrl = getString("photoUrl") ?: ""
     )
 }
 

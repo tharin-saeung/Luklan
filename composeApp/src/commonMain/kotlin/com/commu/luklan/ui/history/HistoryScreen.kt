@@ -40,6 +40,7 @@ data class HistoryEntry(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
+    targetUserId: String? = null,
     onBack: () -> Unit
 ) {
     val medicineRepository = remember { getMedicineRepository() }
@@ -51,7 +52,7 @@ fun HistoryScreen(
     fun loadHistory() {
         isLoading = true
         scope.launch {
-            val userId = authRepository.getCurrentUserId()
+            val userId = targetUserId ?: authRepository.getCurrentUserId()
             if (userId != null) {
                 medicineRepository
                     .getMedicines(userId)

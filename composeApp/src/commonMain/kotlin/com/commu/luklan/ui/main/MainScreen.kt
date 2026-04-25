@@ -42,9 +42,7 @@ import luklan.composeapp.generated.resources.capsule2
 import org.jetbrains.compose.resources.painterResource
 
 enum class MainTab {
-    HOME,
-    EMERGENCY,
-    MENU
+    HOME, EMERGENCY, MENU
 }
 
 @Composable
@@ -55,19 +53,21 @@ fun MainScreen(
     onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToMedicineDetail: (Medicine, String) -> Unit,
-    onNavigateToHistory: () -> Unit,
-    onNavigateToMedicineGroups: () -> Unit,
+    onNavigateToHistory: (String?) -> Unit,
+    onNavigateToMedicineGroups: (String?) -> Unit,
     onNavigateToInviteCaretaker: () -> Unit,
+    onNavigateToInviteCaretakerWithId: (String) -> Unit = {},
     onNavigateToCaretakerDashboard: () -> Unit,
     onNavigateToPatientTimeline: (String, String) -> Unit,
-    onNavigateToNotificationCenter: (String) -> Unit
+    onNavigateToNotificationCenter: (String) -> Unit,
+    onMedicineClick: (Medicine) -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
     val alertRepository = remember { getAlertRepository() }
     val notificationScheduler = remember { getNotificationScheduler() }
+    
     var userProfile by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
-
     var lastNotifiedAlertId by rememberSaveable { mutableStateOf<String?>(null) }
     var pollingJob by remember { mutableStateOf<Job?>(null) }
 
@@ -82,7 +82,7 @@ fun MainScreen(
     LaunchedEffect(userProfile) {
         val uid = userProfile?.id ?: return@LaunchedEffect
         if (pollingJob?.isActive == true) return@LaunchedEffect
-
+        
         pollingJob = scope.launch {
             var isFirstPoll = (lastNotifiedAlertId == null)
             while(true) {
@@ -90,23 +90,19 @@ fun MainScreen(
                     val latest = alerts.firstOrNull()
                     if (latest != null) {
                         val isNew = latest.id != lastNotifiedAlertId
-                        val isVeryFresh = latest.timestamp > (getCurrentTimeMillis() - 15000)
-                        val isRecent = latest.timestamp > (getCurrentTimeMillis() - 300000)
-                        
                         if (isNew) {
                             if (latest.senderId != uid) {
                                 val isFcmFallback = latest.timestamp < (getCurrentTimeMillis() - 20000)
+                                
                                 if (isFirstPoll) {
                                     lastNotifiedAlertId = latest.id
                                     isFirstPoll = false
                                 } else if (isFcmFallback) {
-                                    if (isRecent) {
-                                        notificationScheduler.showImmediateNotification(
-                                            "🆘 SOS จาก ${latest.senderName}",
-                                            "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                        )
-                                        lastNotifiedAlertId = latest.id
-                                    }
+                                    notificationScheduler.showImmediateNotification(
+                                        "🆘 SOS จาก ${latest.senderName}",
+                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                    )
+                                    lastNotifiedAlertId = latest.id
                                 }
                             } else {
                                 lastNotifiedAlertId = latest.id
@@ -145,9 +141,9 @@ fun MainScreen(
                             onClick = { onTabSelected(MainTab.HOME) },
                             modifier = Modifier.weight(1f)
                         )
-
+                        
                         Box(modifier = Modifier.weight(1.25f))
-
+                        
                         TabItem(
                             icon = Icons.Default.Apps,
                             label = "เมนู",
@@ -157,7 +153,7 @@ fun MainScreen(
                         )
                     }
                 }
-                
+
                 EmergencyButton(
                     onTrigger = { onTabSelected(MainTab.EMERGENCY) },
                     modifier = Modifier.width(150.dp).height(110.dp)
@@ -173,6 +169,8 @@ fun MainScreen(
                         onNavigateToAddMedicine = onNavigateToAddMedicine,
                         onNavigateToProfile = onNavigateToProfile,
                         onNavigateToMedicineDetail = onNavigateToMedicineDetail,
+                        onNavigateToHistory = { onNavigateToHistory(null) },
+                        onNavigateToMedicineGroups = { onNavigateToMedicineGroups(null) },
                         onNavigateToNotificationCenter = onNavigateToNotificationCenter
                     )
                 }
@@ -181,8 +179,8 @@ fun MainScreen(
                     onBack = { onTabSelected(MainTab.HOME) }
                 )
                 MainTab.MENU -> MenuScreen(
-                    onNavigateToHistory = onNavigateToHistory,
-                    onNavigateToMedicineGroups = onNavigateToMedicineGroups,
+                    onNavigateToHistory = { onNavigateToHistory(null) },
+                    onNavigateToMedicineGroups = { onNavigateToMedicineGroups(null) },
                     onNavigateToCaretakerDashboard = onNavigateToCaretakerDashboard
                 )
             }
@@ -193,8 +191,8 @@ fun MainScreen(
 @Composable
 fun TabItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String, 
-    isSelected: Boolean, 
+    label: String,
+    isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -251,7 +249,11 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
                     isHolding = true
-                    try { awaitRelease() } finally { isHolding = false }
+                    try {
+                        awaitRelease()
+                    } finally {
+                        isHolding = false
+                    }
                 })
             },
         contentAlignment = Alignment.BottomCenter
@@ -300,8 +302,11 @@ fun EmergencyScreen(userProfile: User?, onBack: () -> Unit) {
                 Icon(Icons.Default.LocalHospital, null, tint = LuklanColors.Error, modifier = Modifier.size(80.dp))
             }
             Text(
-                if (isSent) "ส่งสัญญาณฉุกเฉินแล้ว!" else "กำลังส่งสัญญาณฉุกเฉิน...", 
-                style = LuklanTypography.h1, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center
+                if (isSent) "ส่งสัญญาณฉุกเฉินแล้ว!" else "กำลังส่งสัญญาณฉุกเฉิน...",
+                style = LuklanTypography.h1,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
             )
             Text("ผู้ดูแลของคุณได้รับแจ้งเตือนแล้ว", style = LuklanTypography.bodyLarge, color = Color.White.copy(alpha = 0.8f))
             Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuklanColors.Primary), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
@@ -331,67 +336,60 @@ fun MenuScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(48.dp))
-        
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "เมนู", 
-                style = LuklanTypography.h1, 
-                fontWeight = FontWeight.Bold, 
+                "เมนู",
+                style = LuklanTypography.h1,
+                fontWeight = FontWeight.Bold,
                 color = LuklanColors.Primary,
                 fontSize = 32.sp
             )
         }
-        
         Spacer(Modifier.height(32.dp))
-        
         Spacer(Modifier.weight(0.8f))
-
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             MenuCardWide(
                 icon = Icons.Default.Medication,
-                label = "กลุ่มยา", 
-                onClick = onNavigateToMedicineGroups, 
+                label = "กลุ่มยา",
+                onClick = onNavigateToMedicineGroups,
                 color = LuklanColors.Primary
             )
-            
             MenuCardWide(
-                icon = Icons.Default.History, 
-                label = "ประวัติการกินยา", 
-                onClick = onNavigateToHistory, 
+                icon = Icons.Default.History,
+                label = "ประวัติการกินยา",
+                onClick = onNavigateToHistory,
                 color = LuklanColors.Primary
             )
-            
             MenuCardWide(
-                icon = Icons.Default.People, 
-                label = "กลุ่มผู้ดูแล", 
-                onClick = onNavigateToCaretakerDashboard, 
+                icon = Icons.Default.People,
+                label = "กลุ่มผู้ดูแล",
+                onClick = onNavigateToCaretakerDashboard,
                 color = LuklanColors.Primary
             )
         }
-
         Spacer(Modifier.weight(1.2f))
     }
 }
 
 @Composable
 fun MenuCardWide(
-    icon: Any, 
-    label: String, 
-    onClick: () -> Unit, 
+    icon: Any,
+    label: String,
+    onClick: () -> Unit,
     color: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().height(160.dp), 
-        colors = CardDefaults.cardColors(containerColor = color), 
-        shape = RoundedCornerShape(32.dp), 
+        modifier = modifier.fillMaxWidth().height(160.dp),
+        colors = CardDefaults.cardColors(containerColor = color),
+        shape = RoundedCornerShape(32.dp),
         onClick = onClick
     ) {
         Row(
@@ -413,21 +411,19 @@ fun MenuCardWide(
                     )
                 } else if (icon is androidx.compose.ui.graphics.vector.ImageVector) {
                     Icon(
-                        icon, 
-                        null, 
-                        tint = Color.White, 
+                        icon,
+                        null,
+                        tint = Color.White,
                         modifier = Modifier.size(70.dp)
                     )
                 }
             }
-            
             Spacer(Modifier.width(24.dp))
-            
             Text(
-                label, 
-                color = Color.White, 
+                label,
+                color = Color.White,
                 style = LuklanTypography.h3,
-                fontWeight = FontWeight.Bold, 
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),
                 maxLines = 2,
