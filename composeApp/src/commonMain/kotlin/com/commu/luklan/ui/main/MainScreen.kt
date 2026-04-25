@@ -363,7 +363,7 @@ fun MenuScreen(
             )
             MenuCardWide(
                 icon = Icons.Default.History,
-                label = "ประวัติการกินยา",
+                label = "ประวัติการใช้ยา",
                 onClick = onNavigateToHistory,
                 color = LuklanColors.Primary
             )
@@ -393,7 +393,7 @@ fun MenuCardWide(
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = if (label.length >= 13) 16.dp else if (label.length >= 8) 40.dp else 52.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
@@ -422,12 +422,10 @@ fun MenuCardWide(
             Text(
                 label,
                 color = Color.White,
-                style = LuklanTypography.h3,
-                fontWeight = FontWeight.Bold,
+                style = LuklanTypography.h2,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),
-                maxLines = 2,
-                softWrap = true
+                maxLines = 1
             )
         }
     }

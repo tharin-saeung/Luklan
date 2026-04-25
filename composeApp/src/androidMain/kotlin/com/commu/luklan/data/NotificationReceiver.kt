@@ -36,13 +36,13 @@ class NotificationReceiver : BroadcastReceiver() {
                     
                     if (!isTaken) {
                         // Alert user locally
-                        showNotification(context, "เตือนกินยา (ยังไม่ได้ทาน)", message, medicineId, time)
+                        showNotification(context, "เตือนใช้ยา (ยังไม่ได้ใช้)", message, medicineId, time)
                         // Log to DB for caretaker to see in history/dashboard
-                        if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการกินยา $medicineName ($time)", medicineId, time)
+                        if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการใช้ยา $medicineName ($time)", medicineId, time)
                     }
                 } else {
                     // Initial alarm: Notify user locally
-                    showNotification(context, "เตือนกินยา", message, medicineId, time)
+                    showNotification(context, "เตือนใช้ยา", message, medicineId, time)
                     // Log to DB for caretaker/history
                     if (userId != null) logActivityToDb(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
                 }

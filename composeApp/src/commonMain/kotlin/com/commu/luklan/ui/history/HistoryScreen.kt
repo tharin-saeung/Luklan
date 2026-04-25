@@ -81,7 +81,7 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "ประวัติการกินยา",
+                        text = "ประวัติการใช้ยา",
                         style = LuklanTypography.h3,
                         fontWeight = FontWeight.Bold
                     )
@@ -132,7 +132,7 @@ fun HistoryScreen(
                             modifier = Modifier.size(64.dp)
                         )
                         Text(
-                            text = "ยังไม่มีประวัติการกินยา",
+                            text = "ยังไม่มีประวัติการใช้ยา",
                             style = LuklanTypography.bodyLarge,
                             color = LuklanColors.TextSecondary
                         )

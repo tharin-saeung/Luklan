@@ -199,7 +199,7 @@ fun ProfileScreen(
                     ) {
                         MenuItem(title = "กลุ่มผู้ดูแล", icon = Icons.Default.Groups, onClick = onNavigateToGroups)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f))
-                        MenuItem(title = "ประวัติการกินยา", icon = Icons.Default.History, onClick = onNavigateToHistory)
+                        MenuItem(title = "ประวัติการใช้ยา", icon = Icons.Default.History, onClick = onNavigateToHistory)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f))
                         MenuItem(title = "ติดต่อทีมงาน", icon = Icons.Default.ContactSupport, onClick = onNavigateToContact)
                         Divider(color = Color.LightGray.copy(alpha = 0.5f))

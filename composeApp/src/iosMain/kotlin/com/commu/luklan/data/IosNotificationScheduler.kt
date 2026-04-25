@@ -60,7 +60,7 @@ class IosNotificationScheduler : NotificationScheduler {
                 val minute = timeParts[1].toLongOrNull() ?: return@forEachIndexed
 
                 val content = UNMutableNotificationContent().apply {
-                    setTitle("⏰ เตือนกินยา")
+                    setTitle("⏰ เตือนใช้ยา")
                     setBody(message)
                     setSound(UNNotificationSound.defaultSound())
                     setBadge(NSNumber(1))
@@ -119,8 +119,8 @@ class IosNotificationScheduler : NotificationScheduler {
                 
                 if (checkinComponents != null) {
                     val checkinContent = UNMutableNotificationContent().apply {
-                        setTitle("⏰ ยังไม่ทานยาใช่ไหม?")
-                        setBody("คุณยังไม่ได้บันทึกการกินยา ${medicine.name} เลยนะครับ")
+                        setTitle("⏰ ยังไม่ได้ใช้ยาใช่ไหม?")
+                        setBody("คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
                         setSound(UNNotificationSound.defaultSound())
                         setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to true))
                     }

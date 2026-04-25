@@ -267,7 +267,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("ยาที่ต้องกิน", style = LuklanTypography.h2, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                Text("ยาที่ต้องใช้", style = LuklanTypography.h2, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
                 
                 Surface(
                     onClick = { isEditMode = !isEditMode },
@@ -452,7 +452,7 @@ fun HomeScreen(
                             shadowElevation = 4.dp
                         ) {
                             Text(
-                                "ประวัติการกินยา",
+                                "ประวัติการใช้ยา",
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = LuklanTypography.bodyMedium,
                                 color = LuklanColors.Primary,

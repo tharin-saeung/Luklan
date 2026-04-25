@@ -105,7 +105,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     
                     // Schedule Check-in reminder (10 minutes after adjusted dose time)
                     val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
-                        putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการกินยา ${medicine.name} เลยนะครับ")
+                        putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
                         putExtra("EXTRA_MEDICINE_ID", medicine.id)
                         putExtra("EXTRA_MEDICINE_NAME", medicine.name)
                         putExtra("EXTRA_TIME", timeStr)

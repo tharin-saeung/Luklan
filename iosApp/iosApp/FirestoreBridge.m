@@ -606,7 +606,7 @@
             
             NSString *type = isCheckin ? @"MISSED_MED" : @"MEDICINE";
             NSString *message = isCheckin ? 
-                [NSString stringWithFormat:@"ยังไม่ได้บันทึกการกินยา %@ (%@)", medName, time] :
+                [NSString stringWithFormat:@"ยังไม่ได้บันทึกการใช้ยา %@ (%@)", medName, time] :
                 [NSString stringWithFormat:@"ได้เวลาใช้ยา %@ (%@)", medName, time];
 
             NSDateFormatter *df = [[NSDateFormatter alloc] init];

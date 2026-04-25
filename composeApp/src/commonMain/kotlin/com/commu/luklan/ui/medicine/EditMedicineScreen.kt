@@ -117,7 +117,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
             containerColor = Color.White,
             shape = RoundedCornerShape(24.dp),
             title = { Text("ต้องการลบยานี้หรอครับ?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold) },
-            text = { Text("คุณต้องการลบยา \"${medicine.name}\" หรือไม่? เราจะหยุดส่งการแจ้งเตือนการกินยานี้ให้คุณ", style = LuklanTypography.bodyLarge) },
+            text = { Text("คุณต้องการลบยา \"${medicine.name}\" หรือไม่? เราจะหยุดส่งการแจ้งเตือนการใช้ยานี้ให้คุณ", style = LuklanTypography.bodyLarge) },
             confirmButton = {
                 Button(
                     onClick = {

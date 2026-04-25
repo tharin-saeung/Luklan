@@ -369,7 +369,7 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
 @Composable
 fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<String>, dm: Int, dy: Int, now: LocalDateTime, onMonthYearChange: (Int, Int) -> Unit, onUpdate: (MedicineFormState) -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Text("เลือกวันเริ่มกินยา", style = LuklanTypography.h2, color = Color.White)
+        Text("เลือกวันเริ่มใช้ยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
         
         val listState = rememberLazyListState()
@@ -491,7 +491,7 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Box {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White.copy(0.15f)).clickable { expanded = true }.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(if (state.mealTiming.isEmpty()) "เลือกเวลาการกินยา" else state.mealTiming, color = if (state.mealTiming.isEmpty()) Color.White.copy(0.6f) else Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
+                    Text(if (state.mealTiming.isEmpty()) "เลือกเวลาการใช้ยา" else state.mealTiming, color = if (state.mealTiming.isEmpty()) Color.White.copy(0.6f) else Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(4.dp)); Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {

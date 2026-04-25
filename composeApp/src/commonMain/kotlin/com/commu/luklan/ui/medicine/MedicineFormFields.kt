@@ -79,7 +79,7 @@ fun MedicineFormFields(
         // Dosage and Unit
         Row(modifier = Modifier.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("ปริมาณที่กิน", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+                Text("ปริมาณที่ใช้", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
                 TextField(
                     value = state.dosage,
                     onValueChange = { 
@@ -144,7 +144,7 @@ fun MedicineFormFields(
 
         // Start Date
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
-            Text("วันเริ่มกินยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            Text("วันเริ่มใช้ยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
             Surface(
                 onClick = { showDatePicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -281,7 +281,7 @@ fun MedicineFormFields(
         val options = listOf("ก่อนอาหาร", "หลังอาหาร", "พร้อมอาหาร", "ก่อนนอน")
         AlertDialog(
             onDismissRequest = { showMealTimingPicker = false },
-            title = { Text("เลือกเวลากิน") },
+            title = { Text("เลือกเวลาใช้") },
             text = {
                 Column {
                     options.forEach { opt ->
