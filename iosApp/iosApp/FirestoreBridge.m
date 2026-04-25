@@ -1,6 +1,6 @@
 #import "FirestoreBridge.h"
 #import <FirebaseFirestore/FirebaseFirestore.h>
-#import <FirebaseStorage/FirebaseStorage.h>
+@import FirebaseStorage;
 
 @implementation FirestoreBridge
 
