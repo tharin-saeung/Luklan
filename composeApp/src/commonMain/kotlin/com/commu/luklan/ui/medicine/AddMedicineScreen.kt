@@ -29,6 +29,7 @@ import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.components.WheelTimePicker
+import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
@@ -249,33 +250,33 @@ fun StepCategory(state: MedicineFormState, onUpdate: (MedicineFormState) -> Unit
             Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // Row 1
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[0].first, categories[0].second, state.category == categories[0].first) { 
+                    CategoryCard(categories[0].first, state.category == categories[0].first) { 
                         onUpdate(state.copy(category = categories[0].first, unit = categories[0].third))
                     }
-                    CategoryCard(categories[1].first, categories[1].second, state.category == categories[1].first) { 
+                    CategoryCard(categories[1].first, state.category == categories[1].first) { 
                         onUpdate(state.copy(category = categories[1].first, unit = categories[1].third))
                     }
                 }
                 // Row 2
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[2].first, categories[2].second, state.category == categories[2].first) { 
+                    CategoryCard(categories[2].first, state.category == categories[2].first) { 
                         onUpdate(state.copy(category = categories[2].first, unit = categories[2].third))
                     }
-                    CategoryCard(categories[3].first, categories[3].second, state.category == categories[3].first) { 
+                    CategoryCard(categories[3].first, state.category == categories[3].first) { 
                         onUpdate(state.copy(category = categories[3].first, unit = categories[3].third))
                     }
                 }
                 // Row 3
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[4].first, categories[4].second, state.category == categories[4].first) { 
+                    CategoryCard(categories[4].first, state.category == categories[4].first) { 
                         onUpdate(state.copy(category = categories[4].first, unit = categories[4].third))
                     }
-                    CategoryCard(categories[5].first, categories[5].second, state.category == categories[5].first) { 
+                    CategoryCard(categories[5].first, state.category == categories[5].first) { 
                         onUpdate(state.copy(category = categories[5].first, unit = categories[5].third))
                     }
                 }
                 // Row 4: Centered Last Item
-                CategoryCard(categories[6].first, categories[6].second, state.category == categories[6].first) { 
+                CategoryCard(categories[6].first, state.category == categories[6].first) { 
                     onUpdate(state.copy(category = categories[6].first, unit = categories[6].third))
                 }
             }
@@ -438,13 +439,16 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
 }
 
 @Composable
-fun CategoryCard(label: String, icon: org.jetbrains.compose.resources.DrawableResource, isSelected: Boolean, onClick: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
+fun CategoryCard(label: String, isSelected: Boolean, onClick: () -> Unit) {
     val borderColor = if (isSelected) LuklanColors.Secondary else Color.White
 
-    Box(modifier = Modifier.size(width = 150.dp, height = 150.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(
+        modifier = Modifier
+            .size(width = 150.dp, height = 150.dp)
+            .clickable { onClick() }, 
+        contentAlignment = Alignment.BottomCenter
+    ) {
         Card(
-            onClick = onClick, 
             modifier = Modifier.fillMaxWidth().height(115.dp), 
             shape = RoundedCornerShape(24.dp), 
             colors = CardDefaults.cardColors(containerColor = if (isSelected) LuklanColors.Secondary else Color.White), 
@@ -469,10 +473,9 @@ fun CategoryCard(label: String, icon: org.jetbrains.compose.resources.DrawableRe
                     .background(LuklanColors.Primary, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(icon), 
-                    contentDescription = null, 
-                    modifier = Modifier.size(50.dp).clickable(interactionSource = interactionSource, indication = null) { onClick() }
+                MedicineIcon(
+                    category = label, 
+                    iconSize = 50.dp
                 )
             }
         }

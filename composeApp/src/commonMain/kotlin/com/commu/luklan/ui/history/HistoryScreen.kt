@@ -23,6 +23,7 @@ import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.components.MedicineIcon
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -173,15 +174,7 @@ fun HistoryMedicineCard(medicine: Medicine, timestamp: Long) {
                     .background(LuklanColors.Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                when (medicine.category) {
-                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
-                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
-                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
-                    "ยาเหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(32.dp))
-                    "ยาน้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(32.dp))
-                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
-                    else -> Text("💊", fontSize = 28.sp)
-                }
+                MedicineIcon(category = medicine.category, iconSize = 32.dp)
             }
 
             Spacer(modifier = Modifier.width(LuklanSpacing.md))

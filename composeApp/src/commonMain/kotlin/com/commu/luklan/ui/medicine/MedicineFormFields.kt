@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.FullDatePicker
+import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTypography
 import com.commu.luklan.utils.getCurrentTimeMillis
@@ -65,6 +66,10 @@ fun MedicineFormFields(
                 shadowElevation = 0.dp
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                    if (state.category.isNotEmpty()) {
+                        MedicineIcon(category = state.category, iconSize = 28.dp)
+                        Spacer(Modifier.width(12.dp))
+                    }
                     Text(state.category.ifEmpty { "เลือกประเภท" }, color = if (state.category.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
                 }
@@ -302,8 +307,15 @@ fun MedicineFormFields(
             text = {
                 Column {
                     options.forEach { opt ->
-                        TextButton(onClick = { onUpdate(state.copy(category = opt)); showCategoryPicker = false }, modifier = Modifier.fillMaxWidth()) {
-                            Text(opt, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                        TextButton(
+                            onClick = { onUpdate(state.copy(category = opt)); showCategoryPicker = false }, 
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                MedicineIcon(category = opt, iconSize = 32.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Text(opt, textAlign = TextAlign.Start, modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }

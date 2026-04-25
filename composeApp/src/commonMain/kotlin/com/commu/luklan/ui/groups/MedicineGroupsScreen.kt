@@ -1,6 +1,5 @@
 package com.commu.luklan.ui.groups
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,10 +22,8 @@ import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.components.MedicineIcon
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
-import luklan.composeapp.generated.resources.Res
-import luklan.composeapp.generated.resources.*
 
 data class MedicineGroup(
     val category: String,
@@ -195,16 +192,7 @@ fun GroupCard(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        when (group.category) {
-                            "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(32.dp))
-                            "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(32.dp))
-                            "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(32.dp))
-                            "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(32.dp))
-                            "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(32.dp))
-                            "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(32.dp))
-                            "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(32.dp))
-                            else -> Icon(Icons.Default.Category, null, tint = LuklanColors.Primary, modifier = Modifier.size(28.dp))
-                        }
+                        MedicineIcon(category = group.category, iconSize = 32.dp)
                     }
                     
                     Spacer(modifier = Modifier.width(LuklanSpacing.md))
@@ -290,21 +278,7 @@ fun MedicineItemInGroup(
                 .padding(LuklanSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier.size(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                when (medicine.category) {
-                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.fillMaxSize())
-                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.fillMaxSize())
-                    "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.fillMaxSize())
-                    "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.fillMaxSize())
-                    "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.fillMaxSize())
-                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.fillMaxSize())
-                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.fillMaxSize())
-                    else -> Text("💊", fontSize = 24.sp)
-                }
-            }
+            MedicineIcon(category = medicine.category, iconSize = 32.dp)
             
             Spacer(modifier = Modifier.width(LuklanSpacing.sm))
             

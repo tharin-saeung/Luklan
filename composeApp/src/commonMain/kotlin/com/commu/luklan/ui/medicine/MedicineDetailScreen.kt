@@ -28,6 +28,7 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
@@ -119,16 +120,7 @@ fun MedicineDetailScreen(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                when (currentMedicine.category) {
-                    "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(100.dp))
-                    "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(100.dp))
-                    "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(100.dp))
-                    "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(100.dp))
-                    "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(100.dp))
-                    "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(100.dp))
-                    "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(100.dp))
-                    else -> Text("💊", fontSize = 80.sp)
-                }
+                MedicineIcon(category = currentMedicine.category, iconSize = 100.dp)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -163,21 +155,9 @@ fun MedicineDetailScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val hasMinutes = currentMedicine.mealTimingMinutes > 0 &&
-                        (currentMedicine.mealTiming == "ก่อนอาหาร" || currentMedicine.mealTiming == "หลังอาหาร")
-
                 InfoBox(
                     modifier = Modifier.weight(0.9f),
-                    imageType = when (currentMedicine.category) {
-                        "แคปซูล" -> Res.drawable.capsule
-                        "เม็ด" -> Res.drawable.pill
-                        "น้ำ" -> Res.drawable.liquid
-                        "ครีม" -> Res.drawable.cream
-                        "เหน็บ" -> Res.drawable.suppository
-                        "ฉีด" -> Res.drawable.inject
-                        "อื่นๆ" -> Res.drawable.other
-                        else -> null
-                    },
+                    category = currentMedicine.category,
                     label = "ประเภทยา",
                     value = currentMedicine.category.ifEmpty { "เม็ด" }
                 )
@@ -322,21 +302,12 @@ fun MedicineDetailScreen(
                 ) {
                     Spacer(Modifier.height(16.dp))
 
-                    // Logo in White Circle (Yellow circle removed)
+                    // Logo in White Circle
                     Box(
                         modifier = Modifier.size(110.dp).clip(CircleShape).background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        when (currentMedicine.category) {
-                            "แคปซูล" -> Image(painterResource(Res.drawable.capsule), null, modifier = Modifier.size(70.dp))
-                            "เม็ด" -> Image(painterResource(Res.drawable.pill), null, modifier = Modifier.size(70.dp))
-                            "น้ำ" -> Image(painterResource(Res.drawable.liquid), null, modifier = Modifier.size(70.dp))
-                            "ครีม" -> Image(painterResource(Res.drawable.cream), null, modifier = Modifier.size(70.dp))
-                            "เหน็บ" -> Image(painterResource(Res.drawable.suppository), null, modifier = Modifier.size(70.dp))
-                            "ฉีด" -> Image(painterResource(Res.drawable.inject), null, modifier = Modifier.size(70.dp))
-                            "อื่นๆ" -> Image(painterResource(Res.drawable.other), null, modifier = Modifier.size(70.dp))
-                            else -> Text("💊", fontSize = 48.sp)
-                        }
+                        MedicineIcon(category = currentMedicine.category, iconSize = 70.dp)
                     }
 
                     Spacer(Modifier.height(24.dp))
@@ -500,7 +471,7 @@ fun MedicineDetailScreen(
 fun InfoBox(
     modifier: Modifier,
     icon: ImageVector? = null,
-    imageType: org.jetbrains.compose.resources.DrawableResource? = null,
+    category: String? = null,
     label: String,
     value: String
 ) {
@@ -518,12 +489,8 @@ fun InfoBox(
                 modifier = Modifier.size(40.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (imageType != null) {
-                    Image(
-                        painter = painterResource(imageType),
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp)
-                    )
+                if (category != null) {
+                    MedicineIcon(category = category, iconSize = 36.dp)
                 } else if (icon != null) {
                     // White background for icon center
                     Box(
