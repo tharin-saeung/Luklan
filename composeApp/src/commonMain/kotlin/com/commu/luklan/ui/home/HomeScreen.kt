@@ -292,7 +292,10 @@ fun HomeScreen(
             val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
             val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
             
-            val filteredMedicines = medicines.filter { it.isAvailableOnDate(dateStr, todayStr) }
+            val filteredMedicines = medicines.filter { 
+                it.isAvailableOnDate(dateStr, todayStr) && 
+                (it.currentAmount.toDoubleOrNull() ?: 0.0) > 0.0 
+            }
 
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

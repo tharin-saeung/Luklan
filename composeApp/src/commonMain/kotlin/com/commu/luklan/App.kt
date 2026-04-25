@@ -1,10 +1,13 @@
 package com.commu.luklan
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,8 +28,6 @@ import com.commu.luklan.ui.main.MainTab
 import com.commu.luklan.ui.medicine.AddMedicineScreen
 import com.commu.luklan.ui.medicine.EditMedicineScreen
 import com.commu.luklan.ui.medicine.MedicineDetailScreen
-import com.commu.luklan.ui.ocr.AddMethodScreen
-import com.commu.luklan.ui.ocr.OcrScanScreen
 import com.commu.luklan.ui.onboarding.OnboardingScreen
 import com.commu.luklan.ui.profile.ProfileScreen
 import com.commu.luklan.ui.signup.SignupScreen
@@ -48,6 +49,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
     MaterialTheme {
         val navController = rememberNavController()
         val authRepository = remember { getAuthRepository() }
+        val focusManager = LocalFocusManager.current
         val scope = rememberCoroutineScope()
         
         var medicineToEdit by remember { mutableStateOf<Medicine?>(null) }
@@ -66,7 +68,13 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         }
 
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                },
             color = LuklanColors.Background
         ) {
             NavHost(
@@ -121,7 +129,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     MainScreen(
                         selectedTab = currentTab,
                         onTabSelected = { currentTab = it },
-                        onNavigateToAddMedicine = { navController.navigate(Screen.AddMethod.route) },
+                        onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
                         onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                         onLogout = {
                             // Auth handled inside Profile usually or here
@@ -170,7 +178,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                             selectedPatientName = null
                             navController.popBackStack() 
                         },
-                        onNavigateToAddMedicine = { navController.navigate(Screen.AddMethod.route) },
+                        onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
                         onNavigateToProfile = {
                             navController.navigate(Screen.Profile.route)
                         },
@@ -360,31 +368,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         }
                     )
                 }
-
-                composable(Screen.OcrScan.route) {
-                    OcrScanScreen(
-                        onBack = { navController.popBackStack() },
-                        onProceedToAdd = { navController.navigate(Screen.AddMethod.route) }
-                    )
-                }
-
-                composable(Screen.AddMethod.route) {
-                    AddMethodScreen(
-                        onManual = {
-                            navController.navigate(Screen.AddMedicine.route) {
-                                popUpTo(Screen.AddMethod.route) { inclusive = true }
-                            }
-                        },
-                        onOcr = {
-                            navController.navigate(Screen.OcrScan.route) {
-                                popUpTo(Screen.AddMethod.route) { inclusive = true }
-                            }
-                        },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
             }
         }
     }
 }
+
 
