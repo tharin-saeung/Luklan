@@ -95,6 +95,14 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     calendar.add(Calendar.DAY_OF_YEAR, 1)
                 }
 
+                // Check if already taken for the scheduled date
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                val targetDateStr = sdf.format(calendar.time)
+                val expectedKey = "${targetDateStr}_$timeStr"
+                if (medicine.takenHistory.containsKey(expectedKey)) {
+                    calendar.add(Calendar.DAY_OF_YEAR, 1)
+                }
+
                 try {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
@@ -164,8 +172,8 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
 
     override fun cancel(medicine: Medicine) {
         val intent = Intent(context, NotificationReceiver::class.java)
-        val timesCount = if (medicine.times.isEmpty()) 1 else medicine.times.size
-        for (index in 0 until timesCount) {
+        // Try to cancel up to 10 slots to be safe if times count decreased
+        for (index in 0 until 10) {
             val requestCode = medicine.id.hashCode() + index
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -192,6 +200,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                 untrackRequestCode(checkinReq)
             }
         }
+        println("✅ Cancelled notifications for ${medicine.name} (ID: ${medicine.id})")
     }
 
     override fun cancelAll() {

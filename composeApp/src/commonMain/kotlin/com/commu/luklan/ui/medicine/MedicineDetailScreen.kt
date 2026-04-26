@@ -363,7 +363,12 @@ fun MedicineDetailScreen(
                                 val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)
                                 currentMedicine = updatedMed
                                 scope.launch {
-                                    notificationScheduler.cancelSlot(updatedMed, index)
+                                    if (newAmt < dose) {
+                                        notificationScheduler.cancel(updatedMed)
+                                    } else {
+                                        // Reschedule to clear current and set tomorrow's alarm
+                                        notificationScheduler.schedule(updatedMed)
+                                    }
                                     medicineRepository.updateMedicine(updatedMed)
                                 }
                                 showConfirmationDialog = false

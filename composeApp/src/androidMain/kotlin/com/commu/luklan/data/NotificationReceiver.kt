@@ -32,7 +32,11 @@ class NotificationReceiver : BroadcastReceiver() {
                     // Check if taken before notifying user
                     val doc = db.collection("medicines").document(medicineId).get().await()
                     val takenHistory = doc.get("takenHistory") as? Map<*, *> ?: emptyMap<Any, Any>()
-                    val isTaken = takenHistory.keys.any { (it as? String)?.endsWith("_$time") == true }
+                    
+                    // Check exact date for today
+                    val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                    val expectedKey = "${dateStr}_$time"
+                    val isTaken = takenHistory.containsKey(expectedKey)
                     
                     if (!isTaken) {
                         // Alert user locally

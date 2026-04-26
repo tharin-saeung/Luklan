@@ -99,7 +99,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                 composable(Screen.Onboarding.route) {
                     OnboardingScreen(
                         onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                        onNavigateToSignup = { navController.navigate(Screen.Signup.route) }
+                        onNavigateToSignup = { role -> navController.navigate("${Screen.Signup.route}?role=$role") }
                     )
                 }
 
@@ -110,18 +110,29 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
                         },
-                        onNavigateToSignup = { navController.navigate(Screen.Signup.route) }
+                        onNavigateToSignup = { navController.navigate("${Screen.Signup.route}?role=user") }
                     )
                 }
 
-                composable(Screen.Signup.route) {
+                composable(
+                    route = "${Screen.Signup.route}?role={role}",
+                    arguments = listOf(navArgument("role") { type = NavType.StringType; defaultValue = "user" })
+                ) { backStackEntry ->
+                    val role = backStackEntry.arguments?.read { getString("role")} ?: "user"
+
                     SignupScreen(
+                        role = role,
                         onNavigateToHome = {
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(Screen.Signup.route) { inclusive = true }
                             }
                         },
-                        onNavigateToLogin = { navController.popBackStack() }
+                        onNavigateToLogin = { navController.popBackStack() },
+                        onNavigateToInviteCaretaker = { groupId ->
+                            navController.navigate("${Screen.InviteCaretaker.route}?groupId=$groupId") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     )
                 }
 

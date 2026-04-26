@@ -27,7 +27,20 @@ actual class AuthRepository actual constructor() {
                             if (firestoreError != null) {
                                 continuation.resume(Result.failure(Exception(firestoreError)))
                             } else {
-                                continuation.resume(Result.success(Unit))
+                                if (role == "patient") {
+                                    scope.launch {
+                                        try {
+                                            val groupRepo = getGroupRepository()
+                                            val user = User(id = userId, name = name, email = email, role = role)
+                                            groupRepo.createDefaultGroup(user)
+                                            continuation.resume(Result.success(Unit))
+                                        } catch (e: Exception) {
+                                            continuation.resume(Result.failure(e))
+                                        }
+                                    }
+                                } else {
+                                    continuation.resume(Result.success(Unit))
+                                }
                             }
                         }
                     } else {

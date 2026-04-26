@@ -27,7 +27,8 @@ import kotlinx.coroutines.launch
 fun SignupScreen(
     role: String = "user",
     onNavigateToHome: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToInviteCaretaker: (groupId: String) -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
     val scope = rememberCoroutineScope()
@@ -194,7 +195,9 @@ fun SignupScreen(
                                     if (userId != null) {
                                         val user = com.commu.luklan.data.User(id = userId, name = name, role = role)
                                         com.commu.luklan.data.getGroupRepository().createDefaultGroup(user)
-                                            .onSuccess { onNavigateToHome() }
+                                            .onSuccess { group -> 
+                                                onNavigateToInviteCaretaker(group.id) 
+                                            }
                                             .onFailure { errorMessage = "สร้างกลุ่มไม่สำเร็จ: ${it.message}" }
                                     } else {
                                         onNavigateToHome()

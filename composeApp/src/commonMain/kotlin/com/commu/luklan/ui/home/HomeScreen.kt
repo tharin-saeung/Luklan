@@ -89,7 +89,15 @@ fun HomeScreen(
                 medicines.addAll(list.sortedBy { it.order })
                 if (!isCaretakerView) {
                     val scheduler = com.commu.luklan.data.getNotificationScheduler()
-                    list.forEach { scheduler.schedule(it) }
+                    list.forEach { med ->
+                        val amount = med.currentAmount.toDoubleOrNull() ?: 0.0
+                        val dose = med.dosage.toDoubleOrNull() ?: 0.0
+                        if (amount < dose) {
+                            scheduler.cancel(med)
+                        } else {
+                            scheduler.schedule(med)
+                        }
+                    }
                 }
                 isLoading = false
             }.onFailure { isLoading = false }
