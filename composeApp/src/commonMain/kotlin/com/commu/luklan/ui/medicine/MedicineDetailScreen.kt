@@ -110,20 +110,20 @@ fun MedicineDetailScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Large Icon Circle
             Box(
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(140.dp)
                     .clip(CircleShape)
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                MedicineIcon(category = currentMedicine.category, iconSize = 100.dp)
+                MedicineIcon(category = currentMedicine.category, iconSize = 90.dp)
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Medicine Name
             Text(
@@ -145,10 +145,25 @@ fun MedicineDetailScreen(
                 style = LuklanTypography.bodySmall,
                 color = LuklanColors.Secondary,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            if (currentMedicine.expiryDate.isNotEmpty()) {
+                val expiryDisplay = try {
+                    val parts = currentMedicine.expiryDate.split("-")
+                    val thaiMonthsShort = listOf("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
+                    "วันหมดอายุ: ${parts[2].toInt()} ${thaiMonthsShort[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+                } catch (e: Exception) { "วันหมดอายุ: ${currentMedicine.expiryDate}" }
+                
+                Text(
+                    text = expiryDisplay,
+                    style = LuklanTypography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Info Boxes Row
             Row(
@@ -171,7 +186,7 @@ fun MedicineDetailScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Second Row for Timing
             Row(
@@ -194,7 +209,7 @@ fun MedicineDetailScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Section Header
             Text(
@@ -205,7 +220,7 @@ fun MedicineDetailScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Time Slots Block
             Column(
@@ -229,7 +244,7 @@ fun MedicineDetailScreen(
                             .padding(vertical = 12.dp, horizontal = 8.dp)
                     ) {
                         Text(
-                            text = "$time น.",
+                            text = "${com.commu.luklan.utils.formatTimeForDisplay(time)} น.",
                             style = LuklanTypography.h3,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -331,7 +346,7 @@ fun MedicineDetailScreen(
                     )
 
                     Text(
-                        text = "เวลา ${slotToConfirm!!.first} น.",
+                        text = "เวลา ${com.commu.luklan.utils.formatTimeForDisplay(slotToConfirm!!.first)} น.",
                         style = LuklanTypography.h3,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,

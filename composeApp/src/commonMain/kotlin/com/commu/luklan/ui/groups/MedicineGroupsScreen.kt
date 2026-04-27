@@ -89,7 +89,8 @@ fun MedicineGroupsScreen(
                 title = {
                     Text(
                         text = "กลุ่มยา",
-                        style = LuklanTypography.h3,
+                        style = LuklanTypography.h1,
+                        color = LuklanColors.Primary,
                         fontWeight = FontWeight.Bold
                     )
                 },

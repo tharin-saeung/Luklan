@@ -35,6 +35,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
         dosage = medicine.dosage,
         unit = medicine.unit,
         startDate = medicine.startDate,
+        expiryDate = medicine.expiryDate,
         category = medicine.category,
         mealTiming = medicine.mealTiming,
         mealTimingMinutes = medicine.mealTimingMinutes,
@@ -87,7 +88,8 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                                 mealTiming = state.mealTiming,
                                 mealTimingMinutes = state.mealTimingMinutes,
                                 currentAmount = state.currentAmount,
-                                startDate = state.startDate
+                                startDate = state.startDate,
+                                expiryDate = state.expiryDate
                             )
                             medicineRepo.updateMedicine(up).onSuccess {
                                 scheduler.cancel(medicine)

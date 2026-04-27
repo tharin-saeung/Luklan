@@ -82,7 +82,8 @@ fun HistoryScreen(
                 title = {
                     Text(
                         text = "ประวัติการใช้ยา",
-                        style = LuklanTypography.h3,
+                        style = LuklanTypography.h1,
+                        color = LuklanColors.Primary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -259,7 +260,11 @@ private fun formatDateTime(timestamp: Long): String {
     val day = dateTime.dayOfMonth
     val month = thaiMonths[dateTime.monthNumber - 1]
     val year = dateTime.year + 543 // Convert to Buddhist year
-    val hour = if (dateTime.hour < 10) "0${dateTime.hour}" else "${dateTime.hour}"
+    
+    val hour = when {
+        dateTime.hour == 0 -> "00"
+        else -> dateTime.hour.toString()
+    }
     val minute = if (dateTime.minute < 10) "0${dateTime.minute}" else "${dateTime.minute}"
     
     return "$day $month $year, $hour:$minute น."

@@ -139,13 +139,13 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.2f)),
+                                .background(Color.Transparent),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Icon(
                                 Icons.Default.CameraAlt, 
                                 null, 
-                                tint = Color.White, 
+                                tint = Color.White.copy(alpha = 0.8f), 
                                 modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
                             )
                         }

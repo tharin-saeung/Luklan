@@ -65,7 +65,7 @@ fun CaretakerDashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("กลุ่ม", style = LuklanTypography.h1, fontWeight = FontWeight.Bold) },
+                title = { Text("กลุ่มผู้ดูแล", style = LuklanTypography.h1, color = LuklanColors.Primary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuklanColors.Primary)

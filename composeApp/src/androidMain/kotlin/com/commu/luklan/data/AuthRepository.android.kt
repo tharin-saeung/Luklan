@@ -6,9 +6,9 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.delay
 
 actual class AuthRepository {
@@ -46,13 +46,6 @@ actual class AuthRepository {
                         .set(userData)
                         .await()
                     
-                    // NEW: Create default group for patient
-                    if (role == "patient") {
-                        val groupRepo = getGroupRepository()
-                        val user = User(id = userId, name = name, role = role)
-                        groupRepo.createDefaultGroup(user)
-                    }
-
                     Log.d("AuthRepository", "User data saved to Firestore successfully (attempt $attempt)")
                     saved = true
                     break
@@ -172,11 +165,6 @@ actual class AuthRepository {
             photoUrl = getString("photoUrl") ?: ""
         )
     }
-}
-
-suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
-    addOnSuccessListener { cont.resume(it) }
-    addOnFailureListener { cont.resumeWithException(it) }
 }
 
 actual fun getAuthRepository(): AuthRepository = AuthRepository()

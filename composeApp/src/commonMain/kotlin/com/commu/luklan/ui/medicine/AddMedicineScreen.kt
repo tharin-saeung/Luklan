@@ -48,6 +48,7 @@ data class MedicineFormState(
     val unit: String = "",
     val currentAmount: String = "",
     val startDate: String = "",
+    val expiryDate: String = "",
     val times: List<String> = emptyList(),
     val mealTiming: String = "",
     val mealTimingMinutes: Int = 0
@@ -170,6 +171,7 @@ fun AddMedicineScreen(
                                 unit = formState.unit,
                                 times = formState.times, 
                                 startDate = finalDate, 
+                                expiryDate = formState.expiryDate,
                                 category = formState.category, 
                                 mealTiming = formState.mealTiming,
                                 mealTimingMinutes = formState.mealTimingMinutes, 
@@ -368,7 +370,7 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
 
 @Composable
 fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<String>, dm: Int, dy: Int, now: LocalDateTime, onMonthYearChange: (Int, Int) -> Unit, onUpdate: (MedicineFormState) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text("เลือกวันเริ่มใช้ยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
         
@@ -435,6 +437,55 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                 }
             )
         }
+
+        // Expiry Date Section
+        Spacer(Modifier.height(40.dp))
+        Divider(color = Color.White.copy(alpha = 0.2f))
+        Spacer(Modifier.height(32.dp))
+
+        Text("วันหมดอายุ (ไม่จำเป็น)", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(24.dp))
+
+        var showExpiryPicker by remember { mutableStateOf(false) }
+        val expiryDisplay = try {
+            val parts = state.expiryDate.split("-")
+            if (parts.size == 3) {
+                "${parts[2].toInt()} ${months[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+            } else state.expiryDate
+        } catch (e: Exception) { state.expiryDate }
+
+        Surface(
+            onClick = { showExpiryPicker = true },
+            modifier = Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(32.dp),
+            color = Color.White.copy(alpha = 0.15f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                Text(expiryDisplay.ifEmpty { "ระบุวันหมดอายุ" }, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), fontSize = 18.sp)
+                if (state.expiryDate.isNotEmpty()) {
+                    IconButton(onClick = { onUpdate(state.copy(expiryDate = "")) }, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Close, null, tint = Color.White)
+                    }
+                } else {
+                    Icon(Icons.Default.CalendarToday, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+
+        if (showExpiryPicker) {
+            val todayIso = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+            com.commu.luklan.ui.components.FullDatePicker(
+                initialDate = if (state.expiryDate.isNotEmpty()) state.expiryDate else todayIso,
+                onDismiss = { showExpiryPicker = false },
+                onConfirm = { finalDate ->
+                    onUpdate(state.copy(expiryDate = finalDate))
+                    showExpiryPicker = false
+                }
+            )
+        }
+        
+        Spacer(Modifier.height(32.dp))
     }
 }
 

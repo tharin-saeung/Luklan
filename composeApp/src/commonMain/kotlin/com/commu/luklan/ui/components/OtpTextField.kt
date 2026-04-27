@@ -2,20 +2,23 @@ package com.commu.luklan.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTypography
 
@@ -26,11 +29,21 @@ fun OtpTextField(
     modifier: Modifier = Modifier,
     otpCount: Int = 5
 ) {
+    var textFieldValue by remember(otpText) {
+        mutableStateOf(
+            TextFieldValue(
+                text = otpText,
+                selection = TextRange(otpText.length)
+            )
+        )
+    }
+
     BasicTextField(
-        value = otpText,
+        value = textFieldValue,
         onValueChange = {
-            if (it.length <= otpCount) {
-                onOtpTextChange(it.uppercase())
+            if (it.text.length <= otpCount) {
+                textFieldValue = it.copy(text = it.text.uppercase())
+                onOtpTextChange(it.text.uppercase())
             }
         },
         keyboardOptions = KeyboardOptions(
@@ -45,10 +58,10 @@ fun OtpTextField(
             ) {
                 repeat(otpCount) { index ->
                     val char = when {
-                        index >= otpText.length -> ""
-                        else -> otpText[index].toString()
+                        index >= textFieldValue.text.length -> ""
+                        else -> textFieldValue.text[index].toString()
                     }
-                    val isFocused = (index == otpText.length)
+                    val isFocused = textFieldValue.selection.collapsed && textFieldValue.selection.start == index
 
                     Box(
                         modifier = Modifier
@@ -62,7 +75,16 @@ fun OtpTextField(
                                 width = if (isFocused) 2.dp else 1.dp,
                                 color = if (isFocused) LuklanTheme.colors.Primary else LuklanTheme.colors.Indicator,
                                 shape = RoundedCornerShape(12.dp)
-                            ),
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                val newCursorPosition = index.coerceAtMost(textFieldValue.text.length)
+                                textFieldValue = textFieldValue.copy(
+                                    selection = TextRange(newCursorPosition)
+                                )
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

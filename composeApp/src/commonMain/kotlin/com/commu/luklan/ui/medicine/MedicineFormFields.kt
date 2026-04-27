@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,6 +45,7 @@ fun MedicineFormFields(
     var showMealTimingPicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showExpiryPicker by remember { mutableStateOf(false) }
 
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
 
@@ -166,6 +168,36 @@ fun MedicineFormFields(
             }
         }
 
+        // Expiry Date (Optional)
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("วันหมดอายุ (ไม่จำเป็น)", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            Surface(
+                onClick = { showExpiryPicker = true },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.White,
+                shadowElevation = 0.dp
+            ) {
+                val dateDisplay = try {
+                    val parts = state.expiryDate.split("-")
+                    if (parts.size == 3) {
+                        "${parts[2]} ${thaiMonths[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+                    } else state.expiryDate
+                } catch (e: Exception) { state.expiryDate }
+                
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Text(dateDisplay.ifEmpty { "เลือกวันที่" }, color = if (state.expiryDate.isEmpty()) Color.Gray else LuklanColors.Primary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    if (state.expiryDate.isNotEmpty()) {
+                        IconButton(onClick = { onUpdate(state.copy(expiryDate = "")) }) {
+                            Icon(Icons.Default.Close, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
+                        }
+                    } else {
+                        Icon(Icons.Default.CalendarToday, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
         // Meal Timing
         Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(modifier = Modifier.weight(1.5f)) {
@@ -216,7 +248,7 @@ fun MedicineFormFields(
                     shadowElevation = 1.dp
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        Text("$t น.", color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                        Text("${com.commu.luklan.utils.formatTimeForDisplay(t)} น.", color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(4.dp))
                         Icon(Icons.Default.Edit, null, tint = LuklanColors.Primary.copy(alpha = 0.5f), modifier = Modifier.size(14.dp))
                     }
@@ -338,6 +370,24 @@ fun MedicineFormFields(
             onConfirm = { finalDate ->
                 onUpdate(state.copy(startDate = finalDate))
                 showDatePicker = false
+            }
+        )
+    }
+
+    if (showExpiryPicker) {
+        val nowMillis = getCurrentTimeMillis()
+        val nowInstant = Instant.fromEpochMilliseconds(nowMillis)
+        val nowDateTime = nowInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val todayIso = "${nowDateTime.year}-${nowDateTime.monthNumber.toString().padStart(2, '0')}-${nowDateTime.dayOfMonth.toString().padStart(2, '0')}"
+        
+        val initialPickerDate = if (state.expiryDate.contains("-")) state.expiryDate else todayIso
+
+        FullDatePicker(
+            initialDate = initialPickerDate,
+            onDismiss = { showExpiryPicker = false },
+            onConfirm = { finalDate ->
+                onUpdate(state.copy(expiryDate = finalDate))
+                showExpiryPicker = false
             }
         )
     }

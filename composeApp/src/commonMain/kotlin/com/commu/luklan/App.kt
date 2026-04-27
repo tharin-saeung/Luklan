@@ -61,6 +61,16 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         
         var currentTab by remember { mutableStateOf(MainTab.HOME) }
 
+        val safeBack: () -> Unit = {
+            if (navController.previousBackStackEntry != null) {
+                navController.popBackStack()
+            } else {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+
         LaunchedEffect(deepLinkMedicineId, deepLinkTime) {
             if (deepLinkMedicineId != null && deepLinkTime != null) {
                 navController.navigate("${Screen.MedicineDetail.route}/$deepLinkTime")
@@ -85,20 +95,29 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     SplashScreen(
                         onNavigateToHome = {
                             navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         },
                         onNavigateToOnboarding = {
-                            navController.navigate(Screen.Onboarding.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
+                            navController.navigate("${Screen.Onboarding.route}?page=0") {
+                                popUpTo(0) { inclusive = true }
                             }
                         }
                     )
                 }
 
-                composable(Screen.Onboarding.route) {
+                composable(
+                    route = "${Screen.Onboarding.route}?page={page}",
+                    arguments = listOf(navArgument("page") { type = NavType.IntType; defaultValue = 0 })
+                ) { backStackEntry ->
+                    val page = backStackEntry.arguments?.read { getInt("page") } ?: 0
                     OnboardingScreen(
-                        onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                        initialPage = page,
+                        onNavigateToLogin = { 
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            }
+                        },
                         onNavigateToSignup = { role -> navController.navigate("${Screen.Signup.route}?role=$role") }
                     )
                 }
@@ -107,10 +126,10 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     LoginScreen(
                         onNavigateToHome = {
                             navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         },
-                        onNavigateToSignup = { navController.navigate("${Screen.Signup.route}?role=user") }
+                        onNavigateToSignup = { navController.navigate("${Screen.Onboarding.route}?page=3") }
                     )
                 }
 
@@ -124,10 +143,16 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         role = role,
                         onNavigateToHome = {
                             navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Signup.route) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         },
-                        onNavigateToLogin = { navController.popBackStack() },
+                        onNavigateToLogin = { 
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
                         onNavigateToInviteCaretaker = { groupId ->
                             navController.navigate("${Screen.InviteCaretaker.route}?groupId=$groupId") {
                                 popUpTo(0) { inclusive = true }
@@ -187,7 +212,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         onBack = { 
                             selectedPatientId = null
                             selectedPatientName = null
-                            navController.popBackStack() 
+                            safeBack()
                         },
                         onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
                         onNavigateToProfile = {
@@ -215,11 +240,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                 composable(Screen.Profile.route) {
                     ProfileScreen(
                         onNavigateBack = { 
-                            if (!navController.popBackStack()) {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
+                            safeBack()
                         },
                         onNavigateToGroups = { navController.navigate(Screen.CaretakerDashboard.route) },
                         onNavigateToHistory = { 
@@ -236,7 +257,15 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                 }
 
                 composable(Screen.Contact.route) {
-                    ContactScreen(onBack = { navController.popBackStack() })
+                    ContactScreen(onBack = { 
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack() 
+                        } else {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    })
                 }
 
                 composable(
@@ -244,14 +273,18 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     arguments = listOf(navArgument("groupId") { type = NavType.StringType; nullable = true; defaultValue = null })
                 ) { backStackEntry ->
                     val gid = backStackEntry.arguments?.read { getString("groupId") }
+                    
+                    // Root interceptor for this specific route to prevent exit
+                    com.commu.luklan.utils.CommonBackHandler(enabled = navController.previousBackStackEntry == null) {
+                         navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+
                     InviteCaretakerScreen(
                         groupId = gid,
                         onBack = { 
-                            if (!navController.popBackStack()) {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
+                            safeBack()
                         }
                     )
                 }
@@ -259,11 +292,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                 composable(Screen.CaretakerDashboard.route) {
                     CaretakerDashboardScreen(
                         onBack = { 
-                            if (!navController.popBackStack()) {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
+                            safeBack()
                         },
                         onNavigateToJoin = { navController.navigate(Screen.JoinGroup.route) },
                         onNavigateToCreate = { navController.navigate(Screen.CreateGroup.route) },
@@ -279,7 +308,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     GroupMembersScreen(
                         groupId = selectedGroupId,
                         groupName = selectedGroupName,
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            safeBack()
+                        },
                         onNavigateToInvite = { gid ->
                             navController.navigate("${Screen.InviteCaretaker.route}?groupId=$gid")
                         },
@@ -293,10 +324,20 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
 
                 composable(Screen.JoinGroup.route) {
                     JoinCaretakerScreen(
-                        onBack = { navController.popBackStack() },
-                        onSuccess = { 
-                            navController.navigate(Screen.CaretakerDashboard.route) {
-                                popUpTo(Screen.JoinGroup.route) { inclusive = true }
+                        onBack = { 
+                            safeBack()
+                        },
+                        onSuccess = { gid ->
+                            if (gid.isNotEmpty()) {
+                                selectedGroupId = gid
+                                // Get group name if possible, otherwise empty
+                                navController.navigate(Screen.GroupMembers.route) {
+                                    popUpTo(Screen.JoinGroup.route) { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate(Screen.CaretakerDashboard.route) {
+                                    popUpTo(Screen.JoinGroup.route) { inclusive = true }
+                                }
                             }
                         }
                     )
@@ -304,7 +345,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
 
                 composable(Screen.CreateGroup.route) {
                     CreateGroupScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            safeBack()
+                        },
                         onSuccess = {
                             navController.navigate(Screen.CaretakerDashboard.route) {
                                 popUpTo(Screen.CreateGroup.route) { inclusive = true }
@@ -315,7 +358,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
 
                 composable(Screen.AddMedicine.route) {
                     AddMedicineScreen(
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { 
+                            safeBack()
+                        }
                     )
                 }
 
@@ -328,10 +373,25 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         MedicineDetailScreen(
                             medicine = medicine,
                             selectedDate = date,
-                            onBack = { navController.popBackStack() },
+                            onBack = { 
+                                if (navController.previousBackStackEntry != null) {
+                                    navController.popBackStack()
+                                } else {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            },
                             onEdit = { navController.navigate(Screen.EditMedicine.route) },
                             onMedicineTaken = { }
                         )
+                    } ?: LaunchedEffect(Unit) {
+                        // Safety fallback if medicine data is missing
+                        if (!navController.popBackStack()) {
+                             navController.navigate(Screen.Home.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     }
                 }
 
@@ -341,23 +401,39 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                             medicine = medicine,
                             onNavigateBack = { updated ->
                                 medicineToEdit = updated ?: medicine
-                                navController.popBackStack()
+                                if (navController.previousBackStackEntry != null) {
+                                    navController.popBackStack()
+                                } else {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
                             }
                         )
+                    } ?: LaunchedEffect(Unit) {
+                        if (!navController.popBackStack()) {
+                             navController.navigate(Screen.Home.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     }
                 }
 
                 composable(Screen.History.route) {
                     HistoryScreen(
                         targetUserId = selectedTargetUserIdForNotif,
-                        onBack = { navController.popBackStack() }
+                        onBack = { 
+                            safeBack()
+                        }
                     )
                 }
 
                 composable(Screen.MedicineGroups.route) {
                     MedicineGroupsScreen(
                         targetUserId = selectedTargetUserIdForNotif,
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            safeBack()
+                        },
                         onMedicineClick = { medicine ->
                             medicineToEdit = medicine
                             val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
@@ -370,7 +446,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                 composable(Screen.NotificationCenter.route) {
                     NotificationCenterScreen(
                         targetUserId = selectedTargetUserIdForNotif,
-                        onBack = { navController.popBackStack() },
+                        onBack = { 
+                            safeBack()
+                        },
                         onMedicineClick = { medicine ->
                             medicineToEdit = medicine
                             val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())

@@ -201,13 +201,13 @@ fun GroupMembersScreen(
                         }
                         
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)),
+                            modifier = Modifier.fillMaxSize().background(Color.Transparent),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Icon(
                                 Icons.Default.CameraAlt, 
                                 null, 
-                                tint = Color.White, 
+                                tint = Color.White.copy(alpha = 0.8f), 
                                 modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
                             )
                         }
@@ -269,7 +269,7 @@ fun GroupMembersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("สมาชิก", style = LuklanTypography.h1, fontWeight = FontWeight.Bold) },
+                title = { Text("สมาชิก", style = LuklanTypography.h1, color = LuklanColors.Primary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuklanColors.Primary)

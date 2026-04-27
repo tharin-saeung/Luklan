@@ -66,6 +66,15 @@ fun MainScreen(
     val alertRepository = remember { getAlertRepository() }
     val notificationScheduler = remember { getNotificationScheduler() }
     
+    // Handle system back button to prevent blank screen
+    com.commu.luklan.utils.CommonBackHandler(enabled = true) {
+        if (selectedTab != MainTab.HOME) {
+            onTabSelected(MainTab.HOME)
+        } else {
+            // Already on Home, do nothing to prevent popping the root destination
+        }
+    }
+
     var userProfile by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
     var lastNotifiedAlertId by rememberSaveable { mutableStateOf<String?>(null) }

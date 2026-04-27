@@ -115,8 +115,17 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isCaretakerView && onBack != null) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuklanColors.Primary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuklanColors.Primary)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "ยาของ ${userProfile?.name ?: targetUserName ?: ""}",
+                            style = LuklanTypography.h2,
+                            color = LuklanColors.Primary,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 } else {
                     Box(
@@ -142,12 +151,9 @@ fun HomeScreen(
                     }
                 }
 
-                Text(
-                    text = userProfile?.name ?: targetUserName ?: "ลูกหลาน",
-                    style = LuklanTypography.h3,
-                    color = LuklanColors.Primary,
-                    fontWeight = FontWeight.Bold
-                )
+                if (!isCaretakerView) {
+                    Spacer(Modifier.weight(1f))
+                }
 
                 IconButton(onClick = { onNavigateToNotificationCenter(userId) }) {
                     Icon(Icons.Default.Notifications, null, tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
@@ -558,7 +564,7 @@ fun MedicineCardGrouped(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (medicine.times.isNotEmpty()) medicine.times.joinToString(", ") else "",
+                        text = if (medicine.times.isNotEmpty()) com.commu.luklan.utils.formatTimeListForDisplay(medicine.times) else "",
                         style = LuklanTypography.bodySmall, 
                         color = Color.White.copy(alpha = 0.8f),
                         maxLines = 1

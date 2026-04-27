@@ -33,7 +33,7 @@ import qrscanner.CameraLens
 @Composable
 fun JoinCaretakerScreen(
     onBack: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: (groupId: String) -> Unit
 ) {
     val authRepository = remember { getAuthRepository() }
     val groupRepository = remember { getGroupRepository() }
@@ -54,7 +54,9 @@ fun JoinCaretakerScreen(
                 cameraLens = cameraLens,
                 openImagePicker = openImagePicker,
                 onCompletion = { result: String ->
-                    inviteCode = result
+                    if (result.length == 5) {
+                        inviteCode = result.uppercase()
+                    }
                     isScanning = false
                 },
                 onFailure = { error: String ->
@@ -80,7 +82,7 @@ fun JoinCaretakerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("เพิ่มกลุ่ม", style = LuklanTypography.h1, fontWeight = FontWeight.Bold) },
+                title = { Text("เพิ่มกลุ่ม", style = LuklanTypography.h1, color = LuklanColors.Primary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuklanColors.Primary)
@@ -163,9 +165,9 @@ fun JoinCaretakerScreen(
                                 isLoading = true
                                 scope.launch {
                                     groupRepository.joinGroup(userId, inviteCode)
-                                        .onSuccess { 
+                                        .onSuccess { joinedGroup ->
                                             isLoading = false
-                                            onSuccess() 
+                                            onSuccess(joinedGroup.id)
                                         }
                                         .onFailure { 
                                             isLoading = false

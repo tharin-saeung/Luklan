@@ -99,7 +99,8 @@ fun NotificationCenterScreen(
                         text = if (viewedUserName != null && targetUserId != authRepository.getCurrentUserId()) 
                             "การแจ้งเตือนของ $viewedUserName" 
                             else "การแจ้งเตือน", 
-                        style = LuklanTypography.h2, 
+                        style = LuklanTypography.h1, 
+                        color = LuklanColors.Primary,
                         fontWeight = FontWeight.Bold
                     ) 
                 },
