@@ -51,7 +51,10 @@ class SummaryViewModel : ViewModel() {
             30
         }
 
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val nowMillis = com.commu.luklan.utils.getCurrentTimeMillis()
+        val instant = Instant.fromEpochMilliseconds(nowMillis)
+        val today = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        
         val lastDay = if (year == today.year && month == today.monthNumber) {
             minOf(today.dayOfMonth, lastDayOfMonth)
         } else if (year > today.year || (year == today.year && month > today.monthNumber)) {
