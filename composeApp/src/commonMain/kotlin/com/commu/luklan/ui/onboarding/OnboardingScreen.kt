@@ -18,7 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.ui.theme.LuklanTheme
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -59,7 +60,7 @@ fun OnboardingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(LuklanTheme.colors.Background)
+            .background(LuklanColors.Background)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             HorizontalPager(
@@ -79,7 +80,7 @@ fun OnboardingScreen(
                             onClick = { onNavigateToSignup("patient") },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(28.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Primary)
                         ) {
                             Text("ฉันเป็นผู้ป่วย", style = LuklanTypography.h3, color = Color.White)
                         }
@@ -88,7 +89,7 @@ fun OnboardingScreen(
                             onClick = { onNavigateToSignup("caretaker") },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(28.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = LuklanTheme.colors.Secondary)
+                            colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Secondary)
                         ) {
                             Text("ฉันเป็นผู้ดูแล", style = LuklanTypography.h3, color = Color.White)
                         }
@@ -101,7 +102,7 @@ fun OnboardingScreen(
                             Text(
                                 text = "มีบัญชีอยู่แล้ว?",
                                 style = LuklanTypography.bodyMedium,
-                                color = LuklanTheme.colors.TextSecondary
+                                color = LuklanColors.TextSecondary
                             )
                             TextButton(
                                 onClick = onNavigateToLogin,
@@ -110,7 +111,7 @@ fun OnboardingScreen(
                                 Text(
                                     text = "เข้าสู่ระบบ",
                                     style = LuklanTypography.bodyMedium,
-                                    color = LuklanTheme.colors.Primary,
+                                    color = LuklanColors.Primary,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -133,7 +134,7 @@ fun OnboardingScreen(
                 ) {
                     repeat(pages.size) { iteration ->
                         val color = if (pagerState.currentPage == iteration) 
-                            LuklanTheme.colors.Secondary else Color.LightGray
+                            LuklanColors.Secondary else Color.LightGray
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
@@ -154,7 +155,7 @@ fun OnboardingScreen(
                     ) {
                         Text(
                             text = "ถัดไป",
-                            color = LuklanTheme.colors.Primary,
+                            color = LuklanColors.Primary,
                             style = LuklanTypography.h3,
                             fontWeight = FontWeight.Bold
                         )
@@ -198,9 +199,9 @@ fun OnboardingPage(
 
         Text(
             text = data.title,
-            style = if (data.title.length > 20) LuklanTypography.h3 else LuklanTypography.h2,
+            style = LuklanTypography.h2,
             textAlign = TextAlign.Center,
-            color = LuklanTheme.colors.TextPrimary,
+            color = LuklanColors.TextPrimary,
             fontWeight = FontWeight.Bold
         )
 
@@ -210,7 +211,7 @@ fun OnboardingPage(
             text = data.description,
             style = LuklanTypography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = LuklanTheme.colors.TextSecondary
+            color = LuklanColors.TextSecondary
         )
 
         if (isLastPage) {

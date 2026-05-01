@@ -40,6 +40,7 @@ import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 data class MedicineFormState(
     val name: String = "",
@@ -402,8 +403,8 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                     verticalArrangement = Arrangement.Center, 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(dayName, color = Color.White, fontSize = 16.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                    Text(dayNum.toString(), fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, fontSize = 24.sp, color = Color.White)
+                    Text(dayName, color = Color.White, fontSize = 18.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                    Text(dayNum.toString(), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, fontSize = 24.sp, color = Color.White)
                     if (isToday) {
                         Spacer(Modifier.height(4.dp))
                         Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color.White))

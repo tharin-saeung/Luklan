@@ -19,7 +19,7 @@ import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanSpacing
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

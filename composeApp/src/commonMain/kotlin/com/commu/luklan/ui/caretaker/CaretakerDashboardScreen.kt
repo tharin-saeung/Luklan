@@ -28,6 +28,7 @@ import com.commu.luklan.data.CareGroup
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getGroupRepository
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 

@@ -32,6 +32,7 @@ import com.commu.luklan.ui.theme.*
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import qrgenerator.qrkitpainter.rememberQrKitPainter
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

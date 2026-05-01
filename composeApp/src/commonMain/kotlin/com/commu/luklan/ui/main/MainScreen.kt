@@ -40,6 +40,7 @@ import kotlinx.datetime.toLocalDateTime
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.capsule2
 import org.jetbrains.compose.resources.painterResource
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 enum class MainTab {
     HOME, EMERGENCY, MENU
@@ -402,10 +403,10 @@ fun MenuCardWide(
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = if (label.length >= 13) 16.dp else if (label.length >= 8) 40.dp else 52.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier.size(80.dp),
                 contentAlignment = Alignment.Center
@@ -427,15 +428,15 @@ fun MenuCardWide(
                     )
                 }
             }
-            Spacer(Modifier.width(24.dp))
+            Spacer(Modifier.width(20.dp))
             Text(
                 label,
                 color = Color.White,
                 style = LuklanTypography.h2,
                 textAlign = TextAlign.Start,
-                modifier = Modifier.weight(1f),
                 maxLines = 1
             )
+            Spacer(Modifier.weight(1.2f))
         }
     }
 }

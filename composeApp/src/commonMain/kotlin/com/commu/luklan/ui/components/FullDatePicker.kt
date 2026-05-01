@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.commu.luklan.ui.theme.LuklanColors
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.datetime.*
 import kotlin.time.ExperimentalTime
 

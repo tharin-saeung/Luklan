@@ -29,6 +29,7 @@ import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.*
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -441,7 +442,6 @@ fun MemberItem(
                                 "เจ้าของกลุ่ม",
                                 color = Color.White,
                                 style = LuklanTypography.bodySmall,
-                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                                 maxLines = 1
@@ -465,7 +465,7 @@ fun MemberItem(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("จัดการยา", style = LuklanTypography.bodySmall, fontSize = 12.sp, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                            Text("จัดการยา", style = LuklanTypography.bodySmall, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
                             Icon(Icons.Default.ChevronRight, null, tint = LuklanColors.Primary, modifier = Modifier.size(16.dp))
                         }
                     }

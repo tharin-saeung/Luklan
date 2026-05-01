@@ -19,9 +19,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.commu.luklan.ui.theme.LuklanTheme
-import com.commu.luklan.ui.theme.LuklanTypography
-
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
 @Composable
 fun OtpTextField(
     otpText: String,
@@ -68,12 +67,12 @@ fun OtpTextField(
                             .weight(1f)
                             .height(60.dp)
                             .background(
-                                color = LuklanTheme.colors.Surface,
+                                color = LuklanColors.Surface,
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .border(
                                 width = if (isFocused) 2.dp else 1.dp,
-                                color = if (isFocused) LuklanTheme.colors.Primary else LuklanTheme.colors.Indicator,
+                                color = if (isFocused) LuklanColors.Primary else LuklanColors.Indicator,
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .clickable(
@@ -91,7 +90,7 @@ fun OtpTextField(
                             text = char,
                             style = LuklanTypography.h2,
                             fontWeight = FontWeight.Bold,
-                            color = LuklanTheme.colors.TextPrimary,
+                            color = LuklanColors.TextPrimary,
                             textAlign = TextAlign.Center
                         )
                     }

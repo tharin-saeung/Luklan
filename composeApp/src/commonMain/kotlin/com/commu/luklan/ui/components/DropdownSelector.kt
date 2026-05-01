@@ -11,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.commu.luklan.ui.theme.LuklanTheme
+import com.commu.luklan.ui.theme.LuklanDimensions
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanDimensions
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,10 +42,10 @@ fun DropdownSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(),
-            shape = RoundedCornerShape(LuklanTheme.dimensions.radiusSmall),
+            shape = RoundedCornerShape(LuklanDimensions.radiusSmall),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = LuklanTheme.colors.Surface,
-                unfocusedContainerColor = LuklanTheme.colors.Surface,
+                focusedContainerColor = LuklanColors.Surface,
+                unfocusedContainerColor = LuklanColors.Surface,
                 focusedBorderColor = Color.Black,
                 unfocusedBorderColor = Color.Black,
                 focusedLabelColor = Color.Black,
@@ -59,16 +61,16 @@ fun DropdownSelector(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(LuklanTheme.colors.SurfaceVariant)
+            modifier = Modifier.background(LuklanColors.SurfaceVariant)
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, color = LuklanTheme.colors.TextPrimary) },
+                    text = { Text(option, color = LuklanColors.TextPrimary) },
                     onClick = {
                         onValueChange(option)
                         expanded = false
                     },
-                    modifier = Modifier.fillMaxWidth().background(LuklanTheme.colors.SurfaceVariant)
+                    modifier = Modifier.fillMaxWidth().background(LuklanColors.SurfaceVariant)
                 )
             }
         }

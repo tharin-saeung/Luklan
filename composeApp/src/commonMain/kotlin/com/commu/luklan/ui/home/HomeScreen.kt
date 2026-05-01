@@ -37,6 +37,7 @@ import org.jetbrains.compose.resources.painterResource
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalTime::class)
 @Composable
@@ -251,19 +252,19 @@ fun HomeScreen(
                     ) {
                         Text(
                             dayNum.toString(), 
-                            fontSize = 22.sp, 
-                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, 
+                            fontSize = 24.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = Color.White
                         )
                         Text(
                             dayName, 
-                            fontSize = 14.sp, 
+                            fontSize = 18.sp,
                             color = Color.White,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                         
                         if (isToday) {
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(1.dp))
                             Box(
                                 modifier = Modifier
                                     .size(6.dp)

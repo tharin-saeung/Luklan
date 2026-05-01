@@ -38,6 +38,7 @@ import org.jetbrains.compose.resources.painterResource
 import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable

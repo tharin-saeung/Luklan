@@ -28,6 +28,7 @@ import com.commu.luklan.ui.theme.*
 import kotlinx.coroutines.launch
 import qrscanner.QrScanner
 import qrscanner.CameraLens
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -12,6 +12,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.AuthRepository
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.delay
 
 @Composable
@@ -40,8 +41,8 @@ fun SplashScreen(onNavigateToOnboarding: () -> Unit, onNavigateToHome: () -> Uni
         ) {
             Text(
                     text = "ลูกหลาน",
+                    style = LuklanTypography.h1,
                     fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
                     color = Color.White,
                     textAlign = TextAlign.Center
             )
@@ -49,9 +50,9 @@ fun SplashScreen(onNavigateToOnboarding: () -> Unit, onNavigateToHome: () -> Uni
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                    text = "LukLan",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
+                    text = "Luklan",
+                    style = LuklanTypography.h1,
+                    fontSize = 36.sp,
                     color = Color.White,
                     textAlign = TextAlign.Center
             )

@@ -26,7 +26,7 @@ import com.commu.luklan.data.getAlertRepository
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanSpacing
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -99,7 +99,7 @@ fun NotificationCenterScreen(
                         text = if (viewedUserName != null && targetUserId != authRepository.getCurrentUserId()) 
                             "การแจ้งเตือนของ $viewedUserName" 
                             else "การแจ้งเตือน", 
-                        style = LuklanTypography.h1, 
+                        style = LuklanTypography.h1,
                         color = LuklanColors.Primary,
                         fontWeight = FontWeight.Bold
                     ) 

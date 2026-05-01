@@ -34,7 +34,6 @@ import com.commu.luklan.ui.signup.SignupScreen
 import com.commu.luklan.ui.splash.SplashScreen
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
-import com.commu.luklan.ui.theme.LuklanTypography
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -46,7 +45,7 @@ import kotlin.time.ExperimentalTime
 @Composable
 @Preview
 fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
-    MaterialTheme {
+    LuklanTheme {
         val navController = rememberNavController()
         val authRepository = remember { getAuthRepository() }
         val focusManager = LocalFocusManager.current
@@ -147,10 +146,8 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                             }
                         },
                         onNavigateToLogin = { 
-                            if (!navController.popBackStack()) {
-                                navController.navigate(Screen.Login.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
                             }
                         },
                         onNavigateToInviteCaretaker = { groupId ->
@@ -202,6 +199,44 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                             val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
                             navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
                         }
+                    )
+                }
+
+                composable(
+                    route = "${Screen.MedSummary.route}?userId={userId}&userName={userName}",
+                    arguments = listOf(
+                        navArgument("userId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                        navArgument("userName") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    )
+                ) { backStackEntry ->
+                    val uid = backStackEntry.arguments?.read { getString("userId") } ?: authRepository.getCurrentUserId() ?: ""
+                    val name = backStackEntry.arguments?.read { getString("userName") }
+                    com.commu.luklan.ui.summary.MedSummaryScreen(
+                        userId = uid,
+                        userName = name,
+                        onNavigateToStats = { month, year ->
+                            navController.navigate("${Screen.MedicineStats.route}?userId=$uid&month=$month&year=$year")
+                        },
+                        onBack = { safeBack() }
+                    )
+                }
+
+                composable(
+                    route = "${Screen.MedicineStats.route}?userId={userId}&month={month}&year={year}",
+                    arguments = listOf(
+                        navArgument("userId") { type = NavType.StringType; defaultValue = "" },
+                        navArgument("month") { type = NavType.IntType; defaultValue = 1 },
+                        navArgument("year") { type = NavType.IntType; defaultValue = 2024 }
+                    )
+                ) { backStackEntry ->
+                    val uid = backStackEntry.arguments?.read { getString("userId") } ?: ""
+                    val month = backStackEntry.arguments?.read { getInt("month") } ?: 1
+                    val year = backStackEntry.arguments?.read { getInt("year") } ?: 2024
+                    com.commu.luklan.ui.summary.MedicineStatsScreen(
+                        userId = uid,
+                        initialMonth = month,
+                        initialYear = year,
+                        onBack = { safeBack() }
                     )
                 }
 
@@ -424,6 +459,9 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         targetUserId = selectedTargetUserIdForNotif,
                         onBack = { 
                             safeBack()
+                        },
+                        onNavigateToSummary = { uid ->
+                            navController.navigate("${Screen.MedSummary.route}?userId=$uid&userName=${selectedPatientName ?: ""}")
                         }
                     )
                 }

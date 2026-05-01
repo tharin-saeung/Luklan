@@ -32,6 +32,7 @@ import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
 import kotlin.time.ExperimentalTime
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 data class HistoryEntry(
     val medicine: Medicine,
@@ -42,7 +43,8 @@ data class HistoryEntry(
 @Composable
 fun HistoryScreen(
     targetUserId: String? = null,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToSummary: (String) -> Unit
 ) {
     val medicineRepository = remember { getMedicineRepository() }
     val authRepository = remember { AuthRepository() }
@@ -94,6 +96,23 @@ fun HistoryScreen(
                             contentDescription = "Back",
                             tint = LuklanColors.Primary
                         )
+                    }
+                },
+                actions = {
+                    val userId = targetUserId ?: authRepository.getCurrentUserId()
+                    if (userId != null) {
+                        TextButton(onClick = { onNavigateToSummary(userId) }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.BarChart,
+                                    contentDescription = null,
+                                    tint = LuklanColors.Primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ดูสถิติ", color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

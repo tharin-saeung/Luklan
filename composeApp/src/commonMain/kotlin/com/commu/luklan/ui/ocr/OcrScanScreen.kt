@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.commu.luklan.data.getVisionRepository
 import com.commu.luklan.platform.pickImageFromDevice
 import com.commu.luklan.ui.medicine.MedicineFormState
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import com.commu.luklan.utils.getCurrentTimeMillis

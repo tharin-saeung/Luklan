@@ -1,5 +1,6 @@
 package com.commu.luklan.ui.theme
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.dp
 
 object LuklanDimensions {
@@ -32,4 +33,8 @@ object LuklanDimensions {
     // Indicators
     val indicatorSize = 10.dp     // เพิ่มจาก 8dp
     val indicatorSpacing = 8.dp   // เพิ่ม
+}
+// Create variable to call from Theme.kt
+val LocalLuklanDimensions = staticCompositionLocalOf<LuklanDimensions> {
+    error("No LuklanDimensions provided")
 }

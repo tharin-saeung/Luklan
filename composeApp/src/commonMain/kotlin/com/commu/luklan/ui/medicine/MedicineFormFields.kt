@@ -28,7 +28,7 @@ import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.FullDatePicker
 import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.ui.theme.LuklanColors
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.datetime.*
 import kotlin.time.ExperimentalTime

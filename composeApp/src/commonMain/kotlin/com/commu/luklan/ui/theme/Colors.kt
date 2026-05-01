@@ -1,5 +1,6 @@
 package com.commu.luklan.ui.theme
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 object LuklanColors {
@@ -33,4 +34,8 @@ object LuklanColors {
     // UI Elements
     val Indicator = Color(0xFFE0E0E0)
     val IndicatorActive = Color(0xFFF7AE2C)
+}
+// Create variable to call from Theme.kt
+val LocalLuklanColors = staticCompositionLocalOf<LuklanColors> {
+    error("No LuklanColors provided")
 }

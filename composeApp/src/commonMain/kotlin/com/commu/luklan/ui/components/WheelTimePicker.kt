@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -124,7 +125,7 @@ fun WheelTimePicker(startTime: String = "08:00", onTimeSelected: (String) -> Uni
                         Text(
                                 text = hour.toString().padStart(2, '0'),
                                 style = MaterialTheme.typography.titleLarge,
-                                color = if (isSelected) LuklanTheme.colors.Primary else Color.Gray,
+                                color = if (isSelected) LuklanColors.Primary else Color.Gray,
                                 modifier = Modifier.alpha(if (isSelected) 1f else 0.5f)
                         )
                     }

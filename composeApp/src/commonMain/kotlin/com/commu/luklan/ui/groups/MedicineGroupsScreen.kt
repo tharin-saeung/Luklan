@@ -24,6 +24,7 @@ import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.ui.components.MedicineIcon
 import kotlinx.coroutines.launch
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 data class MedicineGroup(
     val category: String,

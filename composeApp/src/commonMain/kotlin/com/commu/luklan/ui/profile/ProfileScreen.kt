@@ -24,7 +24,7 @@ import com.commu.luklan.data.getStorageRepository
 import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
-import com.commu.luklan.ui.theme.LuklanTypography
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
