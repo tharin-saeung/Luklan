@@ -80,17 +80,19 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF3F6E8C)
+        containerColor = Color.White
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
             ) {
-                // HEADER
+                // HEADER - Blue section
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF3F6E8C))
+                        .padding(top = padding.calculateTopPadding()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
@@ -134,7 +136,7 @@ fun ProfileScreen(
                                 modifier = Modifier.size(56.dp)
                             )
                         }
-                        
+
                         // Edit overlay
                         Box(
                             modifier = Modifier
@@ -143,9 +145,9 @@ fun ProfileScreen(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Icon(
-                                Icons.Default.CameraAlt, 
-                                null, 
-                                tint = Color.White.copy(alpha = 0.8f), 
+                                Icons.Default.CameraAlt,
+                                null,
+                                tint = Color.White.copy(alpha = 0.8f),
                                 modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
                             )
                         }
@@ -180,35 +182,42 @@ fun ProfileScreen(
                             color = Color.White.copy(alpha = 0.6f)
                         )
                     }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // CARD MENU
-                Card(
+                // MENU Area - Use Box to overlap header
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        .weight(1f)
+                        .offset(y = (-24).dp) // Overlap the blue header to show rounding
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                        color = Color.White,
+                        shadowElevation = 0.dp
                     ) {
-                        MenuItem(title = "กลุ่มผู้ดูแล", icon = Icons.Default.Groups, onClick = onNavigateToGroups)
-                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
-                        MenuItem(title = "ประวัติการใช้ยา", icon = Icons.Default.History, onClick = onNavigateToHistory)
-                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
-                        MenuItem(title = "ติดต่อทีมงาน", icon = Icons.Default.ContactSupport, onClick = onNavigateToContact)
-                        Divider(color = Color.LightGray.copy(alpha = 0.5f))
-                        MenuItem(
-                            title = "ออกจากระบบ",
-                            icon = Icons.Default.Logout,
-                            isLogout = true,
-                            onClick = { showLogoutDialog = true }
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp, vertical = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            MenuItem(title = "กลุ่มผู้ดูแล", icon = Icons.Default.Groups, onClick = onNavigateToGroups)
+                            Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                            MenuItem(title = "ประวัติการใช้ยา", icon = Icons.Default.History, onClick = onNavigateToHistory)
+                            Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                            MenuItem(title = "ติดต่อทีมงาน", icon = Icons.Default.ContactSupport, onClick = onNavigateToContact)
+                            Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                            MenuItem(
+                                title = "ออกจากระบบ",
+                                icon = Icons.Default.Logout,
+                                isLogout = true,
+                                onClick = { showLogoutDialog = true }
+                            )
+                        }
                     }
                 }
             }

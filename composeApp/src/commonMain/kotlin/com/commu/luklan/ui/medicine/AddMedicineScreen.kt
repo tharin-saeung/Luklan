@@ -227,7 +227,18 @@ fun StepName(state: MedicineFormState, onNext: () -> Unit, onUpdate: (MedicineFo
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("ชื่อยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
-        TextField(value = state.name, onValueChange = { onUpdate(state.copy(name = it)) }, placeholder = { Text("กรอกชื่อของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }, modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(30.dp), colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold), singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { onNext() }))
+        TextField(
+            value = state.name, 
+            onValueChange = { onUpdate(state.copy(name = it)) }, 
+            placeholder = { Text("กรอกชื่อของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) }, 
+            modifier = Modifier.fillMaxWidth().height(60.dp), 
+            shape = RoundedCornerShape(30.dp), 
+            colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), 
+            textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold), 
+            singleLine = true, 
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), 
+            keyboardActions = KeyboardActions(onDone = { onNext() })
+        )
     }
 }
 
@@ -294,78 +305,78 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
         Text("ปริมาณยาที่ใช้ต่อครั้ง", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(24.dp))
         
-        // Dosage
-        Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextField(
-                value = state.dosage,
-                onValueChange = { 
-                    val filtered = it.filter { c -> c.isDigit() || c == '.' }
-                    if (filtered.count { c -> c == '.' } <= 1) {
-                        onUpdate(state.copy(dosage = filtered))
-                    }
-                },
-                placeholder = { Text("กรอกปริมาณที่ใช้", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                modifier = Modifier.weight(1.5f).fillMaxHeight(),
-                shape = RoundedCornerShape(30.dp),
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary),
-                textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                singleLine = true
-            )
-            
-            var expanded by remember { mutableStateOf(false) }
-            val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
-            
-            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                Surface(modifier = Modifier.fillMaxSize().clickable { expanded = true }, shape = RoundedCornerShape(30.dp), color = Color.White) {
-                    Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Text(state.unit, color = LuklanColors.Primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                // Row 2: Dosage and Unit
+                Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextField(
+                        value = state.dosage,
+                        onValueChange = { 
+                            val filtered = it.filter { c -> c.isDigit() || c == '.' }
+                            if (filtered.count { c -> c == '.' } <= 1) {
+                                onUpdate(state.copy(dosage = filtered))
+                            }
+                        },
+                        placeholder = { Text("กรอกปริมาณที่ใช้", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) },
+                        modifier = Modifier.weight(1.5f).fillMaxHeight(),
+                        shape = RoundedCornerShape(30.dp),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary),
+                        textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        singleLine = true
+                    )
+                    
+                    var expanded by remember { mutableStateOf(false) }
+                    val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
+                    
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        Surface(modifier = Modifier.fillMaxSize().clickable { expanded = true }, shape = RoundedCornerShape(30.dp), color = Color.White) {
+                            Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                Text(state.unit, color = LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                            }
+                        }
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
+                            unitOptions.forEach { opt ->
+                                DropdownMenuItem(text = { Text(opt, color = LuklanColors.Primary, style = LuklanTypography.bodyLarge) }, onClick = { onUpdate(state.copy(unit = opt)); expanded = false })
+                            }
+                        }
                     }
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
-                    unitOptions.forEach { opt ->
-                        DropdownMenuItem(text = { Text(opt, color = LuklanColors.Primary) }, onClick = { onUpdate(state.copy(unit = opt)); expanded = false })
+
+                Spacer(Modifier.height(32.dp))
+
+                Text("ปริมาณยาที่มีทั้งหมด", style = LuklanTypography.h2, color = Color.White)
+                Spacer(Modifier.height(24.dp))
+
+                // Current Amount
+                Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextField(
+                        value = state.currentAmount,
+                        onValueChange = { 
+                            val filtered = it.filter { c -> c.isDigit() || c == '.' }
+                            if (filtered.count { c -> c == '.' } <= 1) {
+                                onUpdate(state.copy(currentAmount = filtered))
+                            }
+                        },
+                        placeholder = { Text("กรอกปริมาณที่มี", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) },
+                        modifier = Modifier.weight(1.5f).fillMaxHeight(),
+                        shape = RoundedCornerShape(30.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = LuklanColors.Primary,
+                            unfocusedTextColor = LuklanColors.Primary
+                        ),
+                        textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onNext() }),
+                        singleLine = true
+                    )
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                        Text(state.unit, color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
                     }
                 }
-            }
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        Text("ปริมาณยาที่มีทั้งหมด", style = LuklanTypography.h2, color = Color.White)
-        Spacer(Modifier.height(24.dp))
-
-        // Current Amount
-        Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextField(
-                value = state.currentAmount,
-                onValueChange = { 
-                    val filtered = it.filter { c -> c.isDigit() || c == '.' }
-                    if (filtered.count { c -> c == '.' } <= 1) {
-                        onUpdate(state.copy(currentAmount = filtered))
-                    }
-                },
-                placeholder = { Text("กรอกปริมาณที่มี", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                modifier = Modifier.weight(1.5f).fillMaxHeight(),
-                shape = RoundedCornerShape(30.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = LuklanColors.Primary,
-                    unfocusedTextColor = LuklanColors.Primary
-                ),
-                textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onNext() }),
-                singleLine = true
-            )
-            Box(modifier = Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                Text(state.unit, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
-        }
     }
 }
 
@@ -557,7 +568,16 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
             }
             if (state.mealTiming.contains("อาหาร") && !state.mealTiming.contains("พร้อม")) {
                 Spacer(Modifier.width(12.dp))
-                TextField(value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(), onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) }, modifier = Modifier.width(85.dp).height(52.dp), shape = RoundedCornerShape(26.dp), colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary), textStyle = TextStyle(textAlign = TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), placeholder = { Text("0", color = Color.LightGray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
+                TextField(
+                    value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(), 
+                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) }, 
+                    modifier = Modifier.width(85.dp).height(52.dp), 
+                    shape = RoundedCornerShape(26.dp), 
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary), 
+                    textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold), 
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
+                    placeholder = { Text("0", color = Color.LightGray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) }
+                )
                 Spacer(Modifier.width(8.dp)); Text("นาที", color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
             }
         }

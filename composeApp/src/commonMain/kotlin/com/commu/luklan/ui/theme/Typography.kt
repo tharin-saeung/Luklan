@@ -24,7 +24,7 @@ fun getGoogleSansFamily() = FontFamily(
     Font(Res.font.googlesans_bold, FontWeight.Bold)
 )
 
-class LuklanTypography(fontFamily: FontFamily) {
+class LuklanTypography(val fontFamily: FontFamily) {
     val h1 = TextStyle(
         fontFamily = fontFamily,
         fontSize = 32.sp,
