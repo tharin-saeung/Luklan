@@ -54,7 +54,19 @@ fun MedicineDetailScreen(
     val notificationScheduler = remember { getNotificationScheduler() }
     val scope = rememberCoroutineScope()
 
-    var currentMedicine by remember(medicine) { mutableStateOf(medicine) }
+    var currentMedicine by remember { mutableStateOf(medicine) }
+    
+    // Real-time updates for this specific medicine
+    LaunchedEffect(medicine.userId) {
+        medicineRepository.observeMedicines(medicine.userId).collect { result ->
+            result.onSuccess { list ->
+                list.find { it.id == medicine.id }?.let { 
+                    currentMedicine = it 
+                }
+            }
+        }
+    }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var slotToConfirm by remember { mutableStateOf<Pair<String, Int>?>(null) }

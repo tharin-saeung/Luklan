@@ -44,6 +44,26 @@ fun addMedicineNative(
 }
 
 @OptIn(ExperimentalForeignApi::class)
+fun listenMedicinesNative(
+    userId: String,
+    completion: (Any?, String?) -> Unit
+): Any? {
+    return FirestoreBridge.listenMedicinesWithUserId(
+        userId = userId,
+        completion = { medicines: Any?, error: String? ->
+            completion(medicines, error)
+        }
+    )
+}
+
+@OptIn(ExperimentalForeignApi::class)
+fun removeListenerNative(listener: Any?) {
+    if (listener != null) {
+        FirestoreBridge.removeListener(listener)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
 fun getMedicinesNative(
     userId: String,
     completion: (Any?, String?) -> Unit

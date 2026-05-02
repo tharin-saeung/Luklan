@@ -93,10 +93,10 @@
     }];
 }
 
-+ (void)getMedicinesWithUserId:(NSString *)userId
-                   completion:(void (^)(NSArray * _Nullable medicines, NSString * _Nullable error))completion {
++ (id)listenMedicinesWithUserId:(NSString *)userId
+                     completion:(void (^)(NSArray * _Nullable medicines, NSString * _Nullable error))completion {
     FIRFirestore *db = [FIRFirestore firestore];
-    [[[db collectionWithPath:@"medicines"] queryWhereField:@"userId" isEqualTo:userId] getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
+    return [[[db collectionWithPath:@"medicines"] queryWhereField:@"userId" isEqualTo:userId] addSnapshotListener:^(FIRQuerySnapshot * _Nullable snapshot, NSError * _Nullable error) {
         if (error) {
             completion(nil, error.localizedDescription);
         } else {
@@ -109,6 +109,12 @@
             completion(medicines, nil);
         }
     }];
+}
+
++ (void)removeListener:(id)listener {
+    if ([listener respondsToSelector:@selector(remove)]) {
+        [listener performSelector:@selector(remove)];
+    }
 }
 
 + (void)deleteMedicineWithId:(NSString *)medicineId

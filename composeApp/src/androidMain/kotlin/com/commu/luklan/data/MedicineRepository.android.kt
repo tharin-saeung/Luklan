@@ -2,6 +2,7 @@ package com.commu.luklan.data
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.tasks.await
 
 class MedicineRepositoryAndroid : MedicineRepository {
@@ -17,14 +18,22 @@ class MedicineRepositoryAndroid : MedicineRepository {
         }
     }
 
-    override suspend fun getMedicines(userId: String): Result<List<Medicine>> {
-        return try {
-            val snapshot = collection.whereEqualTo("userId", userId).get().await()
-            val list = snapshot.documents.mapNotNull { it.toMedicine() }
-            Result.success(list.sortedBy { it.order })
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override fun observeMedicines(userId: String): kotlinx.coroutines.flow.Flow<Result<List<Medicine>>> = kotlinx.coroutines.flow.callbackFlow {
+        val listenerRegistration = collection
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
+                
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { it.toMedicine() }
+                    trySend(Result.success(list.sortedBy { it.order }))
+                }
+            }
+        
+        awaitClose { listenerRegistration.remove() }
     }
 
     override suspend fun updateMedicine(medicine: Medicine): Result<Unit> {

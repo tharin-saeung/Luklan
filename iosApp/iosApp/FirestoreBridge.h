@@ -41,6 +41,11 @@
 + (void)deleteMedicineWithId:(NSString *)medicineId
                  completion:(void (^)(NSString * _Nullable error))completion;
 
++ (id)listenMedicinesWithUserId:(NSString *)userId
+                     completion:(void (^)(NSArray * _Nullable medicines, NSString * _Nullable error))completion;
+
++ (void)removeListener:(id)listener;
+
 // Caretaker Methods
 + (void)getInviteCodeWithUserId:(NSString *)userId
                      completion:(void (^)(NSString * _Nullable code, NSString * _Nullable error))completion;

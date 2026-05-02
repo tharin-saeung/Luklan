@@ -433,7 +433,7 @@ fun MemberItem(
                         maxLines = 1
                     )
                     if (isOwner) {
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(8.dp))
                         Surface(
                             color = LuklanColors.Secondary,
                             shape = CircleShape
@@ -441,7 +441,7 @@ fun MemberItem(
                             Text(
                                 "เจ้าของกลุ่ม",
                                 color = Color.White,
-                                style = LuklanTypography.bodySmall,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                                 maxLines = 1

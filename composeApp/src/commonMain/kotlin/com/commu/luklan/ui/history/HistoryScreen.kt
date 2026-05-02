@@ -52,31 +52,29 @@ fun HistoryScreen(
     var historyEntries by remember { mutableStateOf<List<HistoryEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    fun loadHistory() {
+    LaunchedEffect(targetUserId) {
+        val userId = targetUserId ?: authRepository.getCurrentUserId()
+        if (userId == null) {
+            isLoading = false
+            return@LaunchedEffect
+        }
+        
         isLoading = true
-        scope.launch {
-            val userId = targetUserId ?: authRepository.getCurrentUserId()
-            if (userId != null) {
-                medicineRepository
-                    .getMedicines(userId)
-                    .onSuccess { medicines ->
-                        val entries = mutableListOf<HistoryEntry>()
-                        medicines.forEach { med ->
-                            med.takenHistory.forEach { (_, timestamp) ->
-                                entries.add(HistoryEntry(med, timestamp))
-                            }
-                        }
-                        historyEntries = entries.sortedByDescending { it.timestamp }
-                        isLoading = false
+        medicineRepository.observeMedicines(userId).collect { result ->
+            result.onSuccess { medicines ->
+                val entries = mutableListOf<HistoryEntry>()
+                medicines.forEach { med ->
+                    med.takenHistory.forEach { (_, timestamp) ->
+                        entries.add(HistoryEntry(med, timestamp))
                     }
-                    .onFailure { isLoading = false }
-            } else {
+                }
+                historyEntries = entries.sortedByDescending { it.timestamp }
                 isLoading = false
+            }.onFailure { 
+                isLoading = false 
             }
         }
     }
-
-    LaunchedEffect(Unit) { loadHistory() }
 
     Scaffold(
         topBar = {

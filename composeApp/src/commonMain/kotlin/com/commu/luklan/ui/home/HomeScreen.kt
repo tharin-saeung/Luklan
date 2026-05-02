@@ -80,14 +80,23 @@ fun HomeScreen(
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
     val dayInitials = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
 
-    fun loadData() {
-        if (userId.isEmpty()) return
-        isLoading = true
-        scope.launch {
-            authRepository.getUserProfile(userId).onSuccess { userProfile = it }
-            medicineRepository.getMedicines(userId).onSuccess { list ->
+    LaunchedEffect(userId) {
+        if (userId.isEmpty()) return@LaunchedEffect
+        
+        // Only show loading if we don't have data yet (prevents flicker with cache)
+        if (medicines.isEmpty()) {
+            isLoading = true
+        }
+        
+        // Load User Profile
+        authRepository.getUserProfile(userId).onSuccess { userProfile = it }
+        
+        // Observe Medicines Flow
+        medicineRepository.observeMedicines(userId).collect { result ->
+            result.onSuccess { list ->
                 medicines.clear()
                 medicines.addAll(list.sortedBy { it.order })
+                
                 if (!isCaretakerView) {
                     val scheduler = com.commu.luklan.data.getNotificationScheduler()
                     list.forEach { med ->
@@ -101,11 +110,11 @@ fun HomeScreen(
                     }
                 }
                 isLoading = false
-            }.onFailure { isLoading = false }
+            }.onFailure { 
+                isLoading = false 
+            }
         }
     }
-
-    LaunchedEffect(userId) { loadData() }
 
     Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Background)) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {

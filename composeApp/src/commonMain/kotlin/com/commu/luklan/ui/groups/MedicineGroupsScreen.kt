@@ -41,48 +41,49 @@ fun MedicineGroupsScreen(
     onMedicineClick: (Medicine) -> Unit
 ) {
     val medicineRepository = remember { getMedicineRepository() }
-    val authRepository = remember { AuthRepository() }
+    val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
     val scope = rememberCoroutineScope()
     var groups by remember { mutableStateOf<List<MedicineGroup>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    fun loadGroups() {
+    val userId = targetUserId ?: authRepository.getCurrentUserId()
+
+    LaunchedEffect(userId) {
+        if (userId == null) {
+            isLoading = false
+            return@LaunchedEffect
+        }
+        
         isLoading = true
-        scope.launch {
-            val userId = targetUserId ?: authRepository.getCurrentUserId()
-            if (userId != null) {
-                medicineRepository
-                    .getMedicines(userId)
-                    .onSuccess { medicines ->
-                        val grouped = medicines
-                            .groupBy { it.category }
-                            .map { (category, meds) ->
-                                val outOfStockCount = meds.count { 
-                                    val amt = it.currentAmount.toDoubleOrNull() ?: 0.0
-                                    val dose = it.dosage.toDoubleOrNull() ?: 0.0
-                                    amt < dose 
-                                }
-                                MedicineGroup(
-                                    category = category.ifEmpty { "อื่นๆ" },
-                                    count = meds.size,
-                                    outOfStockCount = outOfStockCount,
-                                    medicines = meds.sortedBy { it.name }
-                                )
-                            }
-                            .sortedWith(compareBy<MedicineGroup> { it.category == "อื่นๆ" || it.category == "ไม่ระบุหมวดหมู่" }
-                                .thenByDescending { it.count })
-                        
-                        groups = grouped
-                        isLoading = false
+        medicineRepository.observeMedicines(userId).collect { result ->
+            result.onSuccess { medicines ->
+                val grouped = medicines
+                    .groupBy { it.category }
+                    .map { entry ->
+                        val category = entry.key
+                        val meds = entry.value
+                        val outOfStockCount = meds.count { 
+                            val amt = it.currentAmount.toDoubleOrNull() ?: 0.0
+                            val dose = it.dosage.toDoubleOrNull() ?: 0.0
+                            amt < dose 
+                        }
+                        MedicineGroup(
+                            category = category.ifEmpty { "อื่นๆ" },
+                            count = meds.size,
+                            outOfStockCount = outOfStockCount,
+                            medicines = meds.sortedBy { it.name }
+                        )
                     }
-                    .onFailure { isLoading = false }
-            } else {
+                    .sortedWith(compareBy<MedicineGroup> { it.category == "อื่นๆ" || it.category == "ไม่ระบุหมวดหมู่" }
+                        .thenByDescending { it.count })
+                
+                groups = grouped
                 isLoading = false
+            }.onFailure { 
+                isLoading = false 
             }
         }
     }
-
-    LaunchedEffect(Unit) { loadGroups() }
 
     Scaffold(
         topBar = {

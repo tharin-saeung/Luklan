@@ -28,13 +28,28 @@ class SummaryViewModel : ViewModel() {
     private val _state = MutableStateFlow(SummaryState())
     val state: StateFlow<SummaryState> = _state.asStateFlow()
 
+    private var currentUserId: String? = null
+    private var currentMonth: Int = 1
+    private var currentYear: Int = 2024
+    private var observeJob: kotlinx.coroutines.Job? = null
+
     fun fetchMonthlyAdherence(userId: String, month: Int, year: Int) {
+        if (currentUserId == userId && currentMonth == month && currentYear == year && observeJob?.isActive == true) return
+
+        currentUserId = userId
+        currentMonth = month
+        currentYear = year
+        
+        observeJob?.cancel()
         _state.update { it.copy(isLoading = true, error = null) }
-        viewModelScope.launch {
-            medicineRepository.getMedicines(userId).onSuccess { medicines ->
-                calculateMonthlyAdherence(medicines, month, year)
-            }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, error = e.message) }
+        
+        observeJob = viewModelScope.launch {
+            medicineRepository.observeMedicines(userId).collect { result ->
+                result.onSuccess { medicines ->
+                    calculateMonthlyAdherence(medicines, currentMonth, currentYear)
+                }.onFailure { e ->
+                    _state.update { it.copy(isLoading = false, error = e.message) }
+                }
             }
         }
     }

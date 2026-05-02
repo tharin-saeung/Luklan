@@ -245,9 +245,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         targetUserId = selectedPatientId,
                         targetUserName = selectedPatientName,
                         onBack = { 
-                            selectedPatientId = null
-                            selectedPatientName = null
-                            safeBack()
+                            navController.popBackStack()
                         },
                         onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
                         onNavigateToProfile = {

@@ -1,6 +1,7 @@
 package com.commu.luklan.data
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.channels.awaitClose
 import platform.Foundation.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -35,10 +36,10 @@ class MedicineRepositoryIos : MedicineRepository {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    override suspend fun getMedicines(userId: String): Result<List<Medicine>> = suspendCoroutine { continuation ->
-        getMedicinesNative(userId) { medicines, error ->
+    override fun observeMedicines(userId: String): kotlinx.coroutines.flow.Flow<Result<List<Medicine>>> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = listenMedicinesNative(userId) { medicines, error ->
             if (error != null) {
-                continuation.resume(Result.failure(Exception(error)))
+                trySend(Result.failure(Exception(error)))
             } else {
                 val list = mutableListOf<Medicine>()
                 val nsArray = medicines as? NSArray
@@ -79,9 +80,11 @@ class MedicineRepositoryIos : MedicineRepository {
                         }
                     }
                 }
-                continuation.resume(Result.success(list.sortedBy { it.order }))
+                trySend(Result.success(list.sortedBy { it.order }))
             }
         }
+        
+        awaitClose { removeListenerNative(listener) }
     }
 
     override suspend fun updateMedicine(medicine: Medicine): Result<Unit> = suspendCoroutine { continuation ->
