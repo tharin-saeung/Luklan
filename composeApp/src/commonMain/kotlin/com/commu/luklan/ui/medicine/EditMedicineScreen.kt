@@ -40,7 +40,8 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
         mealTiming = medicine.mealTiming,
         mealTimingMinutes = medicine.mealTimingMinutes,
         currentAmount = medicine.currentAmount,
-        times = medicine.times
+        times = medicine.times,
+        photoUrl = medicine.photoUrl
     )) }
     
     var isLoading by remember { mutableStateOf(false) }
@@ -65,7 +66,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
             
             Box(modifier = Modifier.weight(1f)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MedicineFormFields(state = state, onUpdate = { state = it })
+                    MedicineFormFields(state = state, userId = medicine.userId, onUpdate = { state = it })
                 }
             }
 
@@ -89,7 +90,8 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                                 mealTimingMinutes = state.mealTimingMinutes,
                                 currentAmount = state.currentAmount,
                                 startDate = state.startDate,
-                                expiryDate = state.expiryDate
+                                expiryDate = state.expiryDate,
+                                photoUrl = state.photoUrl
                             )
                             medicineRepo.updateMedicine(up).onSuccess {
                                 scheduler.cancel(medicine)

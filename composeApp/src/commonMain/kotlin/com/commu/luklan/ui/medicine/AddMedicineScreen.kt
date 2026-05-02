@@ -24,6 +24,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
@@ -42,7 +44,8 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
-data class MedicineFormState(
+data class MedicineFormState @OptIn(ExperimentalUuidApi::class) constructor(
+    val id: String = Uuid.random().toString(),
     val name: String = "",
     val category: String = "",
     val dosage: String = "",
@@ -52,7 +55,8 @@ data class MedicineFormState(
     val expiryDate: String = "",
     val times: List<String> = emptyList(),
     val mealTiming: String = "",
-    val mealTimingMinutes: Int = 0
+    val mealTimingMinutes: Int = 0,
+    val photoUrl: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalTime::class)
@@ -115,8 +119,9 @@ fun AddMedicineScreen(
             }
             Spacer(Modifier.height(24.dp))
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                val effectiveUserId = targetUserId ?: authRepository.getCurrentUserId() ?: ""
                 when (step) {
-                    1 -> StepName(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
+                    1 -> StepName(formState, userId = effectiveUserId, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
                     2 -> StepCategory(formState) { formState = it }
                     3 -> StepAmount(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
                     4 -> StepStartDate(
@@ -133,6 +138,7 @@ fun AddMedicineScreen(
                     6 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { 
                         StepSummary(
                             state = formState, 
+                            userId = effectiveUserId,
                             month = displayMonth,
                             year = displayYear,
                             onUpdate = { formState = it }
@@ -166,23 +172,24 @@ fun AddMedicineScreen(
                                           else "$displayYear-${displayMonth.toString().padStart(2, '0')}-${formState.startDate.padStart(2, '0')}"
                             
                             val med = Medicine(
-                                id = Uuid.random().toString(), 
-                                name = formState.name, 
+                                id = formState.id,
+                                name = formState.name,
                                 dosage = formState.dosage,
                                 unit = formState.unit,
-                                times = formState.times, 
-                                startDate = finalDate, 
+                                times = formState.times,
+                                startDate = finalDate,
                                 expiryDate = formState.expiryDate,
-                                category = formState.category, 
+                                category = formState.category,
                                 mealTiming = formState.mealTiming,
-                                mealTimingMinutes = formState.mealTimingMinutes, 
+                                mealTimingMinutes = formState.mealTimingMinutes,
                                 currentAmount = formState.currentAmount,
-                                userId = userId, 
+                                photoUrl = formState.photoUrl,
+                                userId = userId,
                                 createdAt = getCurrentTimeMillis()
                             )
-                            medicineRepository.addMedicine(med).onSuccess { 
+                            medicineRepository.addMedicine(med).onSuccess {
                                 if (targetUserId == null) notificationScheduler.schedule(med)
-                                isLoading = false; onNavigateBack() 
+                                isLoading = false; onNavigateBack()
                             }.onFailure { isLoading = false; errorMessage = it.message }
                         }
                     }
@@ -203,7 +210,7 @@ fun AddMedicineScreen(
                 if (editingTimeIndex >= 0) newList[editingTimeIndex] = tempTime else newList.add(tempTime)
                 formState = formState.copy(times = newList.sorted()); showTimePicker = false
             }) { Text("ตกลง", color = LuklanColors.Primary, fontWeight = FontWeight.Bold) } },
-            dismissButton = { 
+            dismissButton = {
                 Row {
                     if (editingTimeIndex >= 0) {
                         TextButton(onClick = {
@@ -222,21 +229,69 @@ fun AddMedicineScreen(
     }
 }
 
+@OptIn(ExperimentalUuidApi::class)
 @Composable
-fun StepName(state: MedicineFormState, onNext: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+fun StepName(state: MedicineFormState, userId: String, onNext: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+    val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
+    val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
+        onImageSelected = { bytes: ByteArray? ->
+            if (bytes != null) {
+                isUploading = true
+                backgroundScope.launch {
+                    val path = "medicines/$userId/${state.id}"
+                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
+                        onUpdate(state.copy(photoUrl = url))
+                        isUploading = false
+                    }.onFailure { isUploading = false }
+                }
+            }
+        }
+    )
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Photo
+        Box(
+            modifier = Modifier
+                .size(140.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.2f))
+                .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape)
+                .clickable { imagePickerLauncher.launch() },
+            contentAlignment = Alignment.Center
+        ) {
+            if (state.photoUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = state.photoUrl,
+                    contentDescription = "Medicine Photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else if (isUploading) {
+                CircularProgressIndicator(color = Color.White)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                    Text("เพิ่มรูปถ่าย", color = Color.White, style = LuklanTypography.caption)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
         Text("ชื่อยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
         TextField(
-            value = state.name, 
-            onValueChange = { onUpdate(state.copy(name = it)) }, 
-            placeholder = { Text("กรอกชื่อของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) }, 
-            modifier = Modifier.fillMaxWidth().height(60.dp), 
-            shape = RoundedCornerShape(30.dp), 
-            colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), 
-            textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold), 
-            singleLine = true, 
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), 
+            value = state.name,
+            onValueChange = { onUpdate(state.copy(name = it)) },
+            placeholder = { Text("กรอกชื่อของยา", color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) },
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = RoundedCornerShape(30.dp),
+            colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+            textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onNext() })
         )
     }
@@ -264,33 +319,33 @@ fun StepCategory(state: MedicineFormState, onUpdate: (MedicineFormState) -> Unit
             Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // Row 1
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[0].first, state.category == categories[0].first) { 
+                    CategoryCard(categories[0].first, state.category == categories[0].first) {
                         onUpdate(state.copy(category = categories[0].first, unit = categories[0].third))
                     }
-                    CategoryCard(categories[1].first, state.category == categories[1].first) { 
+                    CategoryCard(categories[1].first, state.category == categories[1].first) {
                         onUpdate(state.copy(category = categories[1].first, unit = categories[1].third))
                     }
                 }
                 // Row 2
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[2].first, state.category == categories[2].first) { 
+                    CategoryCard(categories[2].first, state.category == categories[2].first) {
                         onUpdate(state.copy(category = categories[2].first, unit = categories[2].third))
                     }
-                    CategoryCard(categories[3].first, state.category == categories[3].first) { 
+                    CategoryCard(categories[3].first, state.category == categories[3].first) {
                         onUpdate(state.copy(category = categories[3].first, unit = categories[3].third))
                     }
                 }
                 // Row 3
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CategoryCard(categories[4].first, state.category == categories[4].first) { 
+                    CategoryCard(categories[4].first, state.category == categories[4].first) {
                         onUpdate(state.copy(category = categories[4].first, unit = categories[4].third))
                     }
-                    CategoryCard(categories[5].first, state.category == categories[5].first) { 
+                    CategoryCard(categories[5].first, state.category == categories[5].first) {
                         onUpdate(state.copy(category = categories[5].first, unit = categories[5].third))
                     }
                 }
                 // Row 4: Centered Last Item
-                CategoryCard(categories[6].first, state.category == categories[6].first) { 
+                CategoryCard(categories[6].first, state.category == categories[6].first) {
                     onUpdate(state.copy(category = categories[6].first, unit = categories[6].third))
                 }
             }
@@ -304,12 +359,12 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.verticalScroll(rememberScrollState())) {
         Text("ปริมาณยาที่ใช้ต่อครั้ง", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(24.dp))
-        
+
                 // Row 2: Dosage and Unit
                 Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextField(
                         value = state.dosage,
-                        onValueChange = { 
+                        onValueChange = {
                             val filtered = it.filter { c -> c.isDigit() || c == '.' }
                             if (filtered.count { c -> c == '.' } <= 1) {
                                 onUpdate(state.copy(dosage = filtered))
@@ -323,10 +378,10 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         singleLine = true
                     )
-                    
+
                     var expanded by remember { mutableStateOf(false) }
                     val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
-                    
+
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         Surface(modifier = Modifier.fillMaxSize().clickable { expanded = true }, shape = RoundedCornerShape(30.dp), color = Color.White) {
                             Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
@@ -351,7 +406,7 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
                 Row(modifier = Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextField(
                         value = state.currentAmount,
-                        onValueChange = { 
+                        onValueChange = {
                             val filtered = it.filter { c -> c.isDigit() || c == '.' }
                             if (filtered.count { c -> c == '.' } <= 1) {
                                 onUpdate(state.copy(currentAmount = filtered))
@@ -385,7 +440,7 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text("เลือกวันเริ่มใช้ยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
-        
+
         val listState = rememberLazyListState()
         val daysInMonth = try {
             val firstDayOfNextMonth = if (dm == 12) LocalDate(dy + 1, 1, 1) else LocalDate(dy, dm + 1, 1)
@@ -410,8 +465,8 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                         .background(if (isSelected) LuklanColors.Secondary else Color.White.copy(0.15f))
                         .border(if (isSelected) 0.dp else 1.dp, Color.White.copy(0.3f), RoundedCornerShape(32.dp))
                         .clickable { onUpdate(state.copy(startDate = dayNum.toString())) }
-                        .padding(vertical = 12.dp), 
-                    verticalArrangement = Arrangement.Center, 
+                        .padding(vertical = 12.dp),
+                    verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(dayName, color = Color.White, fontSize = 18.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
@@ -423,12 +478,12 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                 }
             }
         }
-        
+
         Spacer(Modifier.height(32.dp))
-        
+
         var showPicker by remember { mutableStateOf(false) }
         Row(
-            verticalAlignment = Alignment.CenterVertically, 
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.clickable { showPicker = true }
         ) {
@@ -445,7 +500,7 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                 onDismiss = { showPicker = false },
                 onConfirm = { m, y ->
                     onMonthYearChange(m, y)
-                    showPicker = false 
+                    showPicker = false
                 }
             )
         }
@@ -496,7 +551,7 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
                 }
             )
         }
-        
+
         Spacer(Modifier.height(32.dp))
     }
 }
@@ -508,20 +563,20 @@ fun CategoryCard(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(width = 150.dp, height = 150.dp)
-            .clickable { onClick() }, 
+            .clickable { onClick() },
         contentAlignment = Alignment.BottomCenter
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth().height(115.dp), 
-            shape = RoundedCornerShape(24.dp), 
-            colors = CardDefaults.cardColors(containerColor = if (isSelected) LuklanColors.Secondary else Color.White), 
+            modifier = Modifier.fillMaxWidth().height(115.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = if (isSelected) LuklanColors.Secondary else Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 Text(text = label, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = if (isSelected) Color.White else LuklanColors.Primary, modifier = Modifier.padding(bottom = 35.dp))
             }
         }
-        
+
         // Icon Frame
         Surface(
             modifier = Modifier.align(Alignment.TopCenter).size(80.dp),
@@ -537,7 +592,7 @@ fun CategoryCard(label: String, isSelected: Boolean, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 MedicineIcon(
-                    category = label, 
+                    category = label,
                     iconSize = 50.dp
                 )
             }
@@ -569,13 +624,13 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
             if (state.mealTiming.contains("อาหาร") && !state.mealTiming.contains("พร้อม")) {
                 Spacer(Modifier.width(12.dp))
                 TextField(
-                    value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(), 
-                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) }, 
-                    modifier = Modifier.width(85.dp).height(52.dp), 
-                    shape = RoundedCornerShape(26.dp), 
-                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary), 
-                    textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold), 
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), 
+                    value = if (state.mealTimingMinutes == 0) "" else state.mealTimingMinutes.toString(),
+                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(mealTimingMinutes = it.toIntOrNull() ?: 0)) },
+                    modifier = Modifier.width(85.dp).height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary),
+                    textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     placeholder = { Text("0", color = Color.LightGray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = LuklanTypography.bodyLarge) }
                 )
                 Spacer(Modifier.width(8.dp)); Text("นาที", color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
@@ -584,25 +639,25 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
         Spacer(Modifier.height(48.dp))
         state.times.forEachIndexed { i, t ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(i) }, shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)) {
-                Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) { 
+                Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "$t น.", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f)); Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp)) 
+                    Spacer(Modifier.weight(1f)); Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
         }
-        IconButton(onClick = onAdd, modifier = Modifier.padding(top = 16.dp).size(64.dp).clip(CircleShape).background(Color.White)) { 
-            Icon(Icons.Default.Add, null, tint = LuklanColors.Secondary, modifier = Modifier.size(36.dp)) 
+        IconButton(onClick = onAdd, modifier = Modifier.padding(top = 16.dp).size(64.dp).clip(CircleShape).background(Color.White)) {
+            Icon(Icons.Default.Add, null, tint = LuklanColors.Secondary, modifier = Modifier.size(36.dp))
         }
     }
 }
 
 @Composable
-fun StepSummary(state: MedicineFormState, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
+fun StepSummary(state: MedicineFormState, userId: String, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
     val fullDate = "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MedicineFormFields(state = state.copy(startDate = fullDate), onUpdate = { onUpdate(it) })
+        MedicineFormFields(state = state.copy(startDate = fullDate), userId = userId, onUpdate = { onUpdate(it) })
     }
 }

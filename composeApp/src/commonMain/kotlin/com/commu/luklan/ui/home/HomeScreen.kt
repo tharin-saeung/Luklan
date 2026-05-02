@@ -546,7 +546,16 @@ fun MedicineCardGrouped(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                MedicineIcon(category = medicine.category, iconSize = 45.dp)
+                if (medicine.photoUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = medicine.photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    MedicineIcon(category = medicine.category, iconSize = 45.dp)
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))

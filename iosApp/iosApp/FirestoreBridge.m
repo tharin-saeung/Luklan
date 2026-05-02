@@ -15,6 +15,7 @@
               mealTiming:(NSString *)mealTiming
        mealTimingMinutes:(int)mealTimingMinutes
            currentAmount:(NSString *)currentAmount
+                photoUrl:(NSString *)photoUrl
                   userId:(NSString *)userId
             takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                createdAt:(long long)createdAt
@@ -34,6 +35,7 @@
         @"mealTiming": mealTiming,
         @"mealTimingMinutes": @(mealTimingMinutes),
         @"currentAmount": currentAmount,
+        @"photoUrl": photoUrl,
         @"userId": userId,
         @"takenHistory": takenHistory,
         @"createdAt": @(createdAt),

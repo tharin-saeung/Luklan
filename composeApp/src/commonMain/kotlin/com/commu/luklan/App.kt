@@ -162,7 +162,10 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     MainScreen(
                         selectedTab = currentTab,
                         onTabSelected = { currentTab = it },
-                        onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
+                        onNavigateToAddMedicine = { 
+                            selectedPatientId = null
+                            navController.navigate(Screen.AddMedicine.route) 
+                        },
                         onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                         onLogout = {
                             // Auth handled inside Profile usually or here
@@ -391,6 +394,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
 
                 composable(Screen.AddMedicine.route) {
                     AddMedicineScreen(
+                        targetUserId = selectedPatientId,
                         onNavigateBack = { 
                             safeBack()
                         }
@@ -497,5 +501,3 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         }
     }
 }
-
-

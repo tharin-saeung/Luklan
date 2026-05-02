@@ -71,6 +71,7 @@ class MedicineRepositoryIos : MedicineRepository {
                                 mealTiming = dict.objectForKey("mealTiming") as? String ?: "ก่อนอาหาร",
                                 mealTimingMinutes = (dict.objectForKey("mealTimingMinutes") as? NSNumber)?.intValue ?: 30,
                                 currentAmount = dict.objectForKey("currentAmount") as? String ?: "",
+                                photoUrl = dict.objectForKey("photoUrl") as? String ?: "",
                                 userId = dict.objectForKey("userId") as? String ?: "",
                                 takenHistory = takenHistoryMap,
                                 createdAt = (dict.objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L,

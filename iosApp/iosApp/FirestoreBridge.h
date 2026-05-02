@@ -30,6 +30,7 @@
                  mealTiming:(NSString *)mealTiming
           mealTimingMinutes:(int)mealTimingMinutes
               currentAmount:(NSString *)currentAmount
+                   photoUrl:(NSString *)photoUrl
                takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
                   createdAt:(long long)createdAt
                       order:(int)order

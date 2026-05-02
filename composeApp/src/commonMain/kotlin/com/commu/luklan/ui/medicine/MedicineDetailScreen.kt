@@ -133,7 +133,16 @@ fun MedicineDetailScreen(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                MedicineIcon(category = currentMedicine.category, iconSize = 90.dp)
+                if (currentMedicine.photoUrl.isNotEmpty()) {
+                    coil3.compose.AsyncImage(
+                        model = currentMedicine.photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    MedicineIcon(category = currentMedicine.category, iconSize = 90.dp)
+                }
             }
 
             Spacer(Modifier.height(16.dp))

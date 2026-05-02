@@ -7,11 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,21 +20,46 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.FullDatePicker
 import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import com.commu.luklan.utils.getCurrentTimeMillis
+import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
 @Composable
 fun MedicineFormFields(
     state: MedicineFormState,
+    userId: String,
     onUpdate: (MedicineFormState) -> Unit,
 ) {
+    val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
+    val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
+        onImageSelected = { bytes: ByteArray? ->
+            if (bytes != null) {
+                isUploading = true
+                backgroundScope.launch {
+                    val path = "medicines/$userId/${state.id}"
+                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
+                        onUpdate(state.copy(photoUrl = url))
+                        isUploading = false
+                    }.onFailure { isUploading = false }
+                }
+            }
+        }
+    )
+
     var showTimePicker by remember { mutableStateOf(false) }
     var editingTimeIndex by remember { mutableStateOf(-1) }
     var showUnitPicker by remember { mutableStateOf(false) }
@@ -50,6 +71,45 @@ fun MedicineFormFields(
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        // Photo
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .clickable { imagePickerLauncher.launch() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.photoUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = state.photoUrl,
+                        contentDescription = "Medicine Photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else if (isUploading) {
+                    CircularProgressIndicator(color = LuklanColors.Primary)
+                } else if (state.category.isNotEmpty()) {
+                    // Show category icon as placeholder if category selected
+                    Box(contentAlignment = Alignment.Center) {
+                        MedicineIcon(category = state.category, iconSize = 70.dp)
+                        Box(
+                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                        }
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.PhotoCamera, null, tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
+                        Text("เพิ่มรูปถ่าย", color = LuklanColors.Primary, style = LuklanTypography.caption)
+                    }
+                }
+            }
+        }
+
         // Name
         SummaryItemEditable(
             label = "ชื่อยา",
