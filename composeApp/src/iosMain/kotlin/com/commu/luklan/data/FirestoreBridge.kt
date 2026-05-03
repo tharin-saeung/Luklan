@@ -91,6 +91,7 @@ fun updateMedicineNative(
     mealTiming: String,
     mealTimingMinutes: Int,
     currentAmount: String,
+    photoUrl: String,
     takenHistory: Map<String, Long>,
     createdAt: Long,
     order: Int,
@@ -108,6 +109,7 @@ fun updateMedicineNative(
         mealTiming = mealTiming,
         mealTimingMinutes = mealTimingMinutes,
         currentAmount = currentAmount,
+        photoUrl = photoUrl,
         takenHistory = takenHistory as Map<Any?, *>,
         createdAt = createdAt,
         order = order,
@@ -238,5 +240,3 @@ fun getAlertsNative(userId: String, completion: (List<NSDictionary>?, String?) -
         completion(alerts as? List<NSDictionary>, error)
     }
 }
-
-

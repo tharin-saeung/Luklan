@@ -11,7 +11,6 @@ class MedicineRepositoryIos : MedicineRepository {
     override suspend fun addMedicine(medicine: Medicine): Result<Unit> = suspendCoroutine { continuation ->
         addMedicineNative(
             id = medicine.id,
-            userId = medicine.userId,
             name = medicine.name,
             dosage = medicine.dosage,
             unit = medicine.unit,
@@ -22,6 +21,8 @@ class MedicineRepositoryIos : MedicineRepository {
             mealTiming = medicine.mealTiming,
             mealTimingMinutes = medicine.mealTimingMinutes,
             currentAmount = medicine.currentAmount,
+            photoUrl = medicine.photoUrl,
+            userId = medicine.userId,
             takenHistory = medicine.takenHistory,
             createdAt = medicine.createdAt,
             order = medicine.order,
@@ -101,6 +102,7 @@ class MedicineRepositoryIos : MedicineRepository {
             mealTiming = medicine.mealTiming,
             mealTimingMinutes = medicine.mealTimingMinutes,
             currentAmount = medicine.currentAmount,
+            photoUrl = medicine.photoUrl,
             takenHistory = medicine.takenHistory,
             createdAt = medicine.createdAt,
             order = medicine.order,
