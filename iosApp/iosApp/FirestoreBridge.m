@@ -18,6 +18,8 @@
                 photoUrl:(NSString *)photoUrl
                   userId:(NSString *)userId
             takenHistory:(NSDictionary<NSString *, NSNumber *> *)takenHistory
+             forgotTimes:(int)forgotTimes
+   forgotDurationMinutes:(int)forgotDurationMinutes
                createdAt:(long long)createdAt
                    order:(int)order
               completion:(void (^)(NSString * _Nullable error))completion {
