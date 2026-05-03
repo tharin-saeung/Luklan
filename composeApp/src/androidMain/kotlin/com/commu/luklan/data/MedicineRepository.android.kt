@@ -69,6 +69,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
         "photoUrl" to photoUrl,
         "userId" to userId,
         "takenHistory" to takenHistory,
+        "forgotTimes" to forgotTimes,
+        "forgotDurationMinutes" to forgotDurationMinutes,
         "createdAt" to createdAt,
         "order" to order
     )
@@ -90,6 +92,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 photoUrl = getString("photoUrl") ?: "",
                 userId = getString("userId") ?: "",
                 takenHistory = (get("takenHistory") as? Map<*, *>)?.filter { it.key is String && it.value is Long } as? Map<String, Long> ?: emptyMap(),
+                forgotTimes = getLong("forgotTimes")?.toInt() ?: 1,
+                forgotDurationMinutes = getLong("forgotDurationMinutes")?.toInt() ?: 10,
                 createdAt = getLong("createdAt") ?: 0L,
                 order = getLong("order")?.toInt() ?: 0
             )

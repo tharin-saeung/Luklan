@@ -40,6 +40,16 @@ fun onDidFinishLaunchingWithOptions() {
     println("KMP Initializer: Firebase project ID: ${FIRApp.defaultApp()?.options!!.projectID()}")
 }
 
+fun onNewTokenReceived(token: String) {
+    val authRepository = getAuthRepository()
+    val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    authRepository.getCurrentUserId()?.let { uid ->
+        scope.launch {
+            authRepository.updateFcmToken(uid, token)
+        }
+    }
+}
+
 fun onDeepLinkReceived(medicineId: String, time: String?) {
     DeepLinkManager.medicineId = medicineId
     DeepLinkManager.time = time

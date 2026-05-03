@@ -24,6 +24,8 @@ class MedicineRepositoryIos : MedicineRepository {
             photoUrl = medicine.photoUrl,
             userId = medicine.userId,
             takenHistory = medicine.takenHistory,
+            forgotTimes = medicine.forgotTimes,
+            forgotDurationMinutes = medicine.forgotDurationMinutes,
             createdAt = medicine.createdAt,
             order = medicine.order,
             completion = { error ->
@@ -75,6 +77,8 @@ class MedicineRepositoryIos : MedicineRepository {
                                 photoUrl = dict.objectForKey("photoUrl") as? String ?: "",
                                 userId = dict.objectForKey("userId") as? String ?: "",
                                 takenHistory = takenHistoryMap,
+                                forgotTimes = (dict.objectForKey("forgotTimes") as? NSNumber)?.intValue ?: 1,
+                                forgotDurationMinutes = (dict.objectForKey("forgotDurationMinutes") as? NSNumber)?.intValue ?: 10,
                                 createdAt = (dict.objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L,
                                 order = (dict.objectForKey("order") as? NSNumber)?.intValue ?: 0
                             )
@@ -104,6 +108,8 @@ class MedicineRepositoryIos : MedicineRepository {
             currentAmount = medicine.currentAmount,
             photoUrl = medicine.photoUrl,
             takenHistory = medicine.takenHistory,
+            forgotTimes = medicine.forgotTimes,
+            forgotDurationMinutes = medicine.forgotDurationMinutes,
             createdAt = medicine.createdAt,
             order = medicine.order,
             completion = { error ->

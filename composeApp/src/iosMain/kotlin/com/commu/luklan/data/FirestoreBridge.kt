@@ -20,6 +20,8 @@ fun addMedicineNative(
     photoUrl: String,
     userId: String,
     takenHistory: Map<String, Long>,
+    forgotTimes: Int,
+    forgotDurationMinutes: Int,
     createdAt: Long,
     order: Int,
     completion: (String?) -> Unit
@@ -39,6 +41,8 @@ fun addMedicineNative(
         photoUrl = photoUrl,
         userId = userId,
         takenHistory = takenHistory as Map<Any?, *>,
+        forgotTimes = forgotTimes,
+        forgotDurationMinutes = forgotDurationMinutes,
         createdAt = createdAt,
         order = order,
         completion = { error: String? -> completion(error) }
@@ -93,6 +97,8 @@ fun updateMedicineNative(
     currentAmount: String,
     photoUrl: String,
     takenHistory: Map<String, Long>,
+    forgotTimes: Int,
+    forgotDurationMinutes: Int,
     createdAt: Long,
     order: Int,
     completion: (String?) -> Unit
@@ -111,6 +117,8 @@ fun updateMedicineNative(
         currentAmount = currentAmount,
         photoUrl = photoUrl,
         takenHistory = takenHistory as Map<Any?, *>,
+        forgotTimes = forgotTimes,
+        forgotDurationMinutes = forgotDurationMinutes,
         createdAt = createdAt,
         order = order,
         completion = { error: String? -> completion(error) }

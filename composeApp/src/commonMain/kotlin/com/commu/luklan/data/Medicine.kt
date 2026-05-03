@@ -17,6 +17,8 @@ data class Medicine(
     val photoUrl: String = "",
     val userId: String = "",
     val takenHistory: Map<String, Long> = emptyMap(), // "yyyy-MM-dd_HH:mm" -> actualTakenTimestamp
+    val forgotTimes: Int = 1,
+    val forgotDurationMinutes: Int = 10,
     val createdAt: Long = 0L,
     val order: Int = 0
 ) {

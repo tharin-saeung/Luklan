@@ -38,6 +38,8 @@
         @"photoUrl": photoUrl,
         @"userId": userId,
         @"takenHistory": takenHistory,
+        @"forgotTimes": @(forgotTimes),
+        @"forgotDurationMinutes": @(forgotDurationMinutes),
         @"createdAt": @(createdAt),
         @"order": @(order)
     };
@@ -635,7 +637,7 @@
                 @"message": message,
                 @"timestamp": @((long long)([[NSDate date] timeIntervalSince1970] * 1000)),
                 @"groupIds": groupIds,
-                @"isSilent": @YES // Mark as silent for caretaker dashboard only
+                @"isSilent": @(!isCheckin) // Silent for MEDICINE, not silent for MISSED_MED
             };
 
             // setData is idempotent if document ID is same

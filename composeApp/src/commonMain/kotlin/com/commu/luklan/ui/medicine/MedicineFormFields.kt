@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import coil3.compose.AsyncImage
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.FullDatePicker
@@ -39,22 +41,26 @@ import kotlin.uuid.Uuid
 fun MedicineFormFields(
     state: MedicineFormState,
     userId: String,
+    externalIsUploading: Boolean? = null,
+    onLaunchPicker: (() -> Unit)? = null,
     onUpdate: (MedicineFormState) -> Unit,
 ) {
     val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
     val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
-    var isUploading by remember { mutableStateOf(false) }
+    var internalIsUploading by remember { mutableStateOf(false) }
+    
+    val isUploading = externalIsUploading ?: internalIsUploading
 
     val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
         onImageSelected = { bytes: ByteArray? ->
             if (bytes != null) {
-                isUploading = true
+                internalIsUploading = true
                 backgroundScope.launch {
                     val path = "medicines/$userId/${state.id}"
                     storageRepository.uploadImage(path, bytes).onSuccess { url ->
                         onUpdate(state.copy(photoUrl = url))
-                        isUploading = false
-                    }.onFailure { isUploading = false }
+                        internalIsUploading = false
+                    }.onFailure { internalIsUploading = false }
                 }
             }
         }
@@ -76,35 +82,60 @@ fun MedicineFormFields(
             Box(
                 modifier = Modifier
                     .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .clickable { imagePickerLauncher.launch() },
+                    .clickable { onLaunchPicker?.invoke() ?: imagePickerLauncher.launch() },
                 contentAlignment = Alignment.Center
             ) {
-                if (state.photoUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = state.photoUrl,
-                        contentDescription = "Medicine Photo",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else if (isUploading) {
-                    CircularProgressIndicator(color = LuklanColors.Primary)
-                } else if (state.category.isNotEmpty()) {
-                    // Show category icon as placeholder if category selected
-                    Box(contentAlignment = Alignment.Center) {
-                        MedicineIcon(category = state.category, iconSize = 70.dp)
-                        Box(
-                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
+                // Main Circle Content
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (state.photoUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = state.photoUrl,
+                            contentDescription = "Medicine Photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (isUploading) {
+                        CircularProgressIndicator(color = Color.White)
+                    } else if (state.category.isNotEmpty()) {
+                        // Show category icon as placeholder if category selected
+                        Box(contentAlignment = Alignment.Center) {
+                            MedicineIcon(category = state.category, iconSize = 70.dp)
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                            }
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                            Text("เพิ่มรูปถ่าย", color = Color.White, style = LuklanTypography.caption)
                         }
                     }
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.PhotoCamera, null, tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
-                        Text("เพิ่มรูปถ่าย", color = LuklanColors.Primary, style = LuklanTypography.caption)
+                }
+
+                // Camera Overlay (Popped out)
+                if (state.photoUrl.isNotEmpty() && !isUploading) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(28.dp),
+                        shape = CircleShape,
+                        color = LuklanColors.Secondary,
+                        border = BorderStroke(2.dp, Color.White),
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
@@ -134,6 +165,37 @@ fun MedicineFormFields(
                     }
                     Text(state.category.ifEmpty { "เลือกประเภท" }, color = if (state.category.isEmpty()) Color.Gray else LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                }
+            }
+        }
+
+        // Forgot Reminders Configuration
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("ตั้งค่าการเตือนซ้ำ (กรณีลืม)", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("จำนวนครั้ง", color = Color.Gray, style = LuklanTypography.caption, modifier = Modifier.padding(start = 12.dp))
+                    TextField(
+                        value = state.forgotTimes.toString(),
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotTimes = it.toIntOrNull() ?: 1)) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                        textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("เว้นระยะ (นาที)", color = Color.Gray, style = LuklanTypography.caption, modifier = Modifier.padding(start = 12.dp))
+                    TextField(
+                        value = state.forgotDurationMinutes.toString(),
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotDurationMinutes = it.toIntOrNull() ?: 10)) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                        textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
                 }
             }
         }

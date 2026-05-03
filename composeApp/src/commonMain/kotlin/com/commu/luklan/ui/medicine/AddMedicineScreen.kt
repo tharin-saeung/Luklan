@@ -56,7 +56,9 @@ data class MedicineFormState @OptIn(ExperimentalUuidApi::class) constructor(
     val times: List<String> = emptyList(),
     val mealTiming: String = "",
     val mealTimingMinutes: Int = 0,
-    val photoUrl: String = ""
+    val photoUrl: String = "",
+    val forgotTimes: Int = 1,
+    val forgotDurationMinutes: Int = 10
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalTime::class)
@@ -68,6 +70,8 @@ fun AddMedicineScreen(
     val medicineRepository = remember { getMedicineRepository() }
     val authRepository = remember { getAuthRepository() }
     val notificationScheduler = remember { getNotificationScheduler() }
+    val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
+    val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
     val scope = rememberCoroutineScope()
 
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
@@ -89,10 +93,28 @@ fun AddMedicineScreen(
     var step by remember { mutableStateOf(1) }
     val maxStep = 6
     
+    var isUploading by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var editingTimeIndex by remember { mutableStateOf(-1) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val effectiveUserId = remember(targetUserId) { targetUserId ?: authRepository.getCurrentUserId() ?: "" }
+
+    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
+        onImageSelected = { bytes: ByteArray? ->
+            if (bytes != null) {
+                isUploading = true
+                backgroundScope.launch {
+                    val path = "medicines/$effectiveUserId/${formState.id}"
+                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
+                        formState = formState.copy(photoUrl = url)
+                        isUploading = false
+                    }.onFailure { isUploading = false }
+                }
+            }
+        }
+    )
 
     fun canNavigateNext(): Boolean {
         return when (step) {
@@ -119,9 +141,8 @@ fun AddMedicineScreen(
             }
             Spacer(Modifier.height(24.dp))
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                val effectiveUserId = targetUserId ?: authRepository.getCurrentUserId() ?: ""
                 when (step) {
-                    1 -> StepName(formState, userId = effectiveUserId, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
+                    1 -> StepName(formState, isUploading = isUploading, onLaunchPicker = { imagePickerLauncher.launch() }) { formState = it }
                     2 -> StepCategory(formState) { formState = it }
                     3 -> StepAmount(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
                     4 -> StepStartDate(
@@ -139,6 +160,8 @@ fun AddMedicineScreen(
                         StepSummary(
                             state = formState, 
                             userId = effectiveUserId,
+                            isUploading = isUploading,
+                            onLaunchPicker = { imagePickerLauncher.launch() },
                             month = displayMonth,
                             year = displayYear,
                             onUpdate = { formState = it }
@@ -163,7 +186,8 @@ fun AddMedicineScreen(
                             errorMessage = if (step == 3 && formState.currentAmount.isNotBlank() && c < d) "ปริมาณยาที่มีต้องมากกว่าปริมาณที่ใช้" else "กรุณากรอกข้อมูลให้ครบถ้วน"
                         } else { errorMessage = null; step += 1 }
                     } else {
-                        val userId = targetUserId ?: authRepository.getCurrentUserId() ?: return@Button
+                        val userId = effectiveUserId
+                        if (userId.isEmpty()) return@Button
                         isLoading = true
                         scope.launch {
                             // Ensure startDate is correctly formatted for saving
@@ -185,6 +209,8 @@ fun AddMedicineScreen(
                                 currentAmount = formState.currentAmount,
                                 photoUrl = formState.photoUrl,
                                 userId = userId,
+                                forgotTimes = formState.forgotTimes,
+                                forgotDurationMinutes = formState.forgotDurationMinutes,
                                 createdAt = getCurrentTimeMillis()
                             )
                             medicineRepository.addMedicine(med).onSuccess {
@@ -229,52 +255,56 @@ fun AddMedicineScreen(
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 @Composable
-fun StepName(state: MedicineFormState, userId: String, onNext: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
-    val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
-    val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
-    var isUploading by remember { mutableStateOf(false) }
-
-    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
-        onImageSelected = { bytes: ByteArray? ->
-            if (bytes != null) {
-                isUploading = true
-                backgroundScope.launch {
-                    val path = "medicines/$userId/${state.id}"
-                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
-                        onUpdate(state.copy(photoUrl = url))
-                        isUploading = false
-                    }.onFailure { isUploading = false }
-                }
-            }
-        }
-    )
-
+fun StepName(state: MedicineFormState, isUploading: Boolean, onLaunchPicker: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // Photo
         Box(
             modifier = Modifier
                 .size(140.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f))
-                .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape)
-                .clickable { imagePickerLauncher.launch() },
+                .clickable { onLaunchPicker() },
             contentAlignment = Alignment.Center
         ) {
-            if (state.photoUrl.isNotEmpty()) {
-                AsyncImage(
-                    model = state.photoUrl,
-                    contentDescription = "Medicine Photo",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else if (isUploading) {
-                CircularProgressIndicator(color = Color.White)
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(40.dp))
-                    Text("เพิ่มรูปถ่าย", color = Color.White, style = LuklanTypography.caption)
+            // Main Circle Content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.photoUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = state.photoUrl,
+                        contentDescription = "Medicine Photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else if (isUploading) {
+                    CircularProgressIndicator(color = Color.White)
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        Text("เพิ่มรูปถ่าย", color = Color.White, style = LuklanTypography.caption)
+                    }
+                }
+            }
+
+            // Camera Overlay (Popped out)
+            if (state.photoUrl.isNotEmpty() && !isUploading) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(40.dp),
+                    shape = CircleShape,
+                    color = LuklanColors.Secondary,
+                    border = BorderStroke(2.dp, Color.White),
+                    shadowElevation = 4.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
@@ -292,7 +322,8 @@ fun StepName(state: MedicineFormState, userId: String, onNext: () -> Unit, onUpd
             textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onNext() })
+            keyboardActions = KeyboardActions(onDone = { // Logic handled in button
+            })
         )
     }
 }
@@ -636,6 +667,46 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
                 Spacer(Modifier.width(8.dp)); Text("นาที", color = Color.White, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
             }
         }
+        
+        Spacer(Modifier.height(24.dp))
+        Divider(color = Color.White.copy(alpha = 0.2f), modifier = Modifier.padding(horizontal = 24.dp))
+        Spacer(Modifier.height(24.dp))
+        
+        Text("ตั้งค่าการเตือนซ้ำ (กรณีลืม)", style = LuklanTypography.bodyLarge, color = Color.White, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(16.dp))
+        
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Amount of times
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("จำนวนครั้ง", color = Color.White.copy(0.7f), style = LuklanTypography.caption)
+                Spacer(Modifier.height(4.dp))
+                TextField(
+                    value = state.forgotTimes.toString(),
+                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotTimes = it.toIntOrNull() ?: 1)) },
+                    modifier = Modifier.width(80.dp).height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary),
+                    textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+            
+            // Duration
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("เว้นระยะ (นาที)", color = Color.White.copy(0.7f), style = LuklanTypography.caption)
+                Spacer(Modifier.height(4.dp))
+                TextField(
+                    value = state.forgotDurationMinutes.toString(),
+                    onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotDurationMinutes = it.toIntOrNull() ?: 10)) },
+                    modifier = Modifier.width(100.dp).height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = LuklanColors.Primary, unfocusedTextColor = LuklanColors.Primary),
+                    textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+        }
+
         Spacer(Modifier.height(48.dp))
         state.times.forEachIndexed { i, t ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(i) }, shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)) {
@@ -652,12 +723,18 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
 }
 
 @Composable
-fun StepSummary(state: MedicineFormState, userId: String, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
+fun StepSummary(state: MedicineFormState, userId: String, isUploading: Boolean, onLaunchPicker: () -> Unit, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
     val fullDate = "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MedicineFormFields(state = state.copy(startDate = fullDate), userId = userId, onUpdate = { onUpdate(it) })
+        MedicineFormFields(
+            state = state.copy(startDate = fullDate), 
+            userId = userId, 
+            externalIsUploading = isUploading,
+            onLaunchPicker = onLaunchPicker,
+            onUpdate = { onUpdate(it) }
+        )
     }
 }

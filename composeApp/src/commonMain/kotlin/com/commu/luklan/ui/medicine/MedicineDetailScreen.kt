@@ -48,7 +48,8 @@ fun MedicineDetailScreen(
     selectedDate: String? = null, // yyyy-MM-dd
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onMedicineTaken: () -> Unit
+    onMedicineTaken: () -> Unit,
+    onDeepLinkConsumed: () -> Unit = {}
 ) {
     val medicineRepository = remember { getMedicineRepository() }
     val notificationScheduler = remember { getNotificationScheduler() }
@@ -89,6 +90,7 @@ fun MedicineDetailScreen(
                 slotToConfirm = Pair(initialSlotTime, index)
                 showConfirmationDialog = true
             }
+            onDeepLinkConsumed()
         }
     }
 

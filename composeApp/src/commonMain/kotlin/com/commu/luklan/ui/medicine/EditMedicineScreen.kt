@@ -41,7 +41,9 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
         mealTimingMinutes = medicine.mealTimingMinutes,
         currentAmount = medicine.currentAmount,
         times = medicine.times,
-        photoUrl = medicine.photoUrl
+        photoUrl = medicine.photoUrl,
+        forgotTimes = medicine.forgotTimes,
+        forgotDurationMinutes = medicine.forgotDurationMinutes
     )) }
     
     var isLoading by remember { mutableStateOf(false) }
@@ -91,7 +93,9 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                                 currentAmount = state.currentAmount,
                                 startDate = state.startDate,
                                 expiryDate = state.expiryDate,
-                                photoUrl = state.photoUrl
+                                photoUrl = state.photoUrl,
+                                forgotTimes = state.forgotTimes,
+                                forgotDurationMinutes = state.forgotDurationMinutes
                             )
                             medicineRepo.updateMedicine(up).onSuccess {
                                 scheduler.cancel(medicine)

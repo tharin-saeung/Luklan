@@ -35,6 +35,7 @@ import com.commu.luklan.ui.splash.SplashScreen
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.utils.getCurrentTimeMillis
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -59,6 +60,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         var selectedGroupName by remember { mutableStateOf("") }
         
         var currentTab by remember { mutableStateOf(MainTab.HOME) }
+        var activeDeepLinkTime by remember { mutableStateOf<String?>(null) }
 
         val safeBack: () -> Unit = {
             if (navController.previousBackStackEntry != null) {
@@ -71,8 +73,19 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
         }
 
         LaunchedEffect(deepLinkMedicineId, deepLinkTime) {
-            if (deepLinkMedicineId != null && deepLinkTime != null) {
-                navController.navigate("${Screen.MedicineDetail.route}/$deepLinkTime")
+            val uid = authRepository.getCurrentUserId()
+            if (deepLinkMedicineId != null && deepLinkTime != null && uid != null) {
+                val medicineRepository = getMedicineRepository()
+                val result = medicineRepository.observeMedicines(uid).firstOrNull()
+                val med = result?.getOrNull()?.find { it.id == deepLinkMedicineId }
+                
+                if (med != null) {
+                    medicineToEdit = med
+                    activeDeepLinkTime = deepLinkTime
+                    val now = Instant.fromEpochMilliseconds(getCurrentTimeMillis()).toLocalDateTime(TimeZone.currentSystemDefault())
+                    val todayStr = "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+                    navController.navigate("${Screen.MedicineDetail.route}/$todayStr")
+                }
             }
         }
 
@@ -409,6 +422,7 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     medicineToEdit?.let { medicine ->
                         MedicineDetailScreen(
                             medicine = medicine,
+                            initialSlotTime = activeDeepLinkTime,
                             selectedDate = date,
                             onBack = { 
                                 if (navController.previousBackStackEntry != null) {
@@ -420,7 +434,8 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                                 }
                             },
                             onEdit = { navController.navigate(Screen.EditMedicine.route) },
-                            onMedicineTaken = { }
+                            onMedicineTaken = { },
+                            onDeepLinkConsumed = { activeDeepLinkTime = null }
                         )
                     } ?: LaunchedEffect(Unit) {
                         // Safety fallback if medicine data is missing

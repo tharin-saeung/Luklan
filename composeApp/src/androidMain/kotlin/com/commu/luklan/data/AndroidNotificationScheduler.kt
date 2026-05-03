@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import com.commu.luklan.LuklanApplication
 import java.util.Calendar
 
@@ -104,35 +105,57 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                 }
 
                 try {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        calendar.timeInMillis,
-                        pendingIntent
-                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                        )
+                    } else {
+                        alarmManager.setExact(
+                            AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                        )
+                    }
                     trackRequestCode(requestCode)
                     
-                    // Schedule Check-in reminder (10 minutes after adjusted dose time)
-                    val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
-                        putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
-                        putExtra("EXTRA_MEDICINE_ID", medicine.id)
-                        putExtra("EXTRA_MEDICINE_NAME", medicine.name)
-                        putExtra("EXTRA_TIME", timeStr)
-                        putExtra("EXTRA_USER_ID", medicine.userId)
-                        putExtra("EXTRA_IS_CHECKIN", true)
+                    // Schedule Forgot reminders (Check-ins)
+                    for (i in 1..medicine.forgotTimes) {
+                        val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
+                            putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
+                            putExtra("EXTRA_MEDICINE_ID", medicine.id)
+                            putExtra("EXTRA_MEDICINE_NAME", medicine.name)
+                            putExtra("EXTRA_TIME", timeStr)
+                            putExtra("EXTRA_USER_ID", medicine.userId)
+                            putExtra("EXTRA_IS_CHECKIN", true)
+                        }
+                        val checkinReq = requestCode + (1000 * i)
+                        val checkinPendingIntent = PendingIntent.getBroadcast(
+                            context,
+                            checkinReq,
+                            checkinIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        
+                        val checkinTime = calendar.timeInMillis + (medicine.forgotDurationMinutes * i * 60 * 1000L)
+                        if (checkinTime > System.currentTimeMillis()) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                alarmManager.setExactAndAllowWhileIdle(
+                                    AlarmManager.RTC_WAKEUP,
+                                    checkinTime,
+                                    checkinPendingIntent
+                                )
+                            } else {
+                                alarmManager.setExact(
+                                    AlarmManager.RTC_WAKEUP,
+                                    checkinTime,
+                                    checkinPendingIntent
+                                )
+                            }
+                            trackRequestCode(checkinReq)
+                        }
                     }
-                    val checkinReq = requestCode + 1000
-                    val checkinPendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        checkinReq, // Offset for check-in
-                        checkinIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        calendar.timeInMillis + (10 * 60 * 1000), // +10 mins
-                        checkinPendingIntent
-                    )
-                    trackRequestCode(checkinReq)
                 } catch (e: SecurityException) {
                     e.printStackTrace()
                 }
@@ -155,39 +178,9 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
             untrackRequestCode(requestCode)
         }
         
-        // Also cancel check-in
-        val checkinReq = requestCode + 1000
-        val checkinPI = PendingIntent.getBroadcast(
-            context,
-            checkinReq,
-            intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (checkinPI != null) {
-            alarmManager.cancel(checkinPI)
-            checkinPI.cancel()
-            untrackRequestCode(checkinReq)
-        }
-    }
-
-    override fun cancel(medicine: Medicine) {
-        val intent = Intent(context, NotificationReceiver::class.java)
-        // Try to cancel up to 10 slots to be safe if times count decreased
-        for (index in 0 until 10) {
-            val requestCode = medicine.id.hashCode() + index
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-            )
-            if (pendingIntent != null) {
-                alarmManager.cancel(pendingIntent)
-                pendingIntent.cancel()
-                untrackRequestCode(requestCode)
-            }
-            
-            val checkinReq = requestCode + 1000
+        // Cancel all possible forgot reminders for this slot
+        for (i in 1..20) {
+            val checkinReq = requestCode + (1000 * i)
             val checkinPI = PendingIntent.getBroadcast(
                 context,
                 checkinReq,
@@ -199,6 +192,14 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                 checkinPI.cancel()
                 untrackRequestCode(checkinReq)
             }
+        }
+    }
+
+    override fun cancel(medicine: Medicine) {
+        val intent = Intent(context, NotificationReceiver::class.java)
+        // Try to cancel up to 10 slots to be safe
+        for (index in 0 until 10) {
+            cancelSlot(medicine, index)
         }
         println("✅ Cancelled notifications for ${medicine.name} (ID: ${medicine.id})")
     }

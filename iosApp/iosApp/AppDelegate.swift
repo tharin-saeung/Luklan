@@ -5,17 +5,25 @@ import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         print("AppDelegate: didFinishLaunchingWithOptions - Calling KMP init.")
         
         UNUserNotificationCenter.current().delegate = self
+        Messaging.messaging().delegate = self
         
         // Call your kmp initializer kotlin code!
         KMPInitializerKt.onDidFinishLaunchingWithOptions()
         return true
+    }
+
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("AppDelegate: didReceiveRegistrationToken: \(String(describing: fcmToken))")
+        if let token = fcmToken {
+            KMPInitializerKt.onNewTokenReceived(token: token)
+        }
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

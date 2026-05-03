@@ -76,7 +76,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 "message" to message,
                 "timestamp" to System.currentTimeMillis(),
                 "groupIds" to groupIds,
-                "isSilent" to true // Mark as silent to avoid triggering push notifications via cloud functions
+                "isSilent" to (type == "MEDICINE") // Only MEDICINE is silent; MISSED_MED triggers push
             )
             
             db.collection("alerts").document(alertId).set(activity).await()
