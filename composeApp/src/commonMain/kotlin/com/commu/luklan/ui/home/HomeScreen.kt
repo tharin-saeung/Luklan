@@ -180,16 +180,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = thaiMonths[selectedMonth - 1],
-                    style = LuklanTypography.h1,
-                    color = LuklanColors.Primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp,
-                    modifier = Modifier.padding(bottom = 4.dp) // Optical center fix for Thai baseline
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "${selectedYear + 543}",
+                    text = "${thaiMonths[selectedMonth - 1]} ${selectedYear + 543}",
                     style = LuklanTypography.h1,
                     color = LuklanColors.Primary,
                     fontWeight = FontWeight.Bold,
