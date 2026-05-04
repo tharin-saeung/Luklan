@@ -9,7 +9,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        print("AppDelegate: didFinishLaunchingWithOptions - Calling KMP init.")
+        FirebaseApp.configure()
+        print("AppDelegate: didFinishLaunchingWithOptions - Firebase configured.")
         
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self

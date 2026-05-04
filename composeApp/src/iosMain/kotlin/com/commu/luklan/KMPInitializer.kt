@@ -18,7 +18,6 @@ object DeepLinkManager {
 @OptIn(ExperimentalForeignApi::class)
 fun onDidFinishLaunchingWithOptions() {
     println("KMP Initializer: Starting setup...")
-    FIRApp.configure()
     
     // Request notification permissions for all users (e.g., caretakers who only receive pushes)
     val center = UNUserNotificationCenter.currentNotificationCenter()
