@@ -252,9 +252,10 @@ fun AlertItem(
                     fontWeight = FontWeight.Bold,
                     color = if (alert.type == "SOS") LuklanColors.Error else LuklanColors.TextPrimary
                 )
+                val currentUserId = getAuthRepository().getCurrentUserId()
                 Text(
-                    text = if (alert.type == "MISSED_MED" && alert.senderName.isNotEmpty()) {
-                        "${alert.senderName}: ${alert.message}"
+                    text = if (alert.type == "MISSED_MED" && alert.senderId.isNotEmpty() && alert.senderId != currentUserId) {
+                        "${alert.senderName} ${alert.message}"
                     } else {
                         alert.message
                     },
