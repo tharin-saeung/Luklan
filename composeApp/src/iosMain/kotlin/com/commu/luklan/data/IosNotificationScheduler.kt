@@ -75,7 +75,12 @@ class IosNotificationScheduler : NotificationScheduler {
                             "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ" 
                             else "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
                         setSound(UNNotificationSound.defaultSound())
-                        setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to true))
+                        setUserInfo(mapOf(
+                            "medicineId" to medicine.id, 
+                            "time" to timeStr, 
+                            "isCheckin" to true,
+                            "isWatchdog" to !isOwner
+                        ))
                     }
 
                     // Check-in trigger time

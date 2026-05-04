@@ -144,6 +144,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                             putExtra("EXTRA_TIME", timeStr)
                             putExtra("EXTRA_USER_ID", medicine.userId)
                             putExtra("EXTRA_IS_CHECKIN", true)
+                            putExtra("EXTRA_IS_WATCHDOG", !isOwner)
                         }
                         val checkinReq = requestCode + (1000 * i)
                         val checkinPendingIntent = PendingIntent.getBroadcast(

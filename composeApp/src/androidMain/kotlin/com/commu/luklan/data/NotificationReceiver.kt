@@ -21,6 +21,7 @@ class NotificationReceiver : BroadcastReceiver() {
         val userId = intent.getStringExtra("EXTRA_USER_ID")
         val time = intent.getStringExtra("EXTRA_TIME")
         val isCheckin = intent.getBooleanExtra("EXTRA_IS_CHECKIN", false)
+        val isWatchdog = intent.getBooleanExtra("EXTRA_IS_WATCHDOG", false)
 
         val pendingResult = goAsync()
 
@@ -33,16 +34,25 @@ class NotificationReceiver : BroadcastReceiver() {
                     val doc = db.collection("medicines").document(medicineId).get().await()
                     val takenHistory = doc.get("takenHistory") as? Map<*, *> ?: emptyMap<Any, Any>()
                     
-                    // Check exact date for today
                     val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                     val expectedKey = "${dateStr}_$time"
                     val isTaken = takenHistory.containsKey(expectedKey)
                     
                     if (!isTaken) {
-                        // Alert user locally
-                        showNotification(context, "เตือนใช้ยา (ยังไม่ได้ใช้)", message, medicineId, time)
-                        // Log to DB for caretaker to see in history/dashboard
-                        if (userId != null) logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการใช้ยา $medicineName ($time)", medicineId, time)
+                        // Avoid double notification: Check if someone already logged a MISSED_MED alert
+                        val dateAlertStr = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+                        val alertId = "${medicineId}_${dateAlertStr}_${time.replace(":", "")}_MISSED_MED"
+                        val alertDoc = db.collection("alerts").document(alertId).get().await()
+
+                        if (!alertDoc.exists()) {
+                            // Alert user locally
+                            showNotification(context, "เตือนใช้ยา (ยังไม่ได้ใช้)", message, medicineId, time)
+                            
+                            // Log to DB only if NOT a watchdog (to prevent push feedback loop)
+                            if (!isWatchdog && userId != null) {
+                                logActivityToDb(db, userId, "MISSED_MED", "ยังไม่ได้บันทึกการใช้ยา $medicineName ($time)", medicineId, time)
+                            }
+                        }
                     }
                 } else {
                     // Initial alarm: Notify user locally
