@@ -46,7 +46,8 @@ class NotificationReceiver : BroadcastReceiver() {
 
                         if (!alertDoc.exists()) {
                             // Alert user locally
-                            showNotification(context, "เตือนใช้ยา (ยังไม่ได้ใช้)", message, medicineId, time)
+                            val title = if (isWatchdog) "⏰ ผู้ป่วยยังไม่ได้ใช้ยา" else "⏰ ลืมใช้ยาหรือเปล่าครับ?"
+                            showNotification(context, title, message, medicineId, time)
                             
                             // Log to DB only if NOT a watchdog (to prevent push feedback loop)
                             if (!isWatchdog && userId != null) {
@@ -56,7 +57,7 @@ class NotificationReceiver : BroadcastReceiver() {
                     }
                 } else {
                     // Initial alarm: Notify user locally
-                    showNotification(context, "เตือนใช้ยา", message, medicineId, time)
+                    showNotification(context, "⏰ ได้เวลาใช้ยาแล้ว", message, medicineId, time)
                     // Log to DB for caretaker/history
                     if (userId != null) logActivityToDb(db, userId, "MEDICINE", "ได้เวลาใช้ยา $medicineName ($time)", medicineId, time)
                 }

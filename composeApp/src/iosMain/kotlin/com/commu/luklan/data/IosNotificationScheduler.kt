@@ -70,7 +70,7 @@ class IosNotificationScheduler : NotificationScheduler {
                     if (!isOwner && i < medicine.forgotTimes) continue
 
                     val checkinContent = UNMutableNotificationContent().apply {
-                        setTitle(if (isOwner) "⏰ ยังไม่ได้ใช้ยาใช่ไหม?" else "⏰ ผู้ป่วยยังไม่ได้ใช้ยา")
+                        setTitle(if (isOwner) "⏰ ลืมใช้ยาหรือเปล่าครับ?" else "⏰ ผู้ป่วยยังไม่ได้ใช้ยา")
                         setBody(if (isOwner) 
                             "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ" 
                             else "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
