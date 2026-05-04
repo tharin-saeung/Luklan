@@ -100,6 +100,10 @@
                            photoUrl:(NSString *)photoUrl
                          completion:(void (^)(NSString * _Nullable error))completion;
 
++ (void)updateGroupNameWithGroupId:(NSString *)groupId
+                              name:(NSString *)name
+                        completion:(void (^)(NSString * _Nullable error))completion;
+
 + (void)saveUserProfileWithId:(NSString *)userId
                          name:(NSString *)name
                         email:(NSString *)email
@@ -113,6 +117,9 @@
 + (void)updateUserPhotoWithUserId:(NSString *)userId
                          photoUrl:(NSString *)photoUrl
                        completion:(void (^)(NSString * _Nullable error))completion;
+
++ (void)deleteUserProfileWithId:(NSString *)userId
+                         completion:(void (^)(NSString * _Nullable error))completion;
 
 + (void)sendAlertWithId:(NSString *)alertId
                 senderId:(NSString *)senderId

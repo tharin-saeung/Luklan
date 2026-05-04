@@ -231,6 +231,13 @@ fun transferOwnershipNative(groupId: String, newOwnerId: String, completion: (St
 }
 
 @OptIn(ExperimentalForeignApi::class)
+fun deleteUserProfileNative(userId: String, completion: (String?) -> Unit) {
+    FirestoreBridge.deleteUserProfileWithId(userId) { error ->
+        completion(error)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
 fun updateFcmTokenNative(userId: String, token: String, completion: (String?) -> Unit) {
     FirestoreBridge.updateFcmTokenWithUserId(userId, token) { error ->
         completion(error)

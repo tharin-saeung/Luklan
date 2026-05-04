@@ -21,12 +21,14 @@ import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getStorageRepository
-import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.ui.components.ImageSelector
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import com.commu.luklan.data.AppCache
+import com.commu.luklan.data.getNotificationScheduler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,37 +41,21 @@ fun ProfileScreen(
 ) {
     val authRepository = remember { getAuthRepository() }
     val storageRepository = remember { getStorageRepository() }
+    val notificationScheduler = remember { getNotificationScheduler() }
     val scope = rememberCoroutineScope()
 
-    var userProfile by remember { mutableStateOf<User?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
+    val userId = remember { authRepository.getCurrentUserId() ?: "" }
+    var userProfile by remember { mutableStateOf<User?>(AppCache.userProfileCache[userId]) }
+    var isLoading by remember { mutableStateOf(userProfile == null) }
     var isUploading by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    val imagePickerLauncher = rememberImagePickerLauncher(
-        onImageSelected = { bytes: ByteArray? ->
-            val imgBytes = bytes
-            if (imgBytes != null) {
-                userProfile?.id?.let { uid ->
-                    scope.launch {
-                        isUploading = true
-                        storageRepository.uploadImage("profiles/$uid.jpg", imgBytes).onSuccess { url ->
-                            authRepository.updateUserPhoto(uid, url).onSuccess {
-                                userProfile = userProfile?.copy(photoUrl = url)
-                            }
-                        }
-                        isUploading = false
-                    }
-                }
-            }
-        }
-    )
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val userId = authRepository.getCurrentUserId()
-        if (userId != null) {
+        if (userId.isNotEmpty()) {
             authRepository.getUserProfile(userId).onSuccess {
                 userProfile = it
+                AppCache.userProfileCache[userId] = it
                 isLoading = false
             }.onFailure {
                 isLoading = false
@@ -111,24 +97,26 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Profile Icon
-                    Box(
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .clickable { imagePickerLauncher.launch() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isUploading) {
-                            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = LuklanColors.Primary)
-                        } else if (!userProfile?.photoUrl.isNullOrEmpty()) {
-                            AsyncImage(
-                                model = userProfile?.photoUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                            )
-                        } else {
+                    ImageSelector(
+                        image = userProfile?.photoUrl ?: "",
+                        isUploading = isUploading,
+                        onImageSelected = { bytes ->
+                            if (bytes != null) {
+                                userProfile?.id?.let { uid ->
+                                    scope.launch {
+                                        isUploading = true
+                                        storageRepository.uploadImage("profiles/$uid.jpg", bytes).onSuccess { url ->
+                                            authRepository.updateUserPhoto(uid, url).onSuccess {
+                                                userProfile = userProfile?.copy(photoUrl = url)
+                                            }
+                                        }
+                                        isUploading = false
+                                    }
+                                }
+                            }
+                        },
+                        size = 96.dp,
+                        placeholder = {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
@@ -136,22 +124,7 @@ fun ProfileScreen(
                                 modifier = Modifier.size(56.dp)
                             )
                         }
-
-                        // Edit overlay
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Transparent),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                null,
-                                tint = Color.White.copy(alpha = 0.8f),
-                                modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
-                            )
-                        }
-                    }
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -196,8 +169,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .fillMaxSize(),
                         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                        color = Color.White,
-                        shadowElevation = 0.dp
+                        color = Color.White
                     ) {
                         Column(
                             modifier = Modifier
@@ -217,6 +189,18 @@ fun ProfileScreen(
                                 isLogout = true,
                                 onClick = { showLogoutDialog = true }
                             )
+                            Divider(color = Color.LightGray.copy(alpha = 0.5f))
+                            TextButton(
+                                onClick = { showDeleteAccountDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.textButtonColors(contentColor = LuklanColors.Error)
+                            ) {
+                                Text(
+                                    "ลบบัญชีผู้ใช้",
+                                    style = LuklanTypography.bodySmall,
+                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                                )
+                            }
                         }
                     }
                 }
@@ -236,7 +220,9 @@ fun ProfileScreen(
                     onClick = {
                         showLogoutDialog = false
                         scope.launch {
+                            notificationScheduler.cancelAll()
                             authRepository.signOut()
+                            AppCache.clear()
                             onLogoutSuccess()
                         }
                     },
@@ -246,6 +232,35 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
+            }
+        )
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("ลบบัญชีผู้ใช้?", style = LuklanTypography.h3, fontWeight = FontWeight.Bold, color = LuklanColors.Error) },
+            text = { Text("การดำเนินการนี้ไม่สามารถย้อนกลับได้ ข้อมูลทั้งหมดของคุณจะถูกลบถาวร คุณต้องการลบบัญชีใช่หรือไม่?", style = LuklanTypography.bodyLarge, color = LuklanColors.TextPrimary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        scope.launch {
+                            notificationScheduler.cancelAll()
+                            authRepository.deleteAccount().onSuccess {
+                                AppCache.clear()
+                                onLogoutSuccess()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Error),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("ยืนยันการลบ", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) { Text("ยกเลิก", color = LuklanColors.TextSecondary) }
             }
         )
     }
@@ -268,13 +283,13 @@ fun MenuItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isLogout) Color.Red else Color.Gray,
+            tint = if (isLogout) LuklanColors.Error else Color.Gray,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = title,
-            color = if (isLogout) Color.Red else Color.Black,
+            color = if (isLogout) LuklanColors.Error else Color.Black,
             modifier = Modifier.weight(1f),
             style = LuklanTypography.bodyLarge
         )

@@ -18,8 +18,7 @@ object LuklanColors {
     val Tertiary = Color(0xFF4B9C1F)
 
     // Error (Red)
-    val Error = Color(0xFF960119)
-    val Danger = Color(0xFF960119)
+    val Error = Color(0xFFE60000)
 
     // Background & Surface
     val Background = Color(0xFFEEFDFF)

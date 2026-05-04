@@ -133,6 +133,16 @@ class GroupRepositoryIos : GroupRepository {
         }
     }
 
+    override suspend fun updateGroupName(groupId: String, name: String): Result<Unit> = suspendCoroutine { continuation ->
+        platform.FirestoreBridge.FirestoreBridge.updateGroupNameWithGroupId(groupId, name) { error ->
+            if (error != null) {
+                continuation.resume(Result.failure(Exception(error)))
+            } else {
+                continuation.resume(Result.success(Unit))
+            }
+        }
+    }
+
     private fun User.toMap(): Map<String, Any> = mapOf(
         "id" to id,
         "name" to name,

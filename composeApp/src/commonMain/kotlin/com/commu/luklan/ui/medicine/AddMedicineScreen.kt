@@ -30,6 +30,7 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
+import com.commu.luklan.ui.components.ImageSelector
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.MedicineIcon
 import com.commu.luklan.ui.theme.*
@@ -43,6 +44,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.data.AppCache
 
 data class MedicineFormState @OptIn(ExperimentalUuidApi::class) constructor(
     val id: String = Uuid.random().toString(),
@@ -98,23 +100,9 @@ fun AddMedicineScreen(
     var editingTimeIndex by remember { mutableStateOf(-1) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
 
     val effectiveUserId = remember(targetUserId) { targetUserId ?: authRepository.getCurrentUserId() ?: "" }
-
-    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
-        onImageSelected = { bytes: ByteArray? ->
-            if (bytes != null) {
-                isUploading = true
-                backgroundScope.launch {
-                    val path = "medicines/$effectiveUserId/${formState.id}"
-                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
-                        formState = formState.copy(photoUrl = url)
-                        isUploading = false
-                    }.onFailure { isUploading = false }
-                }
-            }
-        }
-    )
 
     fun canNavigateNext(): Boolean {
         return when (step) {
@@ -142,7 +130,22 @@ fun AddMedicineScreen(
             Spacer(Modifier.height(24.dp))
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 when (step) {
-                    1 -> StepName(formState, isUploading = isUploading, onLaunchPicker = { imagePickerLauncher.launch() }) { formState = it }
+                    1 -> StepName(
+                        state = formState,
+                        isUploading = isUploading,
+                        onImageSelected = { bytes ->
+                            if (bytes != null) {
+                                isUploading = true
+                                backgroundScope.launch {
+                                    val path = "medicines/$effectiveUserId/${formState.id}"
+                                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
+                                        formState = formState.copy(photoUrl = url)
+                                        isUploading = false
+                                    }.onFailure { isUploading = false }
+                                }
+                            }
+                        }
+                    ) { formState = it }
                     2 -> StepCategory(formState) { formState = it }
                     3 -> StepAmount(formState, onNext = { if (canNavigateNext()) step += 1 }) { formState = it }
                     4 -> StepStartDate(
@@ -161,7 +164,6 @@ fun AddMedicineScreen(
                             state = formState, 
                             userId = effectiveUserId,
                             isUploading = isUploading,
-                            onLaunchPicker = { imagePickerLauncher.launch() },
                             month = displayMonth,
                             year = displayYear,
                             onUpdate = { formState = it }
@@ -215,6 +217,12 @@ fun AddMedicineScreen(
                             )
                             medicineRepository.addMedicine(med).onSuccess {
                                 if (targetUserId == null) notificationScheduler.schedule(med)
+                                
+                                // Update Cache
+                                val currentMedicines = AppCache.medicinesCache[userId]?.toMutableList() ?: mutableListOf()
+                                currentMedicines.add(med)
+                                AppCache.medicinesCache[userId] = currentMedicines
+
                                 isLoading = false; onNavigateBack()
                             }.onFailure { isLoading = false; errorMessage = it.message }
                         }
@@ -256,58 +264,15 @@ fun AddMedicineScreen(
 }
 
 @Composable
-fun StepName(state: MedicineFormState, isUploading: Boolean, onLaunchPicker: () -> Unit, onUpdate: (MedicineFormState) -> Unit) {
+fun StepName(state: MedicineFormState, isUploading: Boolean, onImageSelected: (ByteArray?) -> Unit, onUpdate: (MedicineFormState) -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // Photo
-        Box(
-            modifier = Modifier
-                .size(140.dp)
-                .clickable { onLaunchPicker() },
-            contentAlignment = Alignment.Center
-        ) {
-            // Main Circle Content
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f))
-                    .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (state.photoUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = state.photoUrl,
-                        contentDescription = "Medicine Photo",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else if (isUploading) {
-                    CircularProgressIndicator(color = Color.White)
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(40.dp))
-                        Text("เพิ่มรูปถ่าย", color = Color.White, style = LuklanTypography.caption)
-                    }
-                }
-            }
-
-            // Camera Overlay (Popped out)
-            if (state.photoUrl.isNotEmpty() && !isUploading) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(40.dp),
-                    shape = CircleShape,
-                    color = LuklanColors.Secondary,
-                    border = BorderStroke(2.dp, Color.White),
-                    shadowElevation = 4.dp
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
-        }
+        ImageSelector(
+            image = state.photoUrl,
+            isUploading = isUploading,
+            onImageSelected = onImageSelected,
+            size = 140.dp
+        )
 
         Spacer(Modifier.height(32.dp))
         Text("ชื่อยา", style = LuklanTypography.h2, color = Color.White)
@@ -612,8 +577,7 @@ fun CategoryCard(label: String, isSelected: Boolean, onClick: () -> Unit) {
         Surface(
             modifier = Modifier.align(Alignment.TopCenter).size(80.dp),
             shape = CircleShape,
-            color = borderColor, // Border color as outer color
-            shadowElevation = 0.dp
+            color = borderColor // Border color as outer color
         ) {
             Box(
                 modifier = Modifier
@@ -723,7 +687,7 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
 }
 
 @Composable
-fun StepSummary(state: MedicineFormState, userId: String, isUploading: Boolean, onLaunchPicker: () -> Unit, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
+fun StepSummary(state: MedicineFormState, userId: String, isUploading: Boolean, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
     val fullDate = "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -733,7 +697,6 @@ fun StepSummary(state: MedicineFormState, userId: String, isUploading: Boolean, 
             state = state.copy(startDate = fullDate), 
             userId = userId, 
             externalIsUploading = isUploading,
-            onLaunchPicker = onLaunchPicker,
             onUpdate = { onUpdate(it) }
         )
     }

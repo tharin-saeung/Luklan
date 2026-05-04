@@ -153,6 +153,15 @@ class GroupRepositoryAndroid : GroupRepository {
         }
     }
 
+    override suspend fun updateGroupName(groupId: String, name: String): Result<Unit> {
+        return try {
+            groupsCollection.document(groupId).update("name", name).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private suspend fun generateUnique5DigitCode(): String {
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         var code: String

@@ -39,6 +39,7 @@ import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.data.AppCache
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
@@ -408,7 +409,15 @@ fun MedicineDetailScreen(
                                         // Reschedule to clear current and set tomorrow's alarm
                                         notificationScheduler.schedule(updatedMed)
                                     }
-                                    medicineRepository.updateMedicine(updatedMed)
+                                    medicineRepository.updateMedicine(updatedMed).onSuccess {
+                                        // Update Cache
+                                        val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
+                                        val indexInCache = currentMedicines.indexOfFirst { it.id == medicine.id }
+                                        if (indexInCache != -1) {
+                                            currentMedicines[indexInCache] = updatedMed
+                                            AppCache.medicinesCache[medicine.userId] = currentMedicines
+                                        }
+                                    }
                                 }
                                 showConfirmationDialog = false
                             },
@@ -448,7 +457,15 @@ fun MedicineDetailScreen(
                                 currentMedicine = updatedMed
                                 scope.launch {
                                     notificationScheduler.schedule(updatedMed)
-                                    medicineRepository.updateMedicine(updatedMed)
+                                    medicineRepository.updateMedicine(updatedMed).onSuccess {
+                                        // Update Cache
+                                        val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
+                                        val indexInCache = currentMedicines.indexOfFirst { it.id == medicine.id }
+                                        if (indexInCache != -1) {
+                                            currentMedicines[indexInCache] = updatedMed
+                                            AppCache.medicinesCache[medicine.userId] = currentMedicines
+                                        }
+                                    }
                                 }
                                 showConfirmationDialog = false
                             },
@@ -496,7 +513,12 @@ fun MedicineDetailScreen(
                         showDeleteDialog = false
                         scope.launch {
                             notificationScheduler.cancel(currentMedicine)
-                            medicineRepository.deleteMedicine(currentMedicine.id)
+                            medicineRepository.deleteMedicine(currentMedicine.id).onSuccess {
+                                // Update Cache
+                                val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
+                                currentMedicines.removeAll { it.id == medicine.id }
+                                AppCache.medicinesCache[medicine.userId] = currentMedicines
+                            }
                             onBack()
                         }
                     },

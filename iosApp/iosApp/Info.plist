@@ -6,6 +6,10 @@
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>แอปต้องการส่งการแจ้งเตือนเพื่อเตือนให้คุณใช้ยาตามเวลาที่กำหนด</string>
+	<key>NSCameraUsageDescription</key>
+	<string>แอปต้องการเข้าถึงกล้องเพื่อถ่ายรูปโปรไฟล์และรูปภาพยา</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>แอปต้องการเข้าถึงคลังรูปภาพเพื่อเลือกรูปโปรไฟล์และรูปภาพยา</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

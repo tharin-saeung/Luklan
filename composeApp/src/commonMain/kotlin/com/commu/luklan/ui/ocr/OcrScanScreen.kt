@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.commu.luklan.data.getVisionRepository
 import com.commu.luklan.platform.pickImageFromDevice
+import com.commu.luklan.platform.ImageSource
+import com.commu.luklan.ui.components.ImageSourceOptionDialog
 import com.commu.luklan.ui.medicine.MedicineFormState
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
@@ -33,10 +35,53 @@ fun OcrScanScreen(
     var extractedText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+
+    fun processImage(source: ImageSource) {
+        scope.launch {
+            isLoading = true
+            error = null
+            try {
+                println("OCR: pickImage - start")
+                val tPickStart = getCurrentTimeMillis()
+                var bytes = pickImageFromDevice(source)
+                val pickElapsed = getCurrentTimeMillis() - tPickStart
+                println("OCR: pickImage - returned bytes=${bytes?.size}")
+                
+                if (bytes == null && pickElapsed < 500L && source == ImageSource.GALLERY) {
+                    println("OCR: pickImage - quick null returned, retrying once")
+                    kotlinx.coroutines.delay(300)
+                    bytes = pickImageFromDevice(source)
+                }
+                
+                if (bytes != null) {
+                    println("OCR: recognizeText - start")
+                    val t0 = getCurrentTimeMillis()
+                    val result = withTimeoutOrNull(12000L) { visionRepository.recognizeText(bytes!!) }
+                    val took = getCurrentTimeMillis() - t0
+                    if (result == null) {
+                        error = "OCR timed out after ${took}ms"
+                    } else {
+                        result.onSuccess {
+                            extractedText = it
+                        }
+                        result.onFailure {
+                            error = it.message ?: "Failed to OCR"
+                        }
+                    }
+                } else {
+                    error = "No image selected. Check permissions or try again."
+                }
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     // Kick off a lightweight background warm-up so first upload is less likely to fail
     LaunchedEffect(Unit) {
-        // best-effort warm up; if it fails we still allow the user to try
         try {
             visionRepository.warmUp()
         } catch (_: Throwable) {
@@ -61,70 +106,11 @@ fun OcrScanScreen(
             // Buttons to pick image or use sample/paste
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = {
-                    // Try to pick image via platform API - may be unimplemented on some platforms
-                    scope.launch {
-                        isLoading = true
-                        error = null
-                        try {
-                            println("OCR: pickImage - start")
-                            val tPickStart = getCurrentTimeMillis()
-                            var bytes = pickImageFromDevice()
-                            val pickElapsed = getCurrentTimeMillis() - tPickStart
-                            println("OCR: pickImage - returned bytes=${bytes?.size}")
-                            // If the picker returned null almost immediately, it's likely a transient
-                            // presentation/gesture issue — retry once after a short delay.
-                            if (bytes == null && pickElapsed < 500L) {
-                                println("OCR: pickImage - quick null returned in ${pickElapsed}ms, retrying once")
-                                kotlinx.coroutines.delay(300)
-                                val tRetryStart = getCurrentTimeMillis()
-                                bytes = pickImageFromDevice()
-                                val retryElapsed = getCurrentTimeMillis() - tRetryStart
-                                println("OCR: pickImage - retry returned bytes=${bytes?.size} (took ${retryElapsed}ms)")
-                            }
-                            if (bytes != null) {
-                                    println("OCR: recognizeText - start")
-                                    val t0 = getCurrentTimeMillis()
-                                    val result = withTimeoutOrNull(12000L) { visionRepository.recognizeText(bytes) }
-                                    val took = getCurrentTimeMillis() - t0
-                                    if (result == null) {
-                                        error = "OCR timed out after ${took}ms"
-                                        println("OCR: recognizeText - timed out after ${took}ms")
-                                    } else {
-                                        result.onSuccess {
-                                            extractedText = it
-                                            println("OCR: recognizeText - success in ${took}ms")
-                                        }
-                                        result.onFailure {
-                                            error = it.message ?: "Failed to OCR"
-                                            println("OCR: recognizeText - failure in ${took}ms: ${it.message}")
-                                        }
-                                    }
-                            } else {
-                                    error = "No image selected (picker returned null). Check permissions or try again."
-                                    println("OCR: pickImage returned null - possible presenter/permission issue")
-                            }
-                        } catch (e: Exception) {
-                            error = e.message
-                        } finally {
-                            isLoading = false
-                        }
-                    }
+                    showImageSourceDialog = true
                 }, enabled = ready && !isLoading) { Text(if (!ready) "กำลังเตรียมระบบ..." else "เลือกภาพ/ถ่ายรูป") }
 
                 Button(onClick = {
-                    // Use sample text flow (quick demo). Replace with actual sample bytes if available.
-                    scope.launch {
-                        isLoading = true
-                        error = null
-                        try {
-                            // For quick demo we ask user to paste or we simulate a result
-                            extractedText = "Paracetamol 500mg 1 เม็ด ทุกวัน"
-                        } catch (e: Exception) {
-                            error = e.message
-                        } finally {
-                            isLoading = false
-                        }
-                    }
+                    extractedText = "Paracetamol 500mg 1 เม็ด ทุกวัน"
                 }) { Text("ตัวอย่าง") }
             }
 
@@ -152,7 +138,6 @@ fun OcrScanScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(onClick = {
-                // Parse extractedText into a simple form and store it
                 val parsed = parseOcrToForm(extractedText)
                 OcrResultStore.lastForm = parsed
                 onProceedToAdd()
@@ -161,7 +146,6 @@ fun OcrScanScreen(
             }
             }
 
-            // Loading overlay
             if (isLoading) {
                 Box(modifier = Modifier
                     .matchParentSize()
@@ -170,6 +154,15 @@ fun OcrScanScreen(
                 }
             }
         }
+    }
+
+    if (showImageSourceDialog) {
+        ImageSourceOptionDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            onSourceSelected = { source ->
+                processImage(source)
+            }
+        )
     }
 }
 

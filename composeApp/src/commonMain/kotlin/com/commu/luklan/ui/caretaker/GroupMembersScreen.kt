@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -25,11 +27,10 @@ import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getGroupRepository
 import com.commu.luklan.data.getStorageRepository
-import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.*
+import com.commu.luklan.ui.components.ImageSelector
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
-import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,21 +58,6 @@ fun GroupMembersScreen(
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var isUpdating by remember { mutableStateOf(false) }
-
-    val imagePickerLauncher = rememberImagePickerLauncher { bytes: ByteArray? ->
-        val imgBytes = bytes
-        if (imgBytes != null) {
-            scope.launch {
-                isUpdating = true
-                storageRepository.uploadImage("groups/$groupId.jpg", imgBytes).onSuccess { url ->
-                    groupRepository.updateGroupPhoto(groupId, url).onSuccess {
-                        group = group?.copy(photoUrl = url)
-                    }
-                }
-                isUpdating = false
-            }
-        }
-    }
 
     fun loadData() {
         scope.launch {
@@ -104,7 +90,7 @@ fun GroupMembersScreen(
                         }
                     }
                 ) {
-                    Text("ลบ", color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text("ลบ", color = LuklanColors.Error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -180,39 +166,27 @@ fun GroupMembersScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Group Image Picker in Dialog
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(CircleShape)
-                            .background(LuklanColors.Primary.copy(alpha = 0.1f))
-                            .clickable { imagePickerLauncher.launch() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isUpdating) {
-                            CircularProgressIndicator(color = LuklanColors.Primary)
-                        } else if (!group?.photoUrl.isNullOrEmpty()) {
-                            AsyncImage(
-                                model = group?.photoUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                            )
-                        } else {
+                    ImageSelector(
+                        image = group?.photoUrl ?: "",
+                        isUploading = isUpdating,
+                        onImageSelected = { bytes ->
+                            if (bytes != null) {
+                                scope.launch {
+                                    isUpdating = true
+                                    storageRepository.uploadImage("groups/$groupId.jpg", bytes).onSuccess { url ->
+                                        groupRepository.updateGroupPhoto(groupId, url).onSuccess {
+                                            group = group?.copy(photoUrl = url)
+                                        }
+                                    }
+                                    isUpdating = false
+                                }
+                            }
+                        },
+                        size = 100.dp,
+                        placeholder = {
                             Icon(Icons.Default.Group, null, tint = LuklanColors.Primary, modifier = Modifier.size(50.dp))
                         }
-                        
-                        Box(
-                            modifier = Modifier.fillMaxSize().background(Color.Transparent),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt, 
-                                null, 
-                                tint = Color.White.copy(alpha = 0.8f), 
-                                modifier = Modifier.size(20.dp).padding(bottom = 4.dp)
-                            )
-                        }
-                    }
+                    )
 
                     OutlinedTextField(
                         value = editName,
@@ -243,15 +217,13 @@ fun GroupMembersScreen(
                         val newName = editName
                         isEditing = false
                         scope.launch {
-                            // Ensure persistence if name changed
                             if (newName != group?.name && newName.isNotBlank()) {
-                                // Add updateGroupName logic or repurpose photo logic
-                                groupRepository.updateGroupPhoto(groupId, group?.photoUrl ?: "").onSuccess {
-                                    // Hack to force doc update if no dedicated name method
+                                groupRepository.updateGroupName(groupId, newName).onSuccess {
+                                    loadData()
                                 }
+                            } else {
+                                loadData()
                             }
-                            // Re-fetch to ensure state sync
-                            loadData()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = LuklanColors.Secondary)
@@ -270,7 +242,7 @@ fun GroupMembersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("สมาชิก", style = LuklanTypography.h1, color = LuklanColors.Primary, fontWeight = FontWeight.Bold) },
+                title = { Text("สมาชิก", style = LuklanTheme.LuklanTypography.h1, color = LuklanColors.Primary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuklanColors.Primary)
@@ -288,7 +260,7 @@ fun GroupMembersScreen(
                             modifier = Modifier.padding(end = 8.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Text("แก้ไขกลุ่ม", style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold)
+                            Text("แก้ไขกลุ่ม", style = LuklanTheme.LuklanTypography.bodySmall, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -312,7 +284,7 @@ fun GroupMembersScreen(
 
                     Text(
                         "รายชื่อสมาชิก (${members.size})",
-                        style = LuklanTypography.h3,
+                        style = LuklanTheme.LuklanTypography.h3,
                         color = LuklanColors.TextPrimary,
                         fontWeight = FontWeight.Bold
                     )
@@ -363,7 +335,7 @@ fun GroupMembersScreen(
                             Icon(Icons.Default.PersonAdd, contentDescription = "Invite", tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("เชิญผู้ดูแล", style = LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
+                        Text("เชิญผู้ดูแล", style = LuklanTheme.LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
                     }
                 }
             }
@@ -420,7 +392,7 @@ fun MemberItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = member.name, 
-                    style = LuklanTypography.h3, 
+                    style = LuklanTheme.LuklanTypography.h3, 
                     color = LuklanColors.TextPrimary,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -428,7 +400,7 @@ fun MemberItem(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = if (member.role == "patient") "ผู้ป่วย" else "ผู้ดูแล",
-                        style = LuklanTypography.bodySmall,
+                        style = LuklanTheme.LuklanTypography.bodySmall,
                         color = LuklanColors.TextSecondary,
                         maxLines = 1
                     )
@@ -465,7 +437,7 @@ fun MemberItem(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("จัดการยา", style = LuklanTypography.bodySmall, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
+                            Text("จัดการยา", style = LuklanTheme.LuklanTypography.bodySmall, color = LuklanColors.Primary, fontWeight = FontWeight.Bold)
                             Icon(Icons.Default.ChevronRight, null, tint = LuklanColors.Primary, modifier = Modifier.size(16.dp))
                         }
                     }
@@ -492,7 +464,7 @@ fun MemberItem(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("ลบออกจากกลุ่ม", color = Color.Red) },
+                                text = { Text("ลบออกจากกลุ่ม", color = LuklanColors.Error) },
                                 onClick = {
                                     showMenu = false
                                     onKick()

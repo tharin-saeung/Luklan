@@ -31,6 +31,7 @@ import com.commu.luklan.ui.theme.*
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import com.commu.luklan.data.AppCache
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,17 +43,18 @@ fun CaretakerDashboardScreen(
 ) {
     val groupRepository = remember { getGroupRepository() }
     val authRepository = remember { getAuthRepository() }
+    val userId = remember { authRepository.getCurrentUserId() ?: "" }
     val scope = rememberCoroutineScope()
     
-    var groups by remember { mutableStateOf<List<CareGroup>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var groups by remember { mutableStateOf<List<CareGroup>>(AppCache.groupsCache[userId] ?: emptyList()) }
+    var isLoading by remember { mutableStateOf(groups.isEmpty()) }
 
     fun loadGroups() {
-        val userId = authRepository.getCurrentUserId()
-        if (userId != null) {
+        if (userId.isNotEmpty()) {
             scope.launch {
                 groupRepository.getGroupsForUser(userId).onSuccess {
                     groups = it
+                    AppCache.groupsCache[userId] = it
                     isLoading = false
                 }.onFailure {
                     isLoading = false

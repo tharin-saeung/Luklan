@@ -136,8 +136,7 @@ fun MainScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(80.dp),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    color = Color.White,
-                    shadowElevation = 8.dp
+                    color = Color.White
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),

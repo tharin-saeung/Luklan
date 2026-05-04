@@ -11,6 +11,7 @@ interface GroupRepository {
     suspend fun kickMember(groupId: String, userId: String): Result<Unit>
     suspend fun transferOwnership(groupId: String, newOwnerId: String): Result<Unit>
     suspend fun updateGroupPhoto(groupId: String, photoUrl: String): Result<Unit>
+    suspend fun updateGroupName(groupId: String, name: String): Result<Unit>
 }
 
 expect fun getGroupRepository(): GroupRepository

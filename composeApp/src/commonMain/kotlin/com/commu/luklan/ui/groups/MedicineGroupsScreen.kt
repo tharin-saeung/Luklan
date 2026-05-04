@@ -214,7 +214,7 @@ fun GroupCard(
                                     modifier = Modifier
                                         .size(22.dp)
                                         .clip(CircleShape)
-                                        .background(Color.Red),
+                                        .background(LuklanColors.Error),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -271,7 +271,7 @@ fun MedicineItemInGroup(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isOutOfStock) Color.Red else LuklanColors.Background
+            containerColor = if (isOutOfStock) LuklanColors.Error else LuklanColors.Background
         ),
         onClick = onClick
     ) {

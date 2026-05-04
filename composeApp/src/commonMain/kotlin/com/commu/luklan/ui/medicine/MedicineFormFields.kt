@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import coil3.compose.AsyncImage
+import com.commu.luklan.ui.components.ImageSelector
 import com.commu.luklan.ui.components.WheelTimePicker
 import com.commu.luklan.ui.components.FullDatePicker
 import com.commu.luklan.ui.components.MedicineIcon
@@ -42,7 +43,6 @@ fun MedicineFormFields(
     state: MedicineFormState,
     userId: String,
     externalIsUploading: Boolean? = null,
-    onLaunchPicker: (() -> Unit)? = null,
     onUpdate: (MedicineFormState) -> Unit,
 ) {
     val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
@@ -50,21 +50,6 @@ fun MedicineFormFields(
     var internalIsUploading by remember { mutableStateOf(false) }
     
     val isUploading = externalIsUploading ?: internalIsUploading
-
-    val imagePickerLauncher = com.commu.luklan.platform.rememberImagePickerLauncher(
-        onImageSelected = { bytes: ByteArray? ->
-            if (bytes != null) {
-                internalIsUploading = true
-                backgroundScope.launch {
-                    val path = "medicines/$userId/${state.id}"
-                    storageRepository.uploadImage(path, bytes).onSuccess { url ->
-                        onUpdate(state.copy(photoUrl = url))
-                        internalIsUploading = false
-                    }.onFailure { internalIsUploading = false }
-                }
-            }
-        }
-    )
 
     var showTimePicker by remember { mutableStateOf(false) }
     var editingTimeIndex by remember { mutableStateOf(-1) }
@@ -79,31 +64,24 @@ fun MedicineFormFields(
     Column(modifier = Modifier.fillMaxWidth()) {
         // Photo
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clickable { onLaunchPicker?.invoke() ?: imagePickerLauncher.launch() },
-                contentAlignment = Alignment.Center
-            ) {
-                // Main Circle Content
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .border(if (state.photoUrl.isNotEmpty()) 0.dp else 2.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (state.photoUrl.isNotEmpty()) {
-                        AsyncImage(
-                            model = state.photoUrl,
-                            contentDescription = "Medicine Photo",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else if (isUploading) {
-                        CircularProgressIndicator(color = Color.White)
-                    } else if (state.category.isNotEmpty()) {
+            ImageSelector(
+                image = state.photoUrl,
+                isUploading = isUploading,
+                onImageSelected = { bytes ->
+                    if (bytes != null) {
+                        internalIsUploading = true
+                        backgroundScope.launch {
+                            val path = "medicines/$userId/${state.id}"
+                            storageRepository.uploadImage(path, bytes).onSuccess { url ->
+                                onUpdate(state.copy(photoUrl = url))
+                                internalIsUploading = false
+                            }.onFailure { internalIsUploading = false }
+                        }
+                    }
+                },
+                size = 120.dp,
+                placeholder = {
+                    if (state.category.isNotEmpty()) {
                         // Show category icon as placeholder if category selected
                         Box(contentAlignment = Alignment.Center) {
                             MedicineIcon(category = state.category, iconSize = 70.dp)
@@ -121,24 +99,7 @@ fun MedicineFormFields(
                         }
                     }
                 }
-
-                // Camera Overlay (Popped out)
-                if (state.photoUrl.isNotEmpty() && !isUploading) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(28.dp),
-                        shape = CircleShape,
-                        color = LuklanColors.Secondary,
-                        border = BorderStroke(2.dp, Color.White),
-                        shadowElevation = 2.dp
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-            }
+            )
         }
 
         // Name
@@ -155,8 +116,7 @@ fun MedicineFormFields(
                 onClick = { showCategoryPicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(32.dp),
-                color = Color.White,
-                shadowElevation = 0.dp
+                color = Color.White
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                     if (state.category.isNotEmpty()) {
@@ -230,8 +190,7 @@ fun MedicineFormFields(
                     onClick = { showUnitPicker = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(32.dp),
-                    color = Color.White,
-                    shadowElevation = 0.dp
+                    color = Color.White
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                         Text(state.unit.ifEmpty { "เลือกหน่วย" }, color = if (state.unit.isEmpty()) Color.Gray else LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -273,8 +232,7 @@ fun MedicineFormFields(
                 onClick = { showDatePicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(32.dp),
-                color = Color.White,
-                shadowElevation = 0.dp
+                color = Color.White
             ) {
                 val dateDisplay = try {
                     val parts = state.startDate.split("-")
@@ -297,8 +255,7 @@ fun MedicineFormFields(
                 onClick = { showExpiryPicker = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(32.dp),
-                color = Color.White,
-                shadowElevation = 0.dp
+                color = Color.White
             ) {
                 val dateDisplay = try {
                     val parts = state.expiryDate.split("-")
@@ -328,8 +285,7 @@ fun MedicineFormFields(
                     onClick = { showMealTimingPicker = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(32.dp),
-                    color = Color.White,
-                    shadowElevation = 0.dp
+                    color = Color.White
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                         Text(state.mealTiming, color = LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -366,8 +322,7 @@ fun MedicineFormFields(
                     onClick = { editingTimeIndex = index; showTimePicker = true },
                     modifier = Modifier.padding(4.dp),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp
+                    color = Color.White
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                         Text("${com.commu.luklan.utils.formatTimeForDisplay(t)} น.", color = LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold)
@@ -403,7 +358,7 @@ fun MedicineFormFields(
                             newList.removeAt(editingTimeIndex)
                             onUpdate(state.copy(times = newList))
                             showTimePicker = false
-                        }) { Text("ลบเวลา", color = Color.Red, style = LuklanTypography.bodyLarge) }
+                        }) { Text("ลบเวลา", color = LuklanColors.Error, style = LuklanTypography.bodyLarge) }
                     }
                     TextButton(onClick = { showTimePicker = false }) { Text("ยกเลิก", style = LuklanTypography.bodyLarge) }
                 }

@@ -33,14 +33,22 @@ private fun nsDataToByteArray(data: NSData): ByteArray {
 
 // iOS implementation using UIImagePickerController
 @OptIn(ExperimentalForeignApi::class)
-actual suspend fun pickImageFromDevice(): ByteArray? = withContext(Dispatchers.Main) {
+actual suspend fun pickImageFromDevice(source: ImageSource): ByteArray? = withContext(Dispatchers.Main) {
     // NOTE: we avoid calling PHPhotoLibrary APIs here to keep Kotlin/Native interop simple.
     // The primary failure mode observed on first-run was that no presenter (window/rootViewController)
     // was available. We handle presenter selection robustly below and log window/presenter state.
 
     suspendCancellableCoroutine { continuation ->
         val picker = UIImagePickerController().apply {
-            sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+            sourceType = if (source == ImageSource.CAMERA) {
+                if (UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera)) {
+                    UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+                } else {
+                    UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+                }
+            } else {
+                UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+            }
             mediaTypes = listOf("public.image")
         }
 

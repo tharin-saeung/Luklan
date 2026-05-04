@@ -151,6 +151,24 @@ actual class AuthRepository {
         }
     }
 
+    actual suspend fun deleteAccount(): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: throw Exception("ไม่พบผู้ใช้งาน")
+            val userId = user.uid
+
+            // Delete user document from Firestore
+            firestore.collection("users").document(userId).delete().await()
+            
+            // Delete user account from Firebase Auth
+            user.delete().await()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Delete account failed: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
     private fun com.google.firebase.firestore.DocumentSnapshot.toUser(): User {
         return User(
             id = id,

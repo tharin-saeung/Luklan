@@ -22,6 +22,7 @@ import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
+import com.commu.luklan.data.AppCache
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +74,7 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
             }
 
             if (error != null) {
-                Text(error!!, color = Color.Red, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold)
+                Text(error!!, color = LuklanColors.Error, style = LuklanTypography.bodySmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
             }
 
@@ -100,6 +101,15 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                             medicineRepo.updateMedicine(up).onSuccess {
                                 scheduler.cancel(medicine)
                                 scheduler.schedule(up)
+                                
+                                // Update Cache
+                                val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
+                                val index = currentMedicines.indexOfFirst { it.id == medicine.id }
+                                if (index != -1) {
+                                    currentMedicines[index] = up
+                                    AppCache.medicinesCache[medicine.userId] = currentMedicines
+                                }
+
                                 isLoading = false
                                 onNavigateBack(up)
                             }.onFailure { 
@@ -132,7 +142,12 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                         showDeleteDialog = false
                         scope.launch {
                             scheduler.cancel(medicine)
-                            medicineRepo.deleteMedicine(medicine.id)
+                            medicineRepo.deleteMedicine(medicine.id).onSuccess {
+                                // Update Cache
+                                val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
+                                currentMedicines.removeAll { it.id == medicine.id }
+                                AppCache.medicinesCache[medicine.userId] = currentMedicines
+                            }
                             onNavigateBack(null)
                         }
                     },

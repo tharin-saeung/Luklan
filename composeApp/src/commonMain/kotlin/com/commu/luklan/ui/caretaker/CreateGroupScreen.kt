@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getGroupRepository
 import com.commu.luklan.data.getStorageRepository
-import com.commu.luklan.platform.rememberImagePickerLauncher
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanSpacing
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.ui.components.ImageSelector
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
@@ -34,24 +34,12 @@ fun CreateGroupScreen(onBack: () -> Unit, onSuccess: () -> Unit) {
     var groupName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
-    var previewUrl by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     val scope = rememberCoroutineScope()
     val groupRepository = remember { getGroupRepository() }
     val authRepository = remember { getAuthRepository() }
     val storageRepository = remember { getStorageRepository() }
-
-    val imagePickerLauncher = rememberImagePickerLauncher(
-        onImageSelected = { bytes: ByteArray? ->
-            if (bytes != null) {
-                selectedImageBytes = bytes
-                // We don't have a local URI easily in KMP without more boilerplate, 
-                // but we can just show a placeholder or use the bytes if we had a loader for it.
-                // For now, let's just indicate image is selected.
-            }
-        }
-    )
 
     Scaffold(
         topBar = {
@@ -73,37 +61,21 @@ fun CreateGroupScreen(onBack: () -> Unit, onSuccess: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Group Image Picker
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(LuklanColors.Primary.copy(alpha = 0.1f))
-                    .clickable { imagePickerLauncher.launch() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (selectedImageBytes != null) {
-                    AsyncImage(
-                        model = selectedImageBytes,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
+            ImageSelector(
+                image = selectedImageBytes,
+                onImageSelected = { bytes ->
+                    if (bytes != null) {
+                        selectedImageBytes = bytes
+                    }
+                },
+                size = 120.dp,
+                placeholder = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Groups, null, tint = LuklanColors.Primary, modifier = Modifier.size(48.dp))
                         Text("เพิ่มรูปกลุ่ม", style = LuklanTypography.bodySmall, color = LuklanColors.Primary)
                     }
                 }
-                
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(8.dp),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
-                    Surface(shape = CircleShape, color = LuklanColors.Primary, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.padding(6.dp))
-                    }
-                }
-            }
+            )
 
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

@@ -442,6 +442,16 @@
     }];
 }
 
++ (void)updateGroupNameWithGroupId:(NSString *)groupId
+                              name:(NSString *)name
+                        completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSString *groupPath = [NSString stringWithFormat:@"care_groups/%@", groupId];
+    [[db documentWithPath:groupPath] updateData:@{@"name": name} completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
 + (void)saveUserProfileWithId:(NSString *)userId
                          name:(NSString *)name
                         email:(NSString *)email
@@ -484,6 +494,15 @@
     FIRFirestore *db = [FIRFirestore firestore];
     NSString *path = [NSString stringWithFormat:@"users/%@", userId];
     [[db documentWithPath:path] updateData:@{@"photoUrl": photoUrl} completion:^(NSError * _Nullable error) {
+        completion(error ? error.localizedDescription : nil);
+    }];
+}
+
++ (void)deleteUserProfileWithId:(NSString *)userId
+                         completion:(void (^)(NSString * _Nullable error))completion {
+    FIRFirestore *db = [FIRFirestore firestore];
+    NSString *path = [NSString stringWithFormat:@"users/%@", userId];
+    [[db documentWithPath:path] deleteDocumentWithCompletion:^(NSError * _Nullable error) {
         completion(error ? error.localizedDescription : nil);
     }];
 }

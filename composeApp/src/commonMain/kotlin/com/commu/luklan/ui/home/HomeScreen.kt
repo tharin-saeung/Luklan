@@ -38,8 +38,13 @@ import luklan.composeapp.generated.resources.Res
 import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
+import com.commu.luklan.data.AppCache
+import com.commu.luklan.data.User
+import com.commu.luklan.data.getNotificationScheduler
+import androidx.compose.material3.pulltorefresh.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     targetUserId: String? = null,
@@ -59,9 +64,16 @@ fun HomeScreen(
     val userId = targetUserId ?: authRepository.getCurrentUserId() ?: ""
     val isCaretakerView = targetUserId != null && targetUserId.isNotEmpty()
 
-    var medicines = remember { mutableStateListOf<Medicine>() }
-    var userProfile by remember { mutableStateOf<com.commu.luklan.data.User?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
+    val medicines = remember { 
+        val cached = AppCache.medicinesCache[userId]
+        if (cached != null) {
+            mutableStateListOf(*cached.toTypedArray())
+        } else {
+            mutableStateListOf<Medicine>()
+        }
+    }
+    var userProfile by remember { mutableStateOf<User?>(AppCache.userProfileCache[userId]) }
+    var isLoading by remember { mutableStateOf(medicines.isEmpty()) }
     var isEditMode by remember { mutableStateOf(false) }
     var showCaretakerMenu by remember { mutableStateOf(false) }
     var medicineToDelete by remember { mutableStateOf<Medicine?>(null) }
@@ -80,6 +92,8 @@ fun HomeScreen(
     val thaiMonths = listOf("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
     val dayInitials = listOf("อา", "จ", "อ", "พ", "พฤ", "ศ", "ส")
 
+    var isRefreshing by remember { mutableStateOf(false) }
+
     LaunchedEffect(userId) {
         if (userId.isEmpty()) return@LaunchedEffect
         
@@ -89,16 +103,21 @@ fun HomeScreen(
         }
         
         // Load User Profile
-        authRepository.getUserProfile(userId).onSuccess { userProfile = it }
+        authRepository.getUserProfile(userId).onSuccess { 
+            userProfile = it 
+            AppCache.userProfileCache[userId] = it
+        }
         
         // Observe Medicines Flow
         medicineRepository.observeMedicines(userId).collect { result ->
             result.onSuccess { list ->
+                val sortedList = list.sortedBy { it.order }
+                AppCache.medicinesCache[userId] = sortedList
                 medicines.clear()
-                medicines.addAll(list.sortedBy { it.order })
+                medicines.addAll(sortedList)
                 
                 if (!isCaretakerView) {
-                    val scheduler = com.commu.luklan.data.getNotificationScheduler()
+                    val scheduler = getNotificationScheduler()
                     list.forEach { med ->
                         val amount = med.currentAmount.toDoubleOrNull() ?: 0.0
                         val dose = med.dosage.toDoubleOrNull() ?: 0.0
@@ -110,14 +129,48 @@ fun HomeScreen(
                     }
                 }
                 isLoading = false
+                isRefreshing = false
             }.onFailure { 
                 isLoading = false 
+                isRefreshing = false
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Background)) {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        state = pullToRefreshState,
+        onRefresh = {
+            isRefreshing = true
+            scope.launch {
+                // Re-load profile
+                authRepository.getUserProfile(userId).onSuccess { 
+                    userProfile = it 
+                    AppCache.userProfileCache[userId] = it
+                }
+                // The medicine listener will automatically pick up any changes if Firestore syncs.
+                // We add a small delay to make the refresh feel substantial if there are no changes.
+                delay(1000)
+                isRefreshing = false
+            }
+        },
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullToRefreshState,
+                isRefreshing = isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = Color.White,
+                color = LuklanColors.Primary
+            )
+        }
+    ) {
+        Box(modifier = Modifier.fillMaxSize().background(LuklanColors.Background)) {
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = LuklanSpacing.lg, vertical = 16.dp),
@@ -340,7 +393,7 @@ fun HomeScreen(
                     item { Spacer(modifier = Modifier.height(100.dp)) }
                 }
             }
-        }
+        } // End of Column
 
         // FAB Section
         if (!isEditMode) {
@@ -357,7 +410,7 @@ fun HomeScreen(
                         modifier = Modifier.size(64.dp).align(Alignment.BottomStart),
                         shape = CircleShape,
                         color = Color.White,
-                        shadowElevation = 6.dp
+                        shadowElevation = 2.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -376,7 +429,7 @@ fun HomeScreen(
                     modifier = Modifier.size(64.dp).align(Alignment.BottomEnd),
                     shape = CircleShape,
                     color = Color.White,
-                    shadowElevation = 6.dp
+                    shadowElevation = 2.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -414,7 +467,7 @@ fun HomeScreen(
                             modifier = Modifier.size(56.dp),
                             shape = CircleShape,
                             color = Color.White,
-                            shadowElevation = 4.dp
+                            shadowElevation = 2.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(Icons.Default.Medication, "Groups", tint = LuklanColors.Primary)
@@ -424,7 +477,7 @@ fun HomeScreen(
                         Surface(
                             color = Color.White,
                             shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 4.dp
+                            shadowElevation = 2.dp
                         ) {
                             Text(
                                 "กลุ่มยา",
@@ -445,16 +498,16 @@ fun HomeScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { 
+                        modifier = Modifier.clickable {
                             showCaretakerMenu = false
-                            onNavigateToHistory(userId) 
+                            onNavigateToHistory(userId)
                         }
                     ) {
                         Surface(
                             modifier = Modifier.size(56.dp),
                             shape = CircleShape,
                             color = Color.White,
-                            shadowElevation = 4.dp
+                            shadowElevation = 2.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(Icons.Default.History, "History", tint = LuklanColors.Primary)
@@ -464,7 +517,7 @@ fun HomeScreen(
                         Surface(
                             color = Color.White,
                             shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 4.dp
+                            shadowElevation = 2.dp
                         ) {
                             Text(
                                 "ประวัติการใช้ยา",
@@ -478,7 +531,7 @@ fun HomeScreen(
                 }
             }
         }
-    }
+    } // End of Outer Box
 
     // Delete Confirmation Dialog
     if (medicineToDelete != null) {
@@ -493,6 +546,12 @@ fun HomeScreen(
                     onClick = {
                         val med = medicineToDelete!!
                         medicines.remove(med)
+                        
+                        // Update Cache
+                        val currentMedicines = AppCache.medicinesCache[userId]?.toMutableList() ?: mutableListOf()
+                        currentMedicines.removeAll { it.id == med.id }
+                        AppCache.medicinesCache[userId] = currentMedicines
+
                         scope.launch { medicineRepository.deleteMedicine(med.id) }
                         medicineToDelete = null
                     },
@@ -505,7 +564,9 @@ fun HomeScreen(
             }
         )
     }
-}
+} // End of PullToRefreshBox
+} // End of HomeScreen
+
 
 @Composable
 fun MedicineCardGrouped(

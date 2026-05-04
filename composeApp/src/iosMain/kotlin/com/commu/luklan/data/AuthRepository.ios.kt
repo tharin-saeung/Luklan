@@ -125,6 +125,29 @@ actual class AuthRepository actual constructor() {
         }
     }
 
+    actual suspend fun deleteAccount(): Result<Unit> = suspendCoroutine { continuation ->
+        val user = auth.currentUser()
+        if (user == null) {
+            continuation.resume(Result.failure(Exception("ไม่พบผู้ใช้งาน")))
+            return@suspendCoroutine
+        }
+        val userId = user.uid()
+
+        deleteUserProfileNative(userId) { firestoreError ->
+            if (firestoreError != null) {
+                continuation.resume(Result.failure(Exception(firestoreError)))
+            } else {
+                user.deleteWithCompletion { authError ->
+                    if (authError != null) {
+                        continuation.resume(Result.failure(Exception(authError.localizedDescription)))
+                    } else {
+                        continuation.resume(Result.success(Unit))
+                    }
+                }
+            }
+        }
+    }
+
     private fun NSDictionary.toUser(): User {
         return User(
             id = (objectForKey("id") as? String) ?: "",
