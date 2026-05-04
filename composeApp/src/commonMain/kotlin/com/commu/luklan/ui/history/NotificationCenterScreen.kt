@@ -253,7 +253,11 @@ fun AlertItem(
                     color = if (alert.type == "SOS") LuklanColors.Error else LuklanColors.TextPrimary
                 )
                 Text(
-                    text = alert.message,
+                    text = if (alert.type == "MISSED_MED" && alert.senderName.isNotEmpty()) {
+                        "${alert.senderName}: ${alert.message}"
+                    } else {
+                        alert.message
+                    },
                     style = LuklanTypography.bodyMedium,
                     color = LuklanColors.TextPrimary
                 )

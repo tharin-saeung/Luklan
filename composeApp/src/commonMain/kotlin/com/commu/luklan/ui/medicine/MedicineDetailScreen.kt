@@ -40,6 +40,7 @@ import luklan.composeapp.generated.resources.*
 import kotlin.time.ExperimentalTime
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import com.commu.luklan.data.AppCache
+import com.commu.luklan.data.getAuthRepository
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
@@ -403,11 +404,14 @@ fun MedicineDetailScreen(
                                 val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)
                                 currentMedicine = updatedMed
                                 scope.launch {
-                                    if (newAmt < dose) {
-                                        notificationScheduler.cancel(updatedMed)
-                                    } else {
-                                        // Reschedule to clear current and set tomorrow's alarm
-                                        notificationScheduler.schedule(updatedMed)
+                                    val currentUserId = getAuthRepository().getCurrentUserId()
+                                    if (medicine.userId == currentUserId) {
+                                        if (newAmt < dose) {
+                                            notificationScheduler.cancel(updatedMed)
+                                        } else {
+                                            // Reschedule to clear current and set tomorrow's alarm
+                                            notificationScheduler.schedule(updatedMed)
+                                        }
                                     }
                                     medicineRepository.updateMedicine(updatedMed).onSuccess {
                                         // Update Cache
@@ -456,7 +460,10 @@ fun MedicineDetailScreen(
                                 val updatedMed = currentMedicine.copy(takenHistory = newHistory, currentAmount = newAmtStr)
                                 currentMedicine = updatedMed
                                 scope.launch {
-                                    notificationScheduler.schedule(updatedMed)
+                                    val currentUserId = getAuthRepository().getCurrentUserId()
+                                    if (medicine.userId == currentUserId) {
+                                        notificationScheduler.schedule(updatedMed)
+                                    }
                                     medicineRepository.updateMedicine(updatedMed).onSuccess {
                                         // Update Cache
                                         val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()

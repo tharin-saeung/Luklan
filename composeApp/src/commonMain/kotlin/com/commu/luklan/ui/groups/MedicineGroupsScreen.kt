@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commu.luklan.data.AuthRepository
 import com.commu.luklan.data.Medicine
+import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.ui.theme.*
 import com.commu.luklan.ui.components.MedicineIcon
@@ -41,7 +42,7 @@ fun MedicineGroupsScreen(
     onMedicineClick: (Medicine) -> Unit
 ) {
     val medicineRepository = remember { getMedicineRepository() }
-    val authRepository = remember { com.commu.luklan.data.getAuthRepository() }
+    val authRepository = remember { getAuthRepository() }
     val scope = rememberCoroutineScope()
     var groups by remember { mutableStateOf<List<MedicineGroup>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }

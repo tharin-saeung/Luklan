@@ -116,16 +116,14 @@ fun HomeScreen(
                 medicines.clear()
                 medicines.addAll(sortedList)
                 
-                if (!isCaretakerView) {
-                    val scheduler = getNotificationScheduler()
-                    list.forEach { med ->
-                        val amount = med.currentAmount.toDoubleOrNull() ?: 0.0
-                        val dose = med.dosage.toDoubleOrNull() ?: 0.0
-                        if (amount < dose) {
-                            scheduler.cancel(med)
-                        } else {
-                            scheduler.schedule(med)
-                        }
+                val scheduler = getNotificationScheduler()
+                list.forEach { med ->
+                    val amount = med.currentAmount.toDoubleOrNull() ?: 0.0
+                    val dose = med.dosage.toDoubleOrNull() ?: 0.0
+                    if (amount < dose) {
+                        scheduler.cancel(med)
+                    } else {
+                        scheduler.schedule(med)
                     }
                 }
                 isLoading = false

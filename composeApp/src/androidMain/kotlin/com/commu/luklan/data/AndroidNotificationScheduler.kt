@@ -104,26 +104,41 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     calendar.add(Calendar.DAY_OF_YEAR, 1)
                 }
 
+                val currentUserId = getAuthRepository().getCurrentUserId()
+                val isOwner = medicine.userId == currentUserId
+                val patientName = AppCache.userProfileCache[medicine.userId]?.name ?: "ผู้ป่วย"
+
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            calendar.timeInMillis,
-                            pendingIntent
-                        )
-                    } else {
-                        alarmManager.setExact(
-                            AlarmManager.RTC_WAKEUP,
-                            calendar.timeInMillis,
-                            pendingIntent
-                        )
+                    if (isOwner) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            alarmManager.setExactAndAllowWhileIdle(
+                                AlarmManager.RTC_WAKEUP,
+                                calendar.timeInMillis,
+                                pendingIntent
+                            )
+                        } else {
+                            alarmManager.setExact(
+                                AlarmManager.RTC_WAKEUP,
+                                calendar.timeInMillis,
+                                pendingIntent
+                            )
+                        }
+                        trackRequestCode(requestCode)
                     }
-                    trackRequestCode(requestCode)
                     
                     // Schedule Forgot reminders (Check-ins)
                     for (i in 1..medicine.forgotTimes) {
+                        // Caretakers only get the LAST reminder as a watchdog to avoid noise
+                        if (!isOwner && i < medicine.forgotTimes) continue
+
+                        val checkinMessage = if (isOwner) {
+                            "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ"
+                        } else {
+                            "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ"
+                        }
+
                         val checkinIntent = Intent(context, NotificationReceiver::class.java).apply {
-                            putExtra("EXTRA_MESSAGE", "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
+                            putExtra("EXTRA_MESSAGE", checkinMessage)
                             putExtra("EXTRA_MEDICINE_ID", medicine.id)
                             putExtra("EXTRA_MEDICINE_NAME", medicine.name)
                             putExtra("EXTRA_TIME", timeStr)

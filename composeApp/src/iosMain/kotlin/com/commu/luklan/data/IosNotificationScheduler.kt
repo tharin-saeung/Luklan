@@ -4,6 +4,8 @@ import kotlinx.cinterop.*
 import platform.Foundation.*
 import platform.UserNotifications.*
 import com.commu.luklan.utils.getCurrentTimeMillis
+import com.commu.luklan.data.AppCache
+import com.commu.luklan.data.getAuthRepository
 
 @OptIn(ExperimentalForeignApi::class)
 class IosNotificationScheduler : NotificationScheduler {
@@ -41,26 +43,37 @@ class IosNotificationScheduler : NotificationScheduler {
                     calendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, it) 
                 } ?: components
 
-                val content = UNMutableNotificationContent().apply {
-                    setTitle("⏰ ได้เวลาใช้ยาแล้ว")
-                    val dosageDisplay = if (medicine.dosage.isNotEmpty()) "${medicine.dosage} ${medicine.unit}" else ""
-                    setBody("ได้เวลาใช้ยา ${medicine.name} $dosageDisplay แล้วนะครับ")
-                    setSound(UNNotificationSound.defaultSound())
-                    setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to false))
-                }
+                val currentUserId = getAuthRepository().getCurrentUserId()
+                val isOwner = medicine.userId == currentUserId
+                val patientName = AppCache.userProfileCache[medicine.userId]?.name ?: "ผู้ป่วย"
 
-                val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(finalComponents, repeats = true)
-                val request = UNNotificationRequest.requestWithIdentifier("${medicine.id}_${timeStr.replace(":", "")}", content, trigger)
+                if (isOwner) {
+                    val content = UNMutableNotificationContent().apply {
+                        setTitle("⏰ ได้เวลาใช้ยาแล้ว")
+                        val dosageDisplay = if (medicine.dosage.isNotEmpty()) "${medicine.dosage} ${medicine.unit}" else ""
+                        setBody("ได้เวลาใช้ยา ${medicine.name} $dosageDisplay แล้วนะครับ")
+                        setSound(UNNotificationSound.defaultSound())
+                        setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to false))
+                    }
 
-                center.addNotificationRequest(request) { error ->
-                    if (error != null) println("❌ iOS Notification Error: ${error.localizedDescription}")
+                    val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(finalComponents, repeats = true)
+                    val request = UNNotificationRequest.requestWithIdentifier("${medicine.id}_${timeStr.replace(":", "")}", content, trigger)
+
+                    center.addNotificationRequest(request) { error ->
+                        if (error != null) println("❌ iOS Notification Error: ${error.localizedDescription}")
+                    }
                 }
 
                 // Forgot Reminders (Check-ins)
                 for (i in 1..medicine.forgotTimes) {
+                    // Caretakers only get the LAST reminder as a watchdog to avoid noise
+                    if (!isOwner && i < medicine.forgotTimes) continue
+
                     val checkinContent = UNMutableNotificationContent().apply {
-                        setTitle("⏰ ยังไม่ได้ใช้ยาใช่ไหม?")
-                        setBody("คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
+                        setTitle(if (isOwner) "⏰ ยังไม่ได้ใช้ยาใช่ไหม?" else "⏰ ผู้ป่วยยังไม่ได้ใช้ยา")
+                        setBody(if (isOwner) 
+                            "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ" 
+                            else "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
                         setSound(UNNotificationSound.defaultSound())
                         setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to true))
                     }

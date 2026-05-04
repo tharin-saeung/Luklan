@@ -216,7 +216,7 @@ fun AddMedicineScreen(
                                 createdAt = getCurrentTimeMillis()
                             )
                             medicineRepository.addMedicine(med).onSuccess {
-                                if (targetUserId == null) notificationScheduler.schedule(med)
+                                notificationScheduler.schedule(med)
                                 
                                 // Update Cache
                                 val currentMedicines = AppCache.medicinesCache[userId]?.toMutableList() ?: mutableListOf()

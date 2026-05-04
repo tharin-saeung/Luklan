@@ -23,6 +23,7 @@ import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import kotlinx.coroutines.launch
 import com.commu.luklan.data.AppCache
+import com.commu.luklan.data.getAuthRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,8 +100,11 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                                 forgotDurationMinutes = state.forgotDurationMinutes
                             )
                             medicineRepo.updateMedicine(up).onSuccess {
-                                scheduler.cancel(medicine)
-                                scheduler.schedule(up)
+                                val currentUserId = getAuthRepository().getCurrentUserId()
+                                if (medicine.userId == currentUserId) {
+                                    scheduler.cancel(medicine)
+                                    scheduler.schedule(up)
+                                }
                                 
                                 // Update Cache
                                 val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
@@ -141,7 +145,10 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                     onClick = {
                         showDeleteDialog = false
                         scope.launch {
-                            scheduler.cancel(medicine)
+                            val currentUserId = getAuthRepository().getCurrentUserId()
+                            if (medicine.userId == currentUserId) {
+                                scheduler.cancel(medicine)
+                            }
                             medicineRepo.deleteMedicine(medicine.id).onSuccess {
                                 // Update Cache
                                 val currentMedicines = AppCache.medicinesCache[medicine.userId]?.toMutableList() ?: mutableListOf()
