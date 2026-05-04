@@ -8,6 +8,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.registerForRemoteNotifications
 import com.commu.luklan.data.getAuthRepository
 import kotlinx.coroutines.*
+import platform.UserNotifications.*
 
 object DeepLinkManager {
     var medicineId by mutableStateOf<String?>(null)
@@ -19,8 +20,21 @@ fun onDidFinishLaunchingWithOptions() {
     println("KMP Initializer: Starting setup...")
     FIRApp.configure()
     
-    // Register for remote notifications
-    platform.UIKit.UIApplication.sharedApplication.registerForRemoteNotifications()
+    // Request notification permissions for all users (e.g., caretakers who only receive pushes)
+    val center = UNUserNotificationCenter.currentNotificationCenter()
+    center.requestAuthorizationWithOptions(
+        UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
+    ) { granted, error ->
+        if (granted) {
+            println("Notification permission granted.")
+            // Register for remote notifications on main thread
+            CoroutineScope(Dispatchers.Main).launch {
+                UIApplication.sharedApplication.registerForRemoteNotifications()
+            }
+        } else {
+            println("Notification permission denied or error: $error")
+        }
+    }
     
     // Initial token fetch
     val authRepository = getAuthRepository()
