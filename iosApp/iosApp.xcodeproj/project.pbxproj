@@ -22,12 +22,12 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D6C295D8708B27C5F99941FF /* Exceptions for "iosApp" folder in "iosApp" target */ = {
+		D6C295D8708B27C5F99941FF /* Exceptions for "iosApp" folder in "Luklan" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 3F81C91146A71171F059EF4B /* iosApp */;
+			target = 3F81C91146A71171F059EF4B /* Luklan */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -35,7 +35,7 @@
 		1FE8F8B4301024DD9B754DD7 /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D6C295D8708B27C5F99941FF /* Exceptions for "iosApp" folder in "iosApp" target */,
+				D6C295D8708B27C5F99941FF /* Exceptions for "iosApp" folder in "Luklan" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -108,9 +108,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3F81C91146A71171F059EF4B /* iosApp */ = {
+		3F81C91146A71171F059EF4B /* Luklan */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 27C7C1BCBD93F6AF971DF94C /* Build configuration list for PBXNativeTarget "iosApp" */;
+			buildConfigurationList = 27C7C1BCBD93F6AF971DF94C /* Build configuration list for PBXNativeTarget "Luklan" */;
 			buildPhases = (
 				AA522674DD22409EBAFB458C /* [CP] Check Pods Manifest.lock */,
 				48DC124D6AD2282290ADDAF1 /* Sources */,
@@ -127,7 +127,7 @@
 			fileSystemSynchronizedGroups = (
 				1FE8F8B4301024DD9B754DD7 /* iosApp */,
 			);
-			name = iosApp;
+			name = Luklan;
 			productName = iosApp;
 			productReference = 467E93BD0A0DAD390C930969 /* Luklan.app */;
 			productType = "com.apple.product-type.application";
@@ -162,7 +162,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3F81C91146A71171F059EF4B /* iosApp */,
+				3F81C91146A71171F059EF4B /* Luklan */,
 			);
 		};
 /* End PBXProject section */
@@ -410,23 +410,27 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = ZW6M8VGGSD;
+				DEVELOPMENT_TEAM = M58MND63UU;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "แอปต้องการใช้กล้องเพื่อสแกนรหัส QR เพื่อเข้าร่วมกลุ่ม หรือ";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "แอปต้องการเข้าถึงรูปภาพเพื่อใช้เพิ่มรูปโปรไฟล์ผู้ใช้หรือกลุ่ม";
+				INFOPLIST_KEY_CFBundleDisplayName = Luklan;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "แอปต้องการเข้าถึงกล้องเพื่อถ่ายรูปโปรไฟล์และรูปภาพยา";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "แอปต้องการเข้าถึงคลังรูปภาพเพื่อเลือกรูปโปรไฟล์และรูปภาพยา";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.commu.luklan.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commu.luklan;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "iosApp/iosApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -447,23 +451,27 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = ZW6M8VGGSD;
+				DEVELOPMENT_TEAM = M58MND63UU;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "แอปต้องการใช้กล้องเพื่อสแกนรหัส QR เพื่อเข้าร่วมกลุ่ม หรือ";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "แอปต้องการเข้าถึงรูปภาพเพื่อใช้เพิ่มรูปโปรไฟล์ผู้ใช้หรือกลุ่ม";
+				INFOPLIST_KEY_CFBundleDisplayName = Luklan;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "แอปต้องการเข้าถึงกล้องเพื่อถ่ายรูปโปรไฟล์และรูปภาพยา";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "แอปต้องการเข้าถึงคลังรูปภาพเพื่อเลือกรูปโปรไฟล์และรูปภาพยา";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.commu.luklan.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.commu.luklan;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "iosApp/iosApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -474,7 +482,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		27C7C1BCBD93F6AF971DF94C /* Build configuration list for PBXNativeTarget "iosApp" */ = {
+		27C7C1BCBD93F6AF971DF94C /* Build configuration list for PBXNativeTarget "Luklan" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E471D11DE37E09E0461EB3D3 /* Debug */,
