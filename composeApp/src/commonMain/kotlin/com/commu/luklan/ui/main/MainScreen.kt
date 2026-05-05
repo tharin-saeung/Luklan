@@ -108,10 +108,13 @@ fun MainScreen(
                                     lastNotifiedAlertId = latest.id
                                     isFirstPoll = false
                                 } else if (isFcmFallback) {
-                                    notificationScheduler.showImmediateNotification(
-                                        "🆘 SOS จาก ${latest.senderName}",
-                                        "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                    )
+                                    val (title, body) = when (latest.type) {
+                                        "SOS" -> "🆘 SOS จาก ${latest.senderName}" to "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
+                                        "MISSED_MED" -> "⚠️ ${latest.senderName} ลืมใช้ยา!" to "${latest.senderName} ยังไม่ได้บันทึกการใช้ยาเลยครับ"
+                                        else -> "🔔 การแจ้งเตือนใหม่" to latest.message
+                                    }
+                                    
+                                    notificationScheduler.showImmediateNotification(title, body)
                                     lastNotifiedAlertId = latest.id
                                 }
                             } else {

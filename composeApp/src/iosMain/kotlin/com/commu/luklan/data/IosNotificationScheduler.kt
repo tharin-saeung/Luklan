@@ -6,6 +6,7 @@ import platform.UserNotifications.*
 import com.commu.luklan.utils.getCurrentTimeMillis
 import com.commu.luklan.data.AppCache
 import com.commu.luklan.data.getAuthRepository
+import platform.UserNotifications.UNNotificationInterruptionLevel
 
 @OptIn(ExperimentalForeignApi::class)
 class IosNotificationScheduler : NotificationScheduler {
@@ -149,6 +150,8 @@ class IosNotificationScheduler : NotificationScheduler {
             setTitle(title)
             setBody(body)
             setSound(UNNotificationSound.defaultSound())
+            // Set as Time Sensitive to break through Focus modes (iOS 15+)
+            setInterruptionLevel(UNNotificationInterruptionLevel.UNNotificationInterruptionLevelTimeSensitive)
         }
         val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(1.0, repeats = false)
         val request = UNNotificationRequest.requestWithIdentifier("immediate_${getCurrentTimeMillis()}", content, trigger)
