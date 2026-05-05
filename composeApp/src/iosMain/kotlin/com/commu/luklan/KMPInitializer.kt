@@ -22,7 +22,7 @@ fun onDidFinishLaunchingWithOptions() {
     // Request notification permissions for all users (e.g., caretakers who only receive pushes)
     val center = UNUserNotificationCenter.currentNotificationCenter()
     center.requestAuthorizationWithOptions(
-        UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
+        UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge or UNAuthorizationOptionTimeSensitive
     ) { granted, error ->
         if (granted) {
             println("Notification permission granted.")
