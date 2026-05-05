@@ -30,6 +30,7 @@ import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getGroupRepository
 import com.commu.luklan.ui.theme.*
 import coil3.compose.AsyncImage
+import com.commu.luklan.data.User
 import kotlinx.coroutines.launch
 import qrgenerator.qrkitpainter.rememberQrKitPainter
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
@@ -47,7 +48,7 @@ fun InviteCaretakerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     var group by remember { mutableStateOf<CareGroup?>(null) }
-    var userProfile by remember { mutableStateOf<com.commu.luklan.data.User?>(null) }
+    var userProfile by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     val qrPainter = group?.inviteCode?.let { 

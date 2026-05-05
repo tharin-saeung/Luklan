@@ -136,7 +136,7 @@ fun MedicineFormFields(
             Text("ตั้งค่าการเตือนซ้ำ (กรณีลืม)", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("จำนวนครั้ง", color = Color.Gray, style = LuklanTypography.caption, modifier = Modifier.padding(start = 12.dp))
+                    Text("จำนวนครั้ง", color = LuklanColors.Secondary, style = LuklanTypography.h4, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
                     TextField(
                         value = state.forgotTimes.toString(),
                         onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotTimes = it.toIntOrNull() ?: 1)) },
@@ -149,7 +149,7 @@ fun MedicineFormFields(
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("เว้นระยะ (นาที)", color = Color.Gray, style = LuklanTypography.caption, modifier = Modifier.padding(start = 12.dp))
+                    Text("เว้นระยะ (นาที)", color = LuklanColors.Secondary, style = LuklanTypography.h4, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
                     TextField(
                         value = state.forgotDurationMinutes.toString(),
                         onValueChange = { if (it.all { c -> c.isDigit() }) onUpdate(state.copy(forgotDurationMinutes = it.toIntOrNull() ?: 10)) },
@@ -274,11 +274,39 @@ fun MedicineFormFields(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
                     Text(dateDisplay.ifEmpty { "เลือกวันที่" }, color = if (state.expiryDate.isEmpty()) Color.Gray else LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     if (state.expiryDate.isNotEmpty()) {
-                        IconButton(onClick = { onUpdate(state.copy(expiryDate = "")) }) {
+                        Box(modifier = Modifier.size(24.dp).clickable { onUpdate(state.copy(expiryDate = "")) }, contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.Close, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
                         }
                     } else {
                         Icon(Icons.Default.CalendarToday, null, tint = LuklanColors.Primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
+        // Usage Type Selection
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("รูปแบบการใช้ยา", color = LuklanColors.Secondary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+            var expanded by remember { mutableStateOf(false) }
+            val options = listOf("ใช้ยาติดต่อกันจนหมด", "ใช้ยาจนอาการหาย")
+            
+            Surface(
+                onClick = { expanded = true },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.White
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Text(state.usageType.ifEmpty { "เลือกรูปแบบการใช้ยา" }, color = if (state.usageType.isEmpty()) Color.Gray else LuklanColors.Primary, style = LuklanTypography.bodyLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, null, tint = LuklanColors.Primary)
+                }
+                
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.background(Color.White)) {
+                    options.forEach { opt ->
+                        DropdownMenuItem(
+                            text = { Text(opt, color = LuklanColors.Primary, style = LuklanTypography.bodyLarge) },
+                            onClick = { onUpdate(state.copy(usageType = opt)); expanded = false }
+                        )
                     }
                 }
             }
@@ -376,7 +404,14 @@ fun MedicineFormFields(
     }
 
     if (showUnitPicker) {
-        val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
+        val unitOptions = when (state.category) {
+            "เม็ด", "เหน็บ" -> listOf("เม็ด")
+            "แคปซูล" -> listOf("แคปซูล")
+            "น้ำ" -> listOf("ml", "ช้อนชา", "ช้อนโต๊ะ", "หลอด", "กรัม")
+            "ครีม" -> listOf("หลอด", "กรัม")
+            "ฉีด" -> listOf("หลอด", "ml", "ช้อนชา", "ช้อนโต๊ะ")
+            else -> listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
+        }
         AlertDialog(
             onDismissRequest = { showUnitPicker = false },
             title = { Text("เลือกหน่วย", style = LuklanTypography.h3) },

@@ -45,7 +45,8 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
         times = medicine.times,
         photoUrl = medicine.photoUrl,
         forgotTimes = medicine.forgotTimes,
-        forgotDurationMinutes = medicine.forgotDurationMinutes
+        forgotDurationMinutes = medicine.forgotDurationMinutes,
+        usageType = medicine.usageType
     )) }
     
     var isLoading by remember { mutableStateOf(false) }
@@ -97,7 +98,8 @@ fun EditMedicineScreen(medicine: Medicine, onNavigateBack: (Medicine?) -> Unit) 
                                 expiryDate = state.expiryDate,
                                 photoUrl = state.photoUrl,
                                 forgotTimes = state.forgotTimes,
-                                forgotDurationMinutes = state.forgotDurationMinutes
+                                forgotDurationMinutes = state.forgotDurationMinutes,
+                                usageType = state.usageType
                             )
                             medicineRepo.updateMedicine(up).onSuccess {
                                 val currentUserId = getAuthRepository().getCurrentUserId()

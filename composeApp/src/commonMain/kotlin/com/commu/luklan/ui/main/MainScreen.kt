@@ -285,7 +285,7 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
     var isHolding by remember { mutableStateOf(false) }
     val progress by animateFloatAsState(
         targetValue = if (isHolding) 1f else 0f,
-        animationSpec = if (isHolding) tween(2000, easing = LinearEasing) else tween(300),
+        animationSpec = if (isHolding) tween(3000, easing = LinearEasing) else tween(300),
         label = "SOSProgress"
     )
 

@@ -45,7 +45,7 @@ class LuklanTypography(val fontFamily: FontFamily) {
     )
     val h4 = TextStyle(
         fontFamily = fontFamily,
-        fontSize = 20.sp,
+        fontSize = 18.sp,
         fontWeight = FontWeight.SemiBold, 
         lineHeight = 28.sp
     )

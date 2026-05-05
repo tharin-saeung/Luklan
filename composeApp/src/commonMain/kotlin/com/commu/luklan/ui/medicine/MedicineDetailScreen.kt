@@ -167,7 +167,7 @@ fun MedicineDetailScreen(
             )
 
             Text(
-                text = "*ใช้ยาติดต่อกันจนหมด",
+                text = if (currentMedicine.usageType.isNotEmpty()) "*${currentMedicine.usageType}" else "*ใช้ยาติดต่อกันจนหมด",
                 style = LuklanTypography.bodySmall,
                 color = LuklanColors.Secondary,
                 fontWeight = FontWeight.Bold,

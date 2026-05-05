@@ -60,7 +60,8 @@ data class MedicineFormState @OptIn(ExperimentalUuidApi::class) constructor(
     val mealTimingMinutes: Int = 0,
     val photoUrl: String = "",
     val forgotTimes: Int = 1,
-    val forgotDurationMinutes: Int = 10
+    val forgotDurationMinutes: Int = 10,
+    val usageType: String = "ใช้ยาติดต่อกันจนหมด"
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class, ExperimentalTime::class)
@@ -87,7 +88,7 @@ fun AddMedicineScreen(
     }
     
     var formState by remember { 
-        mutableStateOf(MedicineFormState(startDate = now.dayOfMonth.toString())) 
+        mutableStateOf(MedicineFormState(startDate = now.dayOfMonth.toString()))
     }
     
     var displayMonth by remember { mutableStateOf(now.monthNumber) }
@@ -213,7 +214,8 @@ fun AddMedicineScreen(
                                 userId = userId,
                                 forgotTimes = formState.forgotTimes,
                                 forgotDurationMinutes = formState.forgotDurationMinutes,
-                                createdAt = getCurrentTimeMillis()
+                                createdAt = getCurrentTimeMillis(),
+                                usageType = formState.usageType
                             )
                             medicineRepository.addMedicine(med).onSuccess {
                                 notificationScheduler.schedule(med)
@@ -378,7 +380,14 @@ fun StepAmount(state: MedicineFormState, onNext: () -> Unit, onUpdate: (Medicine
                     )
 
                     var expanded by remember { mutableStateOf(false) }
-                    val unitOptions = listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
+                    val unitOptions = when (state.category) {
+                        "เม็ด", "เหน็บ" -> listOf("เม็ด")
+                        "แคปซูล" -> listOf("แคปซูล")
+                        "น้ำ" -> listOf("ml", "ช้อนชา", "ช้อนโต๊ะ", "หลอด", "กรัม")
+                        "ครีม" -> listOf("หลอด", "กรัม")
+                        "ฉีด" -> listOf("หลอด", "ml", "ช้อนชา", "ช้อนโต๊ะ")
+                        else -> listOf("เม็ด", "แคปซูล", "ช้อนชา", "ช้อนโต๊ะ", "ml", "หลอด", "กรัม", "แท่ง")
+                    }
 
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         Surface(modifier = Modifier.fillMaxSize().clickable { expanded = true }, shape = RoundedCornerShape(30.dp), color = Color.White) {
@@ -551,6 +560,39 @@ fun StepStartDate(state: MedicineFormState, days: List<String>, months: List<Str
         }
 
         Spacer(Modifier.height(32.dp))
+
+        // Usage Type Selection
+        Text("รูปแบบการใช้ยา", style = LuklanTypography.h2, color = Color.White)
+        Spacer(Modifier.height(16.dp))
+        
+        var expandedUsage by remember { mutableStateOf(false) }
+        val usageOptions = listOf("ใช้ยาติดต่อกันจนหมด", "ใช้ยาจนอาการหาย")
+        
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+            Surface(
+                onClick = { expandedUsage = true },
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.White.copy(alpha = 0.15f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Text(state.usageType.ifEmpty { "เลือกรูปแบบการใช้ยา" }, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), fontSize = 18.sp)
+                    Icon(Icons.Default.ArrowDropDown, null, tint = Color.White)
+                }
+            }
+            
+            DropdownMenu(expanded = expandedUsage, onDismissRequest = { expandedUsage = false }, modifier = Modifier.background(Color.White)) {
+                usageOptions.forEach { opt ->
+                    DropdownMenuItem(
+                        text = { Text(opt, color = LuklanColors.Primary, style = LuklanTypography.bodyLarge) },
+                        onClick = { onUpdate(state.copy(usageType = opt)); expandedUsage = false }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -674,6 +716,9 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
         }
 
         Spacer(Modifier.height(48.dp))
+        if (state.times.isEmpty()) {
+            Text("กรุณาเพิ่มเวลาใช้ยา", style = LuklanTypography.bodyLarge, color = LuklanColors.Secondary, fontWeight = FontWeight.Bold)
+        }
         state.times.forEachIndexed { i, t ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onEdit(i) }, shape = RoundedCornerShape(32.dp), colors = CardDefaults.cardColors(containerColor = LuklanColors.Secondary)) {
                 Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -690,7 +735,11 @@ fun StepTime(state: MedicineFormState, mealOptions: List<String>, onAdd: () -> U
 
 @Composable
 fun StepSummary(state: MedicineFormState, userId: String, isUploading: Boolean, month: Int, year: Int, onUpdate: (MedicineFormState) -> Unit) {
-    val fullDate = "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
+    val fullDate = if (state.startDate.contains("-")) {
+        state.startDate
+    } else {
+        "$year-${month.toString().padStart(2, '0')}-${state.startDate.padStart(2, '0')}"
+    }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally

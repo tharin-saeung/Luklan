@@ -20,7 +20,8 @@ data class Medicine(
     val forgotTimes: Int = 1,
     val forgotDurationMinutes: Int = 10,
     val createdAt: Long = 0L,
-    val order: Int = 0
+    val order: Int = 0,
+    val usageType: String = "" // e.g., "ใช้ยาติดต่อกันจนหมด", "ใช้ยาจนอาการหาย"
 ) {
     fun calculateDaysRemaining(): Int {
         val amount = currentAmount.toDoubleOrNull() ?: 0.0
