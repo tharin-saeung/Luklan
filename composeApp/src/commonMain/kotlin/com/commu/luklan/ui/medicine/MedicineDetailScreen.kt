@@ -586,9 +586,10 @@ fun InfoBox(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = LuklanTypography.caption,
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp, // Fixed size
+                    style = LuklanTypography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
                     maxLines = 1
                 )
                 Text(
@@ -597,7 +598,7 @@ fun InfoBox(
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    fontSize = 16.sp // Fixed size to ensure they look the same
+                    fontSize = 18.sp
                 )
             }
         }

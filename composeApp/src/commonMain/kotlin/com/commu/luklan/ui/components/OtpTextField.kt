@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
+
 @Composable
 fun OtpTextField(
     otpText: String,
@@ -36,6 +39,7 @@ fun OtpTextField(
             )
         )
     }
+    val focusRequester = remember { FocusRequester() }
 
     BasicTextField(
         value = textFieldValue,
@@ -49,6 +53,15 @@ fun OtpTextField(
             keyboardType = KeyboardType.Password,
             capitalization = KeyboardCapitalization.Characters
         ),
+        modifier = modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                focusRequester.requestFocus()
+            },
         decorationBox = {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -74,16 +87,7 @@ fun OtpTextField(
                                 width = if (isFocused) 2.dp else 1.dp,
                                 color = if (isFocused) LuklanColors.Primary else LuklanColors.Indicator,
                                 shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                val newCursorPosition = index.coerceAtMost(textFieldValue.text.length)
-                                textFieldValue = textFieldValue.copy(
-                                    selection = TextRange(newCursorPosition)
-                                )
-                            },
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -96,7 +100,6 @@ fun OtpTextField(
                     }
                 }
             }
-        },
-        modifier = modifier.fillMaxWidth()
+        }
     )
 }

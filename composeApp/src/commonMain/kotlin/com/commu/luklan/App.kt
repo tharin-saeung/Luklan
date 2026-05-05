@@ -1,5 +1,6 @@
 package com.commu.luklan
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
@@ -310,7 +311,13 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     )
                 }
 
-                composable(Screen.Profile.route) {
+                composable(
+                    route = Screen.Profile.route,
+                    enterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() }
+                ) {
                     ProfileScreen(
                         onNavigateBack = { 
                             safeBack()
@@ -556,7 +563,13 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     )
                 }
 
-                composable(Screen.NotificationCenter.route) {
+                composable(
+                    route = Screen.NotificationCenter.route,
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
                     NotificationCenterScreen(
                         targetUserId = selectedTargetUserIdForNotif,
                         onBack = { 

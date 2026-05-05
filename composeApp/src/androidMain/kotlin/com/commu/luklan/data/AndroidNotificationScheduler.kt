@@ -91,7 +91,25 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
                     }
                 }
 
-                // If the time has already passed today, schedule for tomorrow
+                // Ensure we respect medicine.startDate
+                val sdfDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                val startDay = try {
+                    val date = sdfDate.parse(medicine.startDate)
+                    Calendar.getInstance().apply { time = date }
+                } catch (e: Exception) {
+                    null
+                }
+
+                if (startDay != null) {
+                    val startMillis = startDay.timeInMillis
+                    // Use the later of (today at medicine time) or (startDate at medicine time)
+                    if (calendar.timeInMillis < startMillis) {
+                        calendar.set(Calendar.YEAR, startDay.get(Calendar.YEAR))
+                        calendar.set(Calendar.DAY_OF_YEAR, startDay.get(Calendar.DAY_OF_YEAR))
+                    }
+                }
+
+                // If the target time (today or startDate) has already passed, move to next day
                 if (calendar.timeInMillis <= System.currentTimeMillis()) {
                     calendar.add(Calendar.DAY_OF_YEAR, 1)
                 }

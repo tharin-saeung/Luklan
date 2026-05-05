@@ -37,11 +37,13 @@ class IosNotificationScheduler : NotificationScheduler {
 
                     // Use mathematical calculation to avoid NSCalendar Year 1 timezone/LMT bug
                     var totalMinutes = baseHour * 60 + baseMinute
+
                     when (medicine.mealTiming) {
                         "ก่อนอาหาร" -> totalMinutes -= medicine.mealTimingMinutes
                         "หลังอาหาร" -> totalMinutes += medicine.mealTimingMinutes
+                        "พร้อมอาหาร" -> { /* No shift */ }
+                        "ก่อนนอน" -> { /* No shift */ }
                     }
-                    
                     // Normalize to 24h range
                     val normalizedMinutes = (totalMinutes + 1440) % 1440
                     val finalHour = normalizedMinutes / 60

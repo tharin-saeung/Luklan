@@ -277,6 +277,7 @@ fun StepName(state: MedicineFormState, isUploading: Boolean, onImageSelected: (B
         Spacer(Modifier.height(32.dp))
         Text("ชื่อยา", style = LuklanTypography.h2, color = Color.White)
         Spacer(Modifier.height(32.dp))
+        val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
         TextField(
             value = state.name,
             onValueChange = { onUpdate(state.copy(name = it)) },
@@ -287,7 +288,8 @@ fun StepName(state: MedicineFormState, isUploading: Boolean, onImageSelected: (B
             textStyle = LuklanTypography.bodyLarge.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { // Logic handled in button
+            keyboardActions = KeyboardActions(onDone = { 
+                focusManager.clearFocus()
             })
         )
     }

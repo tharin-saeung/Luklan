@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,29 +14,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import coil3.compose.AsyncImage
 import com.commu.luklan.ui.components.ImageSelector
-import com.commu.luklan.ui.components.WheelTimePicker
-import com.commu.luklan.ui.components.FullDatePicker
 import com.commu.luklan.ui.components.MedicineIcon
-import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme.LuklanTypography
-import com.commu.luklan.utils.getCurrentTimeMillis
+import com.commu.luklan.ui.theme.LuklanTheme.LuklanColors
 import kotlinx.coroutines.launch
-import kotlinx.datetime.*
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+import com.commu.luklan.utils.getCurrentTimeMillis
+import androidx.compose.ui.platform.LocalFocusManager
+import com.commu.luklan.ui.components.FullDatePicker
+import com.commu.luklan.ui.components.WheelTimePicker
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Instant
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
 @Composable
@@ -48,6 +49,7 @@ fun MedicineFormFields(
     val storageRepository = remember { com.commu.luklan.data.getStorageRepository() }
     val backgroundScope = remember { kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default) }
     var internalIsUploading by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     
     val isUploading = externalIsUploading ?: internalIsUploading
 
@@ -142,7 +144,8 @@ fun MedicineFormFields(
                         shape = RoundedCornerShape(32.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Right) })
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -154,7 +157,8 @@ fun MedicineFormFields(
                         shape = RoundedCornerShape(32.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
                 }
             }
@@ -181,7 +185,8 @@ fun MedicineFormFields(
                         unfocusedIndicatorColor = Color.Transparent
                     ),
                     textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -220,10 +225,12 @@ fun MedicineFormFields(
                     unfocusedIndicatorColor = Color.Transparent
                 ),
                 textStyle = LuklanTypography.bodyLarge.copy(color = LuklanColors.Primary, fontWeight = FontWeight.Bold),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 trailingIcon = { Text(state.unit, color = Color.Gray, style = LuklanTypography.bodyLarge, modifier = Modifier.padding(end = 20.dp)) }
             )
         }
+
 
         // Start Date
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -435,7 +442,7 @@ fun MedicineFormFields(
 
     if (showDatePicker) {
         val nowMillis = getCurrentTimeMillis()
-        val nowInstant = Instant.fromEpochMilliseconds(nowMillis)
+        val nowInstant = kotlinx.datetime.Instant.fromEpochMilliseconds(nowMillis)
         val nowDateTime = nowInstant.toLocalDateTime(TimeZone.currentSystemDefault())
         val todayIso = "${nowDateTime.year}-${nowDateTime.monthNumber.toString().padStart(2, '0')}-${nowDateTime.dayOfMonth.toString().padStart(2, '0')}"
         
@@ -453,7 +460,7 @@ fun MedicineFormFields(
 
     if (showExpiryPicker) {
         val nowMillis = getCurrentTimeMillis()
-        val nowInstant = Instant.fromEpochMilliseconds(nowMillis)
+        val nowInstant = kotlinx.datetime.Instant.fromEpochMilliseconds(nowMillis)
         val nowDateTime = nowInstant.toLocalDateTime(TimeZone.currentSystemDefault())
         val todayIso = "${nowDateTime.year}-${nowDateTime.monthNumber.toString().padStart(2, '0')}-${nowDateTime.dayOfMonth.toString().padStart(2, '0')}"
         

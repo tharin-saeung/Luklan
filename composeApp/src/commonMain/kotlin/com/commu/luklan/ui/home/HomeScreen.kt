@@ -3,6 +3,7 @@ package com.commu.luklan.ui.home
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -160,7 +162,30 @@ fun HomeScreen(
                 isRefreshing = false
             }
         },
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                var totalDrag = 0f
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        if (totalDrag > 300f) {
+                            // Swipe Right -> Profile
+                            if (!isCaretakerView) {
+                                onNavigateToProfile()
+                            } else {
+                                onBack?.invoke()
+                            }
+                        } else if (totalDrag < -300f) {
+                            // Swipe Left -> Notifications
+                            onNavigateToNotificationCenter(userId)
+                        }
+                        totalDrag = 0f
+                    },
+                    onHorizontalDrag = { _, dragAmount ->
+                        totalDrag += dragAmount
+                    }
+                )
+            },
         contentAlignment = Alignment.TopCenter,
         indicator = {
             PullToRefreshDefaults.Indicator(
