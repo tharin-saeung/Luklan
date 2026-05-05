@@ -71,8 +71,9 @@ fun FullDatePicker(
                         Icon(Icons.Default.ChevronLeft, null, tint = LuklanColors.Primary)
                     }
                     
+                    val monthName = thaiMonthsFull.getOrNull(tempMonth - 1) ?: ""
                     Text(
-                        text = "${thaiMonthsFull[tempMonth - 1]} ${tempYear + 543}",
+                        text = if (monthName.isNotEmpty()) "$monthName ${tempYear + 543}" else "${tempYear + 543}",
                         style = LuklanTypography.h3,
                         fontWeight = FontWeight.Bold,
                         color = LuklanColors.Primary

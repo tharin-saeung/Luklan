@@ -267,7 +267,11 @@ fun MedicineFormFields(
                 val dateDisplay = try {
                     val parts = state.expiryDate.split("-")
                     if (parts.size == 3) {
-                        "${parts[2]} ${thaiMonths[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+                        val year = parts[0].toIntOrNull() ?: 0
+                        val monthIdx = (parts[1].toIntOrNull() ?: 1) - 1
+                        val day = parts[2]
+                        val monthName = thaiMonths.getOrNull(monthIdx) ?: ""
+                        if (monthName.isNotEmpty()) "$day $monthName ${year + 543}" else state.expiryDate
                     } else state.expiryDate
                 } catch (e: Exception) { state.expiryDate }
                 

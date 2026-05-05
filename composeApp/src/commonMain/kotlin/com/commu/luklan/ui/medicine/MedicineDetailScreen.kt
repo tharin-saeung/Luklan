@@ -177,8 +177,14 @@ fun MedicineDetailScreen(
             if (currentMedicine.expiryDate.isNotEmpty()) {
                 val expiryDisplay = try {
                     val parts = currentMedicine.expiryDate.split("-")
-                    val thaiMonthsShort = listOf("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
-                    "วันหมดอายุ: ${parts[2].toInt()} ${thaiMonthsShort[parts[1].toInt() - 1]} ${parts[0].toInt() + 543}"
+                    if (parts.size == 3) {
+                        val thaiMonthsShort = listOf("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
+                        val year = parts[0].toIntOrNull() ?: 0
+                        val monthIdx = (parts[1].toIntOrNull() ?: 1) - 1
+                        val day = parts[2]
+                        val monthName = thaiMonthsShort.getOrNull(monthIdx) ?: ""
+                        if (monthName.isNotEmpty()) "วันหมดอายุ: $day $monthName ${year + 543}" else "วันหมดอายุ: ${currentMedicine.expiryDate}"
+                    } else "วันหมดอายุ: ${currentMedicine.expiryDate}"
                 } catch (e: Exception) { "วันหมดอายุ: ${currentMedicine.expiryDate}" }
                 
                 Text(
