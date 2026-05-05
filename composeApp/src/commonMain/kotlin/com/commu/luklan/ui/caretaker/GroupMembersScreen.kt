@@ -335,7 +335,7 @@ fun GroupMembersScreen(
                             Icon(Icons.Default.PersonAdd, contentDescription = "Invite", tint = LuklanColors.Primary, modifier = Modifier.size(32.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("เชิญผู้ดูแล", style = LuklanTheme.LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
+                        Text("เชิญสมาชิก", style = LuklanTheme.LuklanTypography.bodyMedium, fontWeight = FontWeight.Bold, color = LuklanColors.Primary)
                     }
                 }
             }
