@@ -27,6 +27,8 @@ import com.commu.luklan.data.Medicine
 import com.commu.luklan.data.User
 import com.commu.luklan.data.getAuthRepository
 import com.commu.luklan.data.getAlertRepository
+import com.commu.luklan.data.getGroupRepository
+import com.commu.luklan.data.getMedicineRepository
 import com.commu.luklan.data.getNotificationScheduler
 import com.commu.luklan.ui.home.HomeScreen
 import com.commu.luklan.ui.theme.*
@@ -34,6 +36,7 @@ import com.commu.luklan.utils.getCurrentTimeMillis
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -81,18 +84,8 @@ fun MainScreen(
     var lastNotifiedAlertId by rememberSaveable { mutableStateOf<String?>(null) }
     var pollingJob by remember { mutableStateOf<Job?>(null) }
 
-    LaunchedEffect(Unit) {
-        val userId = authRepository.getCurrentUserId()
-        if (userId != null) {
-            authRepository.getUserProfile(userId).onSuccess { userProfile = it }
-            authRepository.registerFcmToken(userId)
-        }
-    }
-
-    LaunchedEffect(userProfile) {
-        val uid = userProfile?.id ?: return@LaunchedEffect
-        if (pollingJob?.isActive == true) return@LaunchedEffect
-        
+    fun startPolling(uid: String) {
+        pollingJob?.cancel()
         pollingJob = scope.launch {
             var isFirstPoll = (lastNotifiedAlertId == null)
             while(true) {
@@ -108,13 +101,17 @@ fun MainScreen(
                                     lastNotifiedAlertId = latest.id
                                     isFirstPoll = false
                                 } else if (isFcmFallback) {
-                                    val (title, body) = when (latest.type) {
-                                        "SOS" -> "🆘 SOS จาก ${latest.senderName}" to "${latest.senderName} ต้องการความช่วยเหลือด่วน!!"
-                                        "MISSED_MED" -> "⚠️ ${latest.senderName} ลืมใช้ยา!" to "${latest.senderName} ยังไม่ได้บันทึกการใช้ยาเลยครับ"
-                                        else -> "🔔 การแจ้งเตือนใหม่" to latest.message
-                                    }
+                                    val userRole = userProfile?.role ?: "patient"
                                     
-                                    notificationScheduler.showImmediateNotification(title, body)
+                                    // Only caretakers receive local fallback notifications for SOS/MISSED_MED
+                                    if (userRole == "caretaker") {
+                                        val (title, body) = when (latest.type) {
+                                            "SOS" -> "🆘 SOS จาก ${latest.senderName}" to latest.message
+                                            "MISSED_MED" -> "⏰ ผู้ป่วยยังไม่ได้ใช้ยา" to latest.message
+                                            else -> "🔔 การแจ้งเตือนใหม่" to latest.message
+                                        }
+                                        notificationScheduler.showImmediateNotification(title, body)
+                                    }
                                     lastNotifiedAlertId = latest.id
                                 }
                             } else {
@@ -128,6 +125,55 @@ fun MainScreen(
                 delay(15000)
             }
         }
+    }
+
+    fun syncWatchdogs() {
+        val profile = userProfile ?: return
+        if (profile.role != "caretaker") return
+        
+        val groupRepository = getGroupRepository()
+        val medicineRepository = getMedicineRepository()
+        
+        // Fetch all patient medicines in all their groups to set local watchdogs
+        scope.launch {
+            groupRepository.getGroupsForUser(profile.id).onSuccess { groups ->
+                groups.forEach { group ->
+                    groupRepository.getGroupMembers(group.id).onSuccess { members ->
+                        members.forEach { member ->
+                            if (member.id != profile.id && member.role == "patient") {
+                                // Observe patient medicines and schedule watchdogs locally
+                                scope.launch {
+                                    medicineRepository.observeMedicines(member.id).collectLatest { result ->
+                                        result.onSuccess { medicines ->
+                                            medicines.forEach { med ->
+                                                notificationScheduler.schedule(med)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val userId = authRepository.getCurrentUserId()
+        if (userId != null) {
+            authRepository.getUserProfile(userId).onSuccess { userProfile = it }
+            authRepository.registerFcmToken(userId)
+        }
+    }
+
+    LaunchedEffect(userProfile) {
+        val uid = userProfile?.id ?: return@LaunchedEffect
+        startPolling(uid)
+    }
+
+    LaunchedEffect(userProfile) {
+        syncWatchdogs()
     }
 
     Scaffold(
@@ -178,6 +224,10 @@ fun MainScreen(
             when (selectedTab) {
                 MainTab.HOME -> {
                     HomeScreen(
+                        onRefresh = {
+                            userProfile?.id?.let { startPolling(it) }
+                            syncWatchdogs()
+                        },
                         onNavigateToAddMedicine = onNavigateToAddMedicine,
                         onNavigateToProfile = onNavigateToProfile,
                         onNavigateToMedicineDetail = onNavigateToMedicineDetail,

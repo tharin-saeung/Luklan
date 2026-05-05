@@ -50,6 +50,7 @@ fun HomeScreen(
     targetUserId: String? = null,
     targetUserName: String? = null,
     onBack: (() -> Unit)? = null,
+    onRefresh: (() -> Unit)? = null,
     onNavigateToAddMedicine: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToMedicineDetail: (Medicine, String) -> Unit,
@@ -149,6 +150,10 @@ fun HomeScreen(
                     userProfile = it 
                     AppCache.userProfileCache[userId] = it
                 }
+                
+                // Trigger parent refresh (polling/watchdog)
+                onRefresh?.invoke()
+
                 // The medicine listener will automatically pick up any changes if Firestore syncs.
                 // We add a small delay to make the refresh feel substantial if there are no changes.
                 delay(1000)
@@ -364,8 +369,17 @@ fun HomeScreen(
                     CircularProgressIndicator(color = LuklanColors.Primary)
                 }
             } else if (filteredMedicines.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("ไม่มีรายการยา", color = LuklanColors.TextSecondary)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(LuklanSpacing.md),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(100.dp))
+                        Text("ไม่มีรายการยา", color = LuklanColors.TextSecondary)
+                        Spacer(modifier = Modifier.height(100.dp))
+                    }
                 }
             } else {
                 LazyColumn(

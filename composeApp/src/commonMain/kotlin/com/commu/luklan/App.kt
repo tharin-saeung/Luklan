@@ -35,7 +35,9 @@ import com.commu.luklan.ui.splash.SplashScreen
 import com.commu.luklan.ui.theme.LuklanColors
 import com.commu.luklan.ui.theme.LuklanTheme
 import com.commu.luklan.utils.getCurrentTimeMillis
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -263,6 +265,28 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                         onBack = { 
                             navController.popBackStack()
                         },
+                        onRefresh = {
+                            // If current user is caretaker, sync watchdogs for this patient
+                            scope.launch {
+                                authRepository.getCurrentUserId()?.let { uid ->
+                                    authRepository.getUserProfile(uid).onSuccess { profile ->
+                                        if (profile.role == "caretaker") {
+                                            val medicineRepository = getMedicineRepository()
+                                            val notificationScheduler = getNotificationScheduler()
+                                            selectedPatientId?.let { pid ->
+                                                medicineRepository.observeMedicines(pid).collectLatest { result ->
+                                                    result.onSuccess { medicines ->
+                                                        medicines.forEach { med ->
+                                                            notificationScheduler.schedule(med)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         onNavigateToAddMedicine = { navController.navigate(Screen.AddMedicine.route) },
                         onNavigateToProfile = {
                             navController.navigate(Screen.Profile.route)
@@ -342,6 +366,40 @@ fun App(deepLinkMedicineId: String? = null, deepLinkTime: String? = null) {
                     CaretakerDashboardScreen(
                         onBack = { 
                             safeBack()
+                        },
+                        onRefresh = {
+                            // Global watchdog sync on dashboard refresh
+                            scope.launch {
+                                authRepository.getCurrentUserId()?.let { uid ->
+                                    authRepository.getUserProfile(uid).onSuccess { profile ->
+                                        if (profile.role == "caretaker") {
+                                            val groupRepository = getGroupRepository()
+                                            val medicineRepository = getMedicineRepository()
+                                            val notificationScheduler = getNotificationScheduler()
+                                            
+                                            groupRepository.getGroupsForUser(profile.id).onSuccess { groups ->
+                                                groups.forEach { group ->
+                                                    groupRepository.getGroupMembers(group.id).onSuccess { members ->
+                                                        members.forEach { member ->
+                                                            if (member.id != profile.id && member.role == "patient") {
+                                                                scope.launch {
+                                                                    medicineRepository.observeMedicines(member.id).collectLatest { result ->
+                                                                        result.onSuccess { medicines ->
+                                                                            medicines.forEach { med ->
+                                                                                notificationScheduler.schedule(med)
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         onNavigateToJoin = { navController.navigate(Screen.JoinGroup.route) },
                         onNavigateToCreate = { navController.navigate(Screen.CreateGroup.route) },

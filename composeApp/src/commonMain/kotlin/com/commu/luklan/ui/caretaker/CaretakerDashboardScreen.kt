@@ -33,10 +33,15 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.commu.luklan.data.AppCache
 
+import androidx.compose.material3.pulltorefresh.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaretakerDashboardScreen(
     onBack: () -> Unit,
+    onRefresh: (() -> Unit)? = null,
     onNavigateToJoin: () -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToMembers: (String, String) -> Unit
@@ -48,6 +53,9 @@ fun CaretakerDashboardScreen(
     
     var groups by remember { mutableStateOf<List<CareGroup>>(AppCache.groupsCache[userId] ?: emptyList()) }
     var isLoading by remember { mutableStateOf(groups.isEmpty()) }
+    
+    var isRefreshing by remember { mutableStateOf(false) }
+    val pullToRefreshState = rememberPullToRefreshState()
 
     fun loadGroups() {
         if (userId.isNotEmpty()) {
@@ -56,8 +64,10 @@ fun CaretakerDashboardScreen(
                     groups = it
                     AppCache.groupsCache[userId] = it
                     isLoading = false
+                    isRefreshing = false
                 }.onFailure {
                     isLoading = false
+                    isRefreshing = false
                 }
             }
         }
@@ -79,15 +89,36 @@ fun CaretakerDashboardScreen(
         },
         containerColor = LuklanColors.Background
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            state = pullToRefreshState,
+            onRefresh = {
+                isRefreshing = true
+                onRefresh?.invoke()
+                loadGroups()
+            },
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = Color.White,
+                    color = LuklanColors.Primary
+                )
+            }
+        ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = LuklanColors.Primary)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = LuklanColors.Primary)
+                }
             } else if (groups.isEmpty()) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(LuklanSpacing.lg),
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(LuklanSpacing.lg),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Spacer(modifier = Modifier.height(100.dp))
                     Text(
                         "คุณยังไม่มีกลุ่ม",
                         style = LuklanTypography.h3,
@@ -98,6 +129,7 @@ fun CaretakerDashboardScreen(
                         AddGroupButton(onClick = onNavigateToJoin, label = "เข้าร่วมกลุ่ม", icon = Icons.Default.QrCodeScanner)
                         AddGroupButton(onClick = onNavigateToCreate, label = "สร้างกลุ่มใหม่")
                     }
+                    Spacer(modifier = Modifier.height(100.dp))
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
