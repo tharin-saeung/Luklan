@@ -24,6 +24,7 @@ fun addMedicineNative(
     forgotDurationMinutes: Int,
     createdAt: Long,
     order: Int,
+    usageType: String,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.addMedicineWithId(
@@ -45,6 +46,7 @@ fun addMedicineNative(
         forgotDurationMinutes = forgotDurationMinutes,
         createdAt = createdAt,
         order = order,
+        usageType = usageType,
         completion = { error: String? -> completion(error) }
     )
 }
@@ -101,6 +103,7 @@ fun updateMedicineNative(
     forgotDurationMinutes: Int,
     createdAt: Long,
     order: Int,
+    usageType: String,
     completion: (String?) -> Unit
 ) {
     FirestoreBridge.updateMedicineWithId(
@@ -121,6 +124,7 @@ fun updateMedicineNative(
         forgotDurationMinutes = forgotDurationMinutes,
         createdAt = createdAt,
         order = order,
+        usageType = usageType,
         completion = { error: String? -> completion(error) }
     )
 }

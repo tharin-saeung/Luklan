@@ -72,7 +72,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
         "forgotTimes" to forgotTimes,
         "forgotDurationMinutes" to forgotDurationMinutes,
         "createdAt" to createdAt,
-        "order" to order
+        "order" to order,
+        "usageType" to usageType
     )
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toMedicine(): Medicine? {
@@ -95,7 +96,8 @@ class MedicineRepositoryAndroid : MedicineRepository {
                 forgotTimes = getLong("forgotTimes")?.toInt() ?: 1,
                 forgotDurationMinutes = getLong("forgotDurationMinutes")?.toInt() ?: 10,
                 createdAt = getLong("createdAt") ?: 0L,
-                order = getLong("order")?.toInt() ?: 0
+                order = getLong("order")?.toInt() ?: 0,
+                usageType = getString("usageType") ?: ""
             )
         } catch (e: Exception) {
             null

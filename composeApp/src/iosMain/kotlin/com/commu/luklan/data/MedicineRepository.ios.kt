@@ -28,6 +28,7 @@ class MedicineRepositoryIos : MedicineRepository {
             forgotDurationMinutes = medicine.forgotDurationMinutes,
             createdAt = medicine.createdAt,
             order = medicine.order,
+            usageType = medicine.usageType,
             completion = { error ->
                 if (error != null) {
                     continuation.resume(Result.failure(Exception(error)))
@@ -80,7 +81,8 @@ class MedicineRepositoryIos : MedicineRepository {
                                 forgotTimes = (dict.objectForKey("forgotTimes") as? NSNumber)?.intValue ?: 1,
                                 forgotDurationMinutes = (dict.objectForKey("forgotDurationMinutes") as? NSNumber)?.intValue ?: 10,
                                 createdAt = (dict.objectForKey("createdAt") as? NSNumber)?.longValue ?: 0L,
-                                order = (dict.objectForKey("order") as? NSNumber)?.intValue ?: 0
+                                order = (dict.objectForKey("order") as? NSNumber)?.intValue ?: 0,
+                                usageType = dict.objectForKey("usageType") as? String ?: ""
                             )
                             list.add(medicine)
                         }
@@ -112,6 +114,7 @@ class MedicineRepositoryIos : MedicineRepository {
             forgotDurationMinutes = medicine.forgotDurationMinutes,
             createdAt = medicine.createdAt,
             order = medicine.order,
+            usageType = medicine.usageType,
             completion = { error ->
                 if (error != null) {
                     continuation.resume(Result.failure(Exception(error)))

@@ -20,6 +20,7 @@
    forgotDurationMinutes:(int)forgotDurationMinutes
                createdAt:(long long)createdAt
                    order:(int)order
+               usageType:(NSString *)usageType
               completion:(void (^)(NSString * _Nullable error))completion;
 
 + (void)updateMedicineWithId:(NSString *)medicineId
@@ -39,6 +40,7 @@
       forgotDurationMinutes:(int)forgotDurationMinutes
                   createdAt:(long long)createdAt
                       order:(int)order
+                  usageType:(NSString *)usageType
                  completion:(void (^)(NSString * _Nullable error))completion;
 
 + (void)getMedicinesWithUserId:(NSString *)userId

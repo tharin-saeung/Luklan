@@ -21,31 +21,32 @@
              forgotTimes:(int)forgotTimes
    forgotDurationMinutes:(int)forgotDurationMinutes
                createdAt:(long long)createdAt
-                   order:(int)order
-              completion:(void (^)(NSString * _Nullable error))completion {
-    
-    FIRFirestore *db = [FIRFirestore firestore];
-    NSDictionary *medicineMap = @{
-        @"id": medicineId,
-        @"name": name,
-        @"dosage": dosage,
-        @"unit": unit,
-        @"times": times,
-        @"startDate": startDate,
-        @"expiryDate": expiryDate,
-        @"category": category,
-        @"mealTiming": mealTiming,
-        @"mealTimingMinutes": @(mealTimingMinutes),
-        @"currentAmount": currentAmount,
-        @"photoUrl": photoUrl,
-        @"userId": userId,
-        @"takenHistory": takenHistory,
-        @"forgotTimes": @(forgotTimes),
-        @"forgotDurationMinutes": @(forgotDurationMinutes),
-        @"createdAt": @(createdAt),
-        @"order": @(order)
-    };
-    
+               order:(int)order
+               usageType:(NSString *)usageType
+               completion:(void (^)(NSString * _Nullable error))completion {
+
+               FIRFirestore *db = [FIRFirestore firestore];
+               NSDictionary *medicineMap = @{
+               @"id": medicineId,
+               @"name": name,
+               @"dosage": dosage,
+               @"unit": unit,
+               @"times": times,
+               @"startDate": startDate,
+               @"expiryDate": expiryDate,
+               @"category": category,
+               @"mealTiming": mealTiming,
+               @"mealTimingMinutes": @(mealTimingMinutes),
+               @"currentAmount": currentAmount,
+               @"photoUrl": photoUrl,
+               @"userId": userId,
+               @"takenHistory": takenHistory,
+               @"forgotTimes": @(forgotTimes),
+               @"forgotDurationMinutes": @(forgotDurationMinutes),
+               @"createdAt": @(createdAt),
+               @"order": @(order),
+               @"usageType": usageType
+               };    
     NSString *path = [NSString stringWithFormat:@"medicines/%@", medicineId];
     [[db documentWithPath:path] setData:medicineMap completion:^(NSError * _Nullable error) {
         if (error) {
@@ -73,6 +74,7 @@
       forgotDurationMinutes:(int)forgotDurationMinutes
                   createdAt:(long long)createdAt
                       order:(int)order
+                  usageType:(NSString *)usageType
                  completion:(void (^)(NSString * _Nullable error))completion {
 
     FIRFirestore *db = [FIRFirestore firestore];
@@ -92,7 +94,8 @@
         @"forgotTimes": @(forgotTimes),
         @"forgotDurationMinutes": @(forgotDurationMinutes),
         @"createdAt": @(createdAt),
-        @"order": @(order)
+        @"order": @(order),
+        @"usageType": usageType
     };
     
     NSString *path = [NSString stringWithFormat:@"medicines/%@", medicineId];
