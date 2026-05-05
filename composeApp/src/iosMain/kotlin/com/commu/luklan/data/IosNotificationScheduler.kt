@@ -11,87 +11,96 @@ import com.commu.luklan.data.getAuthRepository
 class IosNotificationScheduler : NotificationScheduler {
 
     override fun schedule(medicine: Medicine) {
-        cancel(medicine)
-
-        val amount = medicine.currentAmount.toDoubleOrNull() ?: 0.0
-        val dose = medicine.dosage.toDoubleOrNull() ?: 0.0
-        if (amount < dose) return
-
         val center = UNUserNotificationCenter.currentNotificationCenter()
-        val calendar = NSCalendar.currentCalendar
+        
+        // Use completion handler to ensure we cancel existing ones BEFORE scheduling new ones
+        // This prevents the race condition where cancel() might delete the newly scheduled ones
+        center.getPendingNotificationRequestsWithCompletionHandler { requests ->
+            val idsToRemove = (requests as? List<UNNotificationRequest>)?.filter { 
+                it.identifier.startsWith(medicine.id) 
+            }?.map { it.identifier } ?: emptyList()
+            
+            if (idsToRemove.isNotEmpty()) {
+                center.removePendingNotificationRequestsWithIdentifiers(idsToRemove)
+            }
 
-        medicine.times.forEach { timeStr ->
-            val parts = timeStr.split(":")
-            if (parts.size == 2) {
-                val hour = parts[0].toLong()
-                val minute = parts[1].toLong()
+            val amount = medicine.currentAmount.toDoubleOrNull() ?: 0.0
+            val dose = medicine.dosage.toDoubleOrNull() ?: 0.0
+            if (amount < dose) return@getPendingNotificationRequestsWithCompletionHandler
 
-                val components = NSDateComponents().apply {
-                    setHour(hour)
-                    setMinute(minute)
-                }
+            medicine.times.forEach { timeStr ->
+                val parts = timeStr.split(":")
+                if (parts.size == 2) {
+                    val baseHour = parts[0].toIntOrNull() ?: return@forEach
+                    val baseMinute = parts[1].toIntOrNull() ?: return@forEach
 
-                // Adjust for meal timing
-                var adjustedDate = calendar.dateFromComponents(components)
-                if (medicine.mealTiming == "ก่อนอาหาร") {
-                    adjustedDate = adjustedDate?.let { calendar.dateByAddingUnit(NSCalendarUnitMinute, -medicine.mealTimingMinutes.toLong(), it, 0.toULong()) }
-                } else if (medicine.mealTiming == "หลังอาหาร") {
-                    adjustedDate = adjustedDate?.let { calendar.dateByAddingUnit(NSCalendarUnitMinute, medicine.mealTimingMinutes.toLong(), it, 0.toULong()) }
-                }
+                    // Use mathematical calculation to avoid NSCalendar Year 1 timezone/LMT bug
+                    var totalMinutes = baseHour * 60 + baseMinute
+                    when (medicine.mealTiming) {
+                        "ก่อนอาหาร" -> totalMinutes -= medicine.mealTimingMinutes
+                        "หลังอาหาร" -> totalMinutes += medicine.mealTimingMinutes
+                    }
+                    
+                    // Normalize to 24h range
+                    val normalizedMinutes = (totalMinutes + 1440) % 1440
+                    val finalHour = normalizedMinutes / 60
+                    val finalMinute = normalizedMinutes % 60
 
-                val finalComponents = adjustedDate?.let { 
-                    calendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, it) 
-                } ?: components
-
-                val currentUserId = getAuthRepository().getCurrentUserId()
-                val isOwner = medicine.userId == currentUserId
-                val patientName = AppCache.userProfileCache[medicine.userId]?.name ?: "ผู้ป่วย"
-
-                if (isOwner) {
-                    val content = UNMutableNotificationContent().apply {
-                        setTitle("⏰ ได้เวลาใช้ยาแล้ว")
-                        val dosageDisplay = if (medicine.dosage.isNotEmpty()) "${medicine.dosage} ${medicine.unit}" else ""
-                        setBody("ได้เวลาใช้ยา ${medicine.name} $dosageDisplay แล้วนะครับ")
-                        setSound(UNNotificationSound.defaultSound())
-                        setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to false))
+                    val finalComponents = NSDateComponents().apply {
+                        setHour(finalHour.toLong())
+                        setMinute(finalMinute.toLong())
                     }
 
-                    val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(finalComponents, repeats = true)
-                    val request = UNNotificationRequest.requestWithIdentifier("${medicine.id}_${timeStr.replace(":", "")}", content, trigger)
+                    val currentUserId = getAuthRepository().getCurrentUserId()
+                    val isOwner = medicine.userId == currentUserId
+                    val patientName = AppCache.userProfileCache[medicine.userId]?.name ?: "ผู้ป่วย"
 
-                    center.addNotificationRequest(request) { error ->
-                        if (error != null) println("❌ iOS Notification Error: ${error.localizedDescription}")
-                    }
-                }
+                    if (isOwner) {
+                        val content = UNMutableNotificationContent().apply {
+                            setTitle("⏰ ได้เวลาใช้ยาแล้ว")
+                            val dosageDisplay = if (medicine.dosage.isNotEmpty()) "${medicine.dosage} ${medicine.unit}" else ""
+                            setBody("ได้เวลาใช้ยา ${medicine.name} $dosageDisplay แล้วนะครับ")
+                            setSound(UNNotificationSound.defaultSound())
+                            setUserInfo(mapOf("medicineId" to medicine.id, "time" to timeStr, "isCheckin" to false))
+                        }
 
-                // Forgot Reminders (Check-ins)
-                for (i in 1..medicine.forgotTimes) {
-                    // Caretakers only get the LAST reminder as a watchdog to avoid noise
-                    if (!isOwner && i < medicine.forgotTimes) continue
+                        val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(finalComponents, repeats = true)
+                        val request = UNNotificationRequest.requestWithIdentifier("${medicine.id}_${timeStr.replace(":", "")}", content, trigger)
 
-                    val checkinContent = UNMutableNotificationContent().apply {
-                        setTitle(if (isOwner) "⏰ ลืมใช้ยาหรือเปล่าครับ?" else "⏰ ผู้ป่วยยังไม่ได้ใช้ยา")
-                        setBody(if (isOwner) 
-                            "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ" 
-                            else "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
-                        setSound(UNNotificationSound.defaultSound())
-                        setUserInfo(mapOf(
-                            "medicineId" to medicine.id, 
-                            "time" to timeStr, 
-                            "isCheckin" to true,
-                            "isWatchdog" to !isOwner
-                        ))
+                        center.addNotificationRequest(request) { error ->
+                            if (error != null) println("❌ iOS Notification Error: ${error.localizedDescription}")
+                        }
                     }
 
-                    // Check-in trigger time
-                    val checkinDate = adjustedDate?.let {
-                        calendar.dateByAddingUnit(NSCalendarUnitMinute, (medicine.forgotDurationMinutes * i).toLong(), it, 0.toULong())
-                    }
-                    val checkinComponents = checkinDate?.let {
-                        calendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, it)
-                    }
+                    // Forgot Reminders (Check-ins)
+                    for (i in 1..medicine.forgotTimes) {
+                        if (!isOwner && i < medicine.forgotTimes) continue
 
-                    if (checkinComponents != null) {
+                        val checkinContent = UNMutableNotificationContent().apply {
+                            setTitle(if (isOwner) "⏰ ลืมใช้ยาหรือเปล่าครับ?" else "⏰ ผู้ป่วยยังไม่ได้ใช้ยา")
+                            setBody(if (isOwner) 
+                                "คุณยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ" 
+                                else "$patientName ยังไม่ได้บันทึกการใช้ยา ${medicine.name} เลยนะครับ")
+                            setSound(UNNotificationSound.defaultSound())
+                            setUserInfo(mapOf(
+                                "medicineId" to medicine.id, 
+                                "time" to timeStr, 
+                                "isCheckin" to true,
+                                "isWatchdog" to !isOwner
+                            ))
+                        }
+
+                        // Mathematical shift for check-ins as well
+                        val checkinTotalMinutes = totalMinutes + (medicine.forgotDurationMinutes * i)
+                        val normalizedCheckinMinutes = (checkinTotalMinutes + 1440) % 1440
+                        val checkinHour = normalizedCheckinMinutes / 60
+                        val checkinMinute = normalizedCheckinMinutes % 60
+
+                        val checkinComponents = NSDateComponents().apply {
+                            setHour(checkinHour.toLong())
+                            setMinute(checkinMinute.toLong())
+                        }
+
                         val checkinTrigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(checkinComponents, repeats = true)
                         val checkinRequest = UNNotificationRequest.requestWithIdentifier(
                             "${medicine.id}_${timeStr.replace(":", "")}_checkin_$i", 

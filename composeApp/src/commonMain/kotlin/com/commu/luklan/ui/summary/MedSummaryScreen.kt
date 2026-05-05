@@ -152,8 +152,7 @@ fun MedSummaryScreen(
                         Text(
                             text = "${state.adherencePercentage.toInt()}%",
                             style = LuklanTypography.h1.copy(fontSize = 54.sp),
-                            color = Color.White,
-                            fontWeight = FontWeight.Black
+                            color = Color.White
                         )
                     }
                 }
