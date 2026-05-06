@@ -157,7 +157,7 @@ fun MedSummaryScreen(
                     }
                 }
 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(24.dp))
 
                 // Summary Message Card
                 Surface(
@@ -207,7 +207,7 @@ fun MedSummaryScreen(
                     }
                 }
 
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(24.dp))
                 
                 Button(
                     onClick = { onNavigateToStats(selectedMonth, selectedYear) },
