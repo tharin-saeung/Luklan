@@ -285,7 +285,7 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
     var isHolding by remember { mutableStateOf(false) }
     val progress by animateFloatAsState(
         targetValue = if (isHolding) 1f else 0f,
-        animationSpec = if (isHolding) tween(3000, easing = LinearEasing) else tween(300),
+        animationSpec = if (isHolding) tween(1000, easing = LinearEasing) else tween(300),
         label = "SOSProgress"
     )
 
@@ -328,7 +328,7 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
                 .background(LuklanColors.Secondary),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(progress).background(LuklanColors.Primary))
+            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(progress).background(LuklanColors.Error))
             Text("ฉุกเฉิน", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 32.dp))
         }
     }
