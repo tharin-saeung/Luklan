@@ -155,7 +155,7 @@ fun JoinCaretakerScreen(
                     ) {
                         Icon(Icons.Default.QrCodeScanner, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("แสกน", fontWeight = FontWeight.Bold)
+                        Text("สแกน", fontWeight = FontWeight.Bold)
                     }
                     
                     // Confirm button

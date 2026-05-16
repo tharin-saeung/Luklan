@@ -325,10 +325,10 @@ fun EmergencyButton(onTrigger: () -> Unit, modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .height(100.dp)
                 .clip(bellShape)
-                .background(LuklanColors.Secondary),
+                .background(LuklanColors.Error),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(progress).background(LuklanColors.Error))
+            Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(progress).background(LuklanColors.Secondary))
             Text("ฉุกเฉิน", color = Color.White, style = LuklanTypography.h3, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 32.dp))
         }
     }
