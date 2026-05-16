@@ -1,4 +1,6 @@
-target 'iosApp' do
+source 'https://cdn.cocoapods.org'
+
+target 'Luklan' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
   platform :ios, '16.0'

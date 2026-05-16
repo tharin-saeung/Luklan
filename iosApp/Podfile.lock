@@ -1199,6 +1199,8 @@ PODS:
     - FirebaseCore (~> 11.0)
     - FirebaseFirestore (~> 11.0)
     - FirebaseFunctions (~> 11.0)
+    - FirebaseMessaging (~> 11.0)
+    - FirebaseStorage (~> 11.0)
   - FirebaseAppCheckInterop (11.15.0)
   - FirebaseAuth (11.15.0):
     - FirebaseAppCheckInterop (~> 11.0)
@@ -1442,7 +1444,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
-  composeApp: 3f0f1b916e94f2ec55904551b741a366bf2636af
+  composeApp: 36c248a202fc0f803fd2e41bf98004daf40cea8e
   FirebaseAppCheckInterop: 06fe5a3799278ae4667e6c432edd86b1030fa3df
   FirebaseAuth: a6575e5fbf46b046c58dc211a28a5fbdd8d4c83b
   FirebaseAuthInterop: 7087d7a4ee4bc4de019b2d0c240974ed5d89e2fd
@@ -1467,6 +1469,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
 
-PODFILE CHECKSUM: 5d13be652d04db275348359908b616e2001b2b86
+PODFILE CHECKSUM: 9699c971a7d43dc77599b72456461649e86b99ab
 
 COCOAPODS: 1.16.2
