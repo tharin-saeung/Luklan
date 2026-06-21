@@ -1,5 +1,5 @@
     This is a Kotlin Multiplatform project targeting Android, iOS.
-
+ 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
   It contains several subfolders:
   - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
@@ -34,7 +34,7 @@ in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and r
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
 
-## Temporary change: OCR flow disabled
+## Temporary change: OCR flow disabled 
 
 - OCR parsing has been found unstable and this project temporarily disables the OCR flow in the app navigation.
 - The Home screen Add button now navigates directly to the manual `AddMedicine` screen.
