@@ -1,9 +1,8 @@
 # Luklan (ลูกหลาน) 📱💊
 
-> A cross-platform mobile application designed to bridge elderly healthcare management and family caregiving through real-time medication tracking, computer-vision prescription scanning, and emergency response.
+A cross-platform mobile application designed to bridge elderly healthcare management and family caregiving through real-time medication tracking, computer-vision prescription scanning, and emergency response.
 
-Built with **Kotlin Multiplatform (KMP)** and **Compose Multiplatform**, sharing over 85% of business logic and UI across Android and iOS.
-
+> 🛠️ **Architecture:** Built with **Kotlin Multiplatform (KMP)** and **Compose Multiplatform**, sharing over 85% of business logic and UI across Android and iOS.
 ---
 
 ## 🌟 Key Features
